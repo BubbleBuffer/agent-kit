@@ -1,0 +1,455 @@
+// Widget tests for the transcript group: markdown, the activity group and its
+// rows, output clamp, edit rows, diff, plan, return lines and the list's
+// follow-tail and anchor restore.
+
+import 'package:agent_kit/agent_kit.dart';
+import 'package:agent_kit_core/agent_kit_core.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures.dart';
+import 'harness.dart';
+
+void main() {
+  group('markdown', () {
+    test('splits blocks', () {
+      final blocks = parseMarkdownBlocks(proseMarkdown);
+      expect(blocks.map((b) => b.runtimeType), [
+        MdParagraph,
+        MdParagraph,
+        MdList,
+        MdCode,
+      ]);
+      expect((blocks[2] as MdList).items, hasLength(3));
+      expect((blocks[3] as MdCode).language, 'rust');
+    });
+
+    test('an open fence runs to the end', () {
+      final blocks = parseMarkdownBlocks('text\n\n```dart\nlet x = 1;');
+      expect((blocks.last as MdCode).code, 'let x = 1;');
+    });
+
+    test('numbered lists, headings and quotes', () {
+      final blocks = parseMarkdownBlocks('# Title\n\n3. a\n4. b\n\n> quoted');
+      expect(blocks[0], isA<MdHeading>());
+      expect((blocks[1] as MdList).start, 3);
+      expect(blocks[2], isA<MdQuote>());
+    });
+
+    test('inline runs', () {
+      final spans = parseMarkdownInline('a `b` **c** *d* [e](u) snake_case');
+      expect(spans.where((s) => s.code).map((s) => s.text), ['b']);
+      expect(spans.where((s) => s.bold).map((s) => s.text), ['c']);
+      expect(spans.where((s) => s.italic).map((s) => s.text), ['d']);
+      expect(spans.where((s) => s.link != null).map((s) => s.link), ['u']);
+      expect(spans.last.text, contains('snake_case'));
+    });
+
+    testWidgets('the default renderer draws prose and a code block', (
+      tester,
+    ) async {
+      await pumpTranscript(
+        tester,
+        SingleChildScrollView(child: AssistantProse(assistantMessage())),
+      );
+      expect(find.textContaining('Both tools hold the last figure'), findsOneWidget);
+      expect(find.byType(CodeBlock), findsOneWidget);
+      expect(find.textContaining('self.stale_since.is_some()'), findsOneWidget);
+    });
+
+    testWidgets('a link calls back', (tester) async {
+      String? tapped;
+      await pumpTranscript(
+        tester,
+        AssistantProse(
+          const AssistantMessage(id: 'm', markdown: 'See [the docs](x://y).'),
+          onLinkTap: (u) => tapped = u,
+        ),
+      );
+      final rich = find.byType(RichText).first;
+      final box = tester.getTopLeft(rich);
+      // "See " is 4 characters wide; tap inside "the docs".
+      await tester.tapAt(box + const Offset(50, 10));
+      expect(tapped, 'x://y');
+    });
+  });
+
+  group('messages', () {
+    testWidgets('user bubble, chips and tap', (tester) async {
+      KitRef? tapped;
+      await pumpTranscript(
+        tester,
+        UserBubble(userMessage(), onRefTap: (r) => tapped = r),
+      );
+      expect(find.textContaining('The quota bar in the web view'), findsOneWidget);
+      await tester.tap(find.text('usage/mod.rs'));
+      expect(tapped?.id, 'f1');
+    });
+
+    testWidgets('notice and system lines', (tester) async {
+      await pumpTranscript(
+        tester,
+        Column(
+          children: [
+            const SystemLineView(SystemLine(id: 's', text: 'Context compacted')),
+            for (final tone in NoticeTone.values)
+              NoticeLineView(NoticeLine(id: tone.name, text: 'Tone ${tone.name}', tone: tone)),
+          ],
+        ),
+      );
+      expect(find.text('Context compacted'), findsOneWidget);
+      for (final tone in NoticeTone.values) {
+        expect(find.text('Tone ${tone.name}'), findsOneWidget);
+      }
+    });
+  });
+
+  group('activity group', () {
+    test('summary line', () {
+      expect(
+        activitySummary(activityGroup()),
+        'Worked 48s · thought 6s · 5 tool calls',
+      );
+      expect(
+        activitySummary(
+          ActivityGroup(id: 'g', rows: [const ToolRow(id: 't', name: 'x')]),
+        ),
+        'Working · 1 tool call',
+      );
+    });
+
+    testWidgets('opens into rows, one at a time', (tester) async {
+      await pumpTranscript(tester, ActivityGroupView(activityGroup()));
+      const summary = 'Worked 48s · thought 6s · 5 tool calls';
+      expect(find.text(summary), findsOneWidget);
+      expect(find.text('exec'), findsNothing);
+
+      await tester.tap(find.text(summary));
+      await tester.pump();
+      for (final verb in ['think', 'read', 'grep', 'exec', 'spawn']) {
+        expect(find.text(verb), findsWidgets, reason: verb);
+      }
+      expect(find.text('212 lines'), findsOneWidget);
+      expect(find.text('9 hits'), findsOneWidget);
+      expect(find.text('child c7e2'), findsOneWidget);
+
+      await tester.tap(find.text('cargo test -p bubblepaw-host usage'));
+      await tester.pump();
+      expect(find.text('Show all 20 lines'), findsOneWidget);
+
+      await tester.tap(
+        find.text('Compared Codex and Claude Code usage handling'),
+      );
+      await tester.pump();
+      expect(find.text('Show all 20 lines'), findsNothing);
+      expect(
+        find.text(
+          'Compared Codex and Claude Code usage handling\n'
+          'Both keep the last figure; Codex also marks it stale.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the exit status is in danger', (tester) async {
+      await pumpTranscript(
+        tester,
+        ActivityGroupView(activityGroup(), initiallyOpen: true),
+      );
+      final style = tester.widget<Text>(find.text('exit 101')).style!;
+      expect(style.color, BbTheme.light().dangerInk);
+    });
+
+    testWidgets('a spawn row opens the child', (tester) async {
+      String? opened;
+      await pumpTranscript(
+        tester,
+        ActivityGroupView(
+          activityGroup(),
+          initiallyOpen: true,
+          onOpenChild: (id) => opened = id,
+        ),
+      );
+      await tester.tap(find.text('Survey quota handling in Codex'));
+      expect(opened, 'child-c7e2');
+    });
+
+    testWidgets('Enter on the focused summary line opens it', (tester) async {
+      await pumpTranscript(tester, ActivityGroupView(activityGroup()));
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(find.text('exec'), findsOneWidget);
+    });
+
+    testWidgets('running and failed tool rows use the status mark', (
+      tester,
+    ) async {
+      await pumpTranscript(
+        tester,
+        ActivityGroupView(
+          ActivityGroup(
+            id: 'g',
+            rows: const [
+              ToolRow(id: 'a', name: 'read', kind: ToolKind.read, target: 'a.rs'),
+              ToolRow(
+                id: 'b',
+                name: 'web',
+                kind: ToolKind.web,
+                target: 'b',
+                state: WorkState.failed,
+                meta: 'timeout',
+              ),
+            ],
+          ),
+          initiallyOpen: true,
+        ),
+      );
+      expect(find.byType(StatusMark), findsNWidgets(2));
+      expect(find.text('timeout'), findsOneWidget);
+    });
+  });
+
+  group('exec output', () {
+    testWidgets('clamps, shows all, opens the full output', (tester) async {
+      var showAll = 0;
+      var full = 0;
+      await pumpTranscript(
+        tester,
+        SingleChildScrollView(
+          child: ExecOutput(
+            output: failingOutput(),
+            exitCode: 101,
+            onShowAll: () => showAll++,
+            onOpenFull: () => full++,
+          ),
+        ),
+      );
+      expect(find.textContaining('zero_is_not_unknown'), findsNothing);
+      expect(find.text('2.1 KB'), findsOneWidget);
+      expect(find.text('exited 101'), findsOneWidget);
+
+      await tester.tap(find.text('Show all 20 lines'));
+      await tester.pump();
+      expect(showAll, 1);
+      expect(find.textContaining('zero_is_not_unknown'), findsOneWidget);
+      expect(find.text('Show fewer lines'), findsOneWidget);
+
+      await tester.tap(find.text('Open full output'));
+      expect(full, 1);
+    });
+
+    testWidgets('short output has no clamp button', (tester) async {
+      await pumpTranscript(
+        tester,
+        const ExecOutput(output: ToolOutput(text: 'ok\n'), exitCode: 0),
+      );
+      expect(find.textContaining('Show all'), findsNothing);
+      expect(find.text('Open full output'), findsNothing);
+    });
+  });
+
+  group('edit row and diff', () {
+    testWidgets('counts, callbacks and the diff', (tester) async {
+      var review = 0;
+      var undo = 0;
+      await pumpTranscript(
+        tester,
+        SingleChildScrollView(
+          child: FileEditRow(
+            modifiedEdit(),
+            onReviewDiff: () => review++,
+            onUndo: () => undo++,
+          ),
+        ),
+      );
+      expect(find.text('Edited usage/mod.rs'), findsOneWidget);
+      expect(find.text('+8'), findsOneWidget);
+      expect(find.text('−3'), findsOneWidget);
+      expect(find.byType(DiffView), findsNothing);
+
+      await tester.tap(find.text('Edited usage/mod.rs'));
+      await tester.pump();
+      expect(find.byType(DiffView), findsOneWidget);
+
+      await tester.tap(find.text('Review diff'));
+      await tester.tap(find.text('Undo'));
+      expect(review, 1);
+      expect(undo, 1);
+    });
+
+    testWidgets('a created file offers Open; an undone edit no Undo', (
+      tester,
+    ) async {
+      var opened = 0;
+      await pumpTranscript(
+        tester,
+        Column(
+          children: [
+            FileEditRow(createdEdit(), onOpen: () => opened++, onUndo: () {}),
+            FileEditRow(modifiedEdit(undone: true), onUndo: () {}),
+          ],
+        ),
+      );
+      expect(find.text('Created tests/quota_reconnect.rs'), findsOneWidget);
+      await tester.tap(find.text('Open'));
+      expect(opened, 1);
+      expect(find.text('Undo'), findsOneWidget);
+      expect(find.text('Undone'), findsOneWidget);
+    });
+
+    testWidgets('the diff numbers lines and strikes removals', (tester) async {
+      final diff = modifiedEdit().diff;
+      await pumpTranscript(tester, SingleChildScrollView(child: DiffView(diff)));
+      expect(find.text('24'), findsOneWidget);
+      expect(find.text('28'), findsOneWidget);
+      expect(find.text('183'), findsOneWidget);
+      expect(find.text('⋯'), findsOneWidget);
+      final removed = tester.widget<Text>(
+        find.text('    pub last: UsageSnapshot,'),
+      );
+      expect(removed.style!.decoration, TextDecoration.lineThrough);
+      final added = tester.widget<Text>(
+        find.text('    pub last: Option<UsageSnapshot>,'),
+      );
+      expect(added.style!.color, BbTheme.light().constructiveInk);
+    });
+  });
+
+  group('plan', () {
+    testWidgets('one line that opens', (tester) async {
+      await pumpTranscript(tester, const PlanChecklist(planItems));
+      expect(find.text('Plan'), findsOneWidget);
+      expect(find.text('2/5'), findsOneWidget);
+      expect(find.textContaining('Survey Codex'), findsNothing);
+
+      await tester.tap(find.text('Plan'));
+      await tester.pump();
+      expect(find.textContaining('Survey Codex'), findsOneWidget);
+      expect(find.textContaining('Run the usage tests'), findsOneWidget);
+
+      await tester.tap(find.text('Plan'));
+      await tester.pump();
+      expect(find.textContaining('Survey Codex'), findsNothing);
+    });
+  });
+
+  group('return lines', () {
+    testWidgets('a child result opens the child', (tester) async {
+      String? opened;
+      await pumpTranscript(
+        tester,
+        ReturnLine(childResult, onOpen: (id) => opened = id),
+      );
+      expect(find.textContaining('Map UsageState transitions'), findsOneWidget);
+      expect(find.text('Result ready'), findsOneWidget);
+      await tester.tap(find.text('Open'));
+      expect(opened, 'child-c7e2');
+    });
+
+    testWidgets('the interrupted notice resumes', (tester) async {
+      var resumed = 0;
+      await pumpTranscript(
+        tester,
+        InterruptedNotice(onResume: () => resumed++),
+      );
+      expect(find.text('Interrupted by a restart'), findsOneWidget);
+      await tester.tap(find.text('Resume'));
+      expect(resumed, 1);
+    });
+  });
+
+  group('transcript list', () {
+    Widget list(
+      List<TranscriptItem> items,
+      TranscriptController controller, {
+      TranscriptAnchor? anchor,
+    }) => TranscriptList(
+      items: items,
+      controller: controller,
+      initialAnchor: anchor,
+    );
+
+    bool atBottom(WidgetTester tester) {
+      final p = listPosition(tester);
+      return p.maxScrollExtent - p.pixels < 2;
+    }
+
+    testWidgets('follows the tail, lets go on scroll, jumps back', (
+      tester,
+    ) async {
+      final controller = TranscriptController();
+      addTearDown(controller.dispose);
+      await pumpTranscript(tester, list(longTranscript(20), controller));
+      await tester.pumpAndSettle();
+      expect(listPosition(tester).maxScrollExtent, greaterThan(500));
+      expect(atBottom(tester), isTrue);
+      expect(find.text('Jump to latest'), findsNothing);
+
+      // New content keeps it pinned.
+      await pumpTranscript(tester, list(longTranscript(21), controller));
+      await tester.pumpAndSettle();
+      expect(atBottom(tester), isTrue);
+
+      // Scrolling up lets go and shows the button.
+      await tester.drag(find.byType(ListView), const Offset(0, 500));
+      await tester.pumpAndSettle();
+      expect(controller.following, isFalse);
+      expect(find.text('Jump to latest'), findsOneWidget);
+      final before = listPosition(tester).pixels;
+
+      await pumpTranscript(tester, list(longTranscript(22), controller));
+      await tester.pumpAndSettle();
+      expect(listPosition(tester).pixels, closeTo(before, 2));
+      expect(atBottom(tester), isFalse);
+
+      await tester.tap(find.text('Jump to latest'));
+      await tester.pumpAndSettle();
+      expect(atBottom(tester), isTrue);
+      expect(controller.following, isTrue);
+      expect(find.text('Jump to latest'), findsNothing);
+    });
+
+    testWidgets('restores an anchor', (tester) async {
+      final controller = TranscriptController();
+      addTearDown(controller.dispose);
+      await pumpTranscript(
+        tester,
+        list(longTranscript(60), controller, anchor: const TranscriptAnchor('u30')),
+      );
+      await tester.pumpAndSettle();
+      expect(controller.following, isFalse);
+      final anchor = controller.anchor!;
+      expect(anchor.itemId, 'u30');
+      expect(anchor.offset.abs(), lessThan(2));
+      expect(find.text('Question number 30 about the quota bar.'), findsOneWidget);
+    });
+
+    testWidgets('renders every item kind', (tester) async {
+      final items = <TranscriptItem>[
+        userMessage(),
+        assistantMessage(),
+        activityGroup(),
+        modifiedEdit(),
+        childResult,
+        const SystemLine(id: 's', text: 'Context compacted'),
+        const NoticeLine(id: 'n', text: 'Heads up', tone: NoticeTone.warning),
+      ];
+      await pumpTranscript(
+        tester,
+        TranscriptList(
+          items: items,
+          leading: const PlanChecklist(planItems),
+          trailing: const InterruptedNotice(),
+        ),
+        height: 3000,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Plan'), findsOneWidget);
+      expect(find.text('Heads up'), findsOneWidget);
+      expect(find.text('Interrupted by a restart'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+}

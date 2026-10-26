@@ -7,6 +7,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import '../components/composer.dart';
+import '../components/transcript.dart';
 
 class ComponentsScene extends StatelessWidget {
   const ComponentsScene({super.key});
@@ -33,6 +34,7 @@ class ComponentsScene extends StatelessWidget {
                 children: [
                   const _Heading('StatusMark'),
                   const _StatusSpecimens(),
+                  const TranscriptSpecimens(),
                   SizedBox(height: t.spacing.xl),
                   const ComposerSpecimens(),
                   SizedBox(height: t.spacing.xl),
