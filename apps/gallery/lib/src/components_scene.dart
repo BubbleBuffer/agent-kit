@@ -6,6 +6,7 @@ import 'package:agent_kit_core/agent_kit_core.dart' show ChatStatus;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../components/chrome.dart';
 import '../components/composer.dart';
 import '../components/transcript.dart';
 import '../components/workspace.dart';
@@ -41,6 +42,9 @@ class ComponentsScene extends StatelessWidget {
                   SizedBox(height: t.spacing.xl),
                   const _Heading('Workspace'),
                   const WorkspaceSpecimens(),
+                  SizedBox(height: t.spacing.xl),
+                  const _Heading('Chrome'),
+                  const ChromeSpecimens(),
                   SizedBox(height: t.spacing.xl),
                   const _Heading('Not built yet'),
                   for (final line in _planned)
