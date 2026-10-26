@@ -3,7 +3,6 @@
 // ledger or a strip by the width it is given.
 
 import 'package:agent_kit/agent_kit.dart';
-import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:agent_kit_core/fake.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';

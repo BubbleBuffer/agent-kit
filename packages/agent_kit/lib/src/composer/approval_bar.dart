@@ -483,8 +483,8 @@ class _RenderWrapActs extends RenderBox
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! ContainerBoxParentData<RenderBox>) {
-      child.parentData = ContainerBoxParentData<RenderBox>();
+    if (child.parentData is! _ActsParentData) {
+      child.parentData = _ActsParentData();
     }
   }
 
@@ -525,8 +525,8 @@ class _RenderWrapActs extends RenderBox
   @override
   void performLayout() {
     final plan = _plan(constraints, ChildLayoutHelper.layoutChild);
-    (_what.parentData! as ContainerBoxParentData<RenderBox>).offset = plan.what;
-    (_acts.parentData! as ContainerBoxParentData<RenderBox>).offset = plan.acts;
+    (_what.parentData! as _ActsParentData).offset = plan.what;
+    (_acts.parentData! as _ActsParentData).offset = plan.acts;
     size = plan.size;
   }
 
@@ -559,3 +559,5 @@ class _RenderWrapActs extends RenderBox
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
       defaultHitTestChildren(result, position: position);
 }
+
+class _ActsParentData extends ContainerBoxParentData<RenderBox> {}
