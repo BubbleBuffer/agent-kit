@@ -47,9 +47,10 @@ void main() {
     expect(find.byKey(const ValueKey('rail-row-idle')), findsOneWidget);
     expect(find.text('Needs approval'), findsOneWidget);
 
-    // ignore: avoid_print
-    print('DIAG ${tester.getRect(find.byType(ListView).first)} ${tester.getRect(find.byKey(const ValueKey('rail-row-idle')))} ${find.byType(ListView).evaluate().length}');
-    await tester.tap(find.byKey(const ValueKey('rail-row-idle')));
+    await tester.tap(
+      find.byKey(const ValueKey('rail-row-idle')),
+      warnIfMissed: false,
+    );
     await _settle(tester);
     expect(find.text('Needs approval'), findsNothing);
     // The open chat's title is in the header as well as in the rail.
