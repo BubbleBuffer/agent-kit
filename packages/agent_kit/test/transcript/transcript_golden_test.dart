@@ -203,10 +203,10 @@ Widget _states() {
 
 void main() {
   const heights = {
-    ('turn', 390): 2500.0,
-    ('turn', 1000): 2000.0,
-    ('states', 390): 2900.0,
-    ('states', 1000): 2300.0,
+    ('turn', 390): 2120.0,
+    ('turn', 1000): 1680.0,
+    ('states', 390): 1500.0,
+    ('states', 1000): 1250.0,
   };
   final sheets = <String, Widget Function()>{'turn': _turn, 'states': _states};
   for (final entry in sheets.entries) {

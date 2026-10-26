@@ -163,7 +163,7 @@ class _Gap extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '⋯',
+              '…',
               style: monoStyle(const TypeSpec(12.5, 16, 400), t.faint),
             ),
           ),
