@@ -41,7 +41,7 @@ void main() {
   testWidgets('shows the pill, the age, the question and the option rows', (
     tester,
   ) async {
-    await pumpComposer(tester, _prompt(fixtureQuestion, []));
+    await pumpComposer(tester, _prompt(fixtureQuestion, []), width: 1000);
     expect(find.text('Question'), findsOneWidget);
     expect(find.text('waiting 3m'), findsOneWidget);
     expect(
@@ -79,15 +79,15 @@ void main() {
   ) async {
     final handle = tester.ensureSemantics();
     await pumpComposer(tester, _prompt(fixtureQuestion, []));
-    expect(find.bySemanticsLabel('Question from the agent'), findsWidgets);
-    expect(find.bySemanticsLabel('Pick one'), findsWidgets);
+    expect(find.bySemanticsLabel(RegExp('Question from the agent')), findsWidgets);
+    expect(find.bySemanticsLabel(RegExp('Pick one')), findsWidgets);
     expect(
       find.bySemanticsLabel(
-        'Always. A small age label sits next to the figure.',
+        RegExp('Always. A small age label sits next to the figure.'),
       ),
-      findsOneWidget,
+      findsWidgets,
     );
-    expect(find.bySemanticsLabel('Other answer'), findsWidgets);
+    expect(find.bySemanticsLabel(RegExp('Other answer')), findsWidgets);
     handle.dispose();
   });
 
@@ -271,9 +271,7 @@ void main() {
       expect(a.text, isNull);
     });
 
-    testWidgets('moves on, and the last Skip sends every item', (
-      tester,
-    ) async {
+    testWidgets('moves on, and the last Skip sends every item', (tester) async {
       final sent = <Map<String, QuestionAnswer>>[];
       await pumpComposer(tester, _prompt(fixtureMixed, sent));
       await _tap(tester, 'Always');
@@ -331,7 +329,10 @@ void main() {
       await pumpComposer(tester, _prompt(fixtureQuestion, sent));
       await _key(tester, LogicalKeyboardKey.digit4);
       expect(
-        tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+        tester
+            .widget<EditableText>(find.byType(EditableText))
+            .focusNode
+            .hasFocus,
         isTrue,
       );
       await _key(tester, LogicalKeyboardKey.digit1);

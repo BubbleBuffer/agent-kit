@@ -144,11 +144,7 @@ final fixtureText = QuestionItem(
 );
 
 Question _request(String id, List<QuestionItem> items, Duration waited) =>
-    Question(
-      id: id,
-      requestedAt: fixtureNow.subtract(waited),
-      items: items,
-    );
+    Question(id: id, requestedAt: fixtureNow.subtract(waited), items: items);
 
 /// One pick-one question, waiting 3 minutes.
 final fixtureQuestion = _request('qs1', [

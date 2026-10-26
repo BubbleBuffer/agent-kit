@@ -30,7 +30,10 @@ void main() {
       'label': QuestionAnswer(skipped: true),
     });
     await pumpComposer(tester, QuestionAnswerLines(question: q));
-    expect(_line('Should a stale quota figure show its age? Only on hover'), findsOneWidget);
+    expect(
+      _line('Should a stale quota figure show its age? Only on hover'),
+      findsOneWidget,
+    );
     expect(
       _line(
         'Which views should keep the last known figure? '
@@ -39,7 +42,9 @@ void main() {
       findsOneWidget,
     );
     expect(
-      _line('What should the stale label say? I’ll use it in the tooltip and the screen-reader text. Skipped'),
+      _line(
+        'What should the stale label say? I’ll use it in the tooltip and the screen-reader text. Skipped',
+      ),
       findsOneWidget,
     );
   });

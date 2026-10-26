@@ -330,7 +330,9 @@ class _ComposerSpecimensState extends State<ComposerSpecimens> {
           520,
           _answer(
             _one,
-            answers: {'age': QuestionAnswer(choices: const ['Only on hover'])},
+            answers: {
+              'age': QuestionAnswer(choices: const ['Only on hover']),
+            },
           ),
         ),
         _Frame(
@@ -389,12 +391,7 @@ class _ComposerSpecimensState extends State<ComposerSpecimens> {
           _answer(_five, step: 3),
           phone: true,
         ),
-        _Frame(
-          'phone 390: text only',
-          390,
-          _answer(_text),
-          phone: true,
-        ),
+        _Frame('phone 390: text only', 390, _answer(_text), phone: true),
       ],
     );
   }

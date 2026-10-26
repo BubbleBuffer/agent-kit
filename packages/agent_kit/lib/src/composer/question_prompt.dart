@@ -98,8 +98,7 @@ class _Draft {
   bool get hasContent => picked.isNotEmpty || hasEntry;
 
   /// Whether the item can be sent as it is.
-  bool get valid =>
-      skipped || item.kind == QuestionKind.pickAny || hasContent;
+  bool get valid => skipped || item.kind == QuestionKind.pickAny || hasContent;
 
   /// Whether the tab shows a check.
   bool get done =>
@@ -571,7 +570,9 @@ class _QuestionTab extends StatelessWidget {
     return Semantics(
       button: true,
       selected: active,
-      label: done ? '$header, answered' : (skipped ? '$header, skipped' : header),
+      label: done
+          ? '$header, answered'
+          : (skipped ? '$header, skipped' : header),
       excludeSemantics: true,
       onTap: onTap,
       child: Hover(
@@ -748,65 +749,70 @@ class _OptionRowState extends State<_OptionRow> {
           ),
         },
         child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            onEnter: (_) => setState(() => _hover = true),
-            onExit: (_) => setState(() => _hover = false),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                _focus.requestFocus();
-                widget.onTap();
-              },
-              child: DecoratedBox(
-                decoration: _rowDecoration(
-                  t,
-                  on: widget.on,
-                  hover: _hover,
-                  focus: _ring,
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hover = true),
+          onExit: (_) => setState(() => _hover = false),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              _focus.requestFocus();
+              widget.onTap();
+            },
+            child: DecoratedBox(
+              decoration: _rowDecoration(
+                t,
+                on: widget.on,
+                hover: _hover,
+                focus: _ring,
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  8,
+                  touch ? 10 : 7,
+                  6,
+                  touch ? 10 : 7,
                 ),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(8, touch ? 10 : 7, 6, touch ? 10 : 7),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: _Box(single: widget.single, on: widget.on),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              o.label,
-                              style: ts(t.typeScale.ui, t.ink, weight: 600),
-                            ),
-                            if (o.description != null) ...[
-                              const SizedBox(height: 1),
-                              Text(
-                                o.description!,
-                                style: ts(t.typeScale.uiSmall, t.muted),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      if (widget.keyHint != null) ...[
-                        const SizedBox(width: 10),
-                        Padding(
-                          padding: EdgeInsets.only(
-                            top: o.description == null ? 1 : 8,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: _Box(single: widget.single, on: widget.on),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            o.label,
+                            style: ts(t.typeScale.ui, t.ink, weight: 600),
                           ),
-                          child: KeyCap(widget.keyHint!, color: t.ink),
+                          if (o.description != null) ...[
+                            const SizedBox(height: 1),
+                            Text(
+                              o.description!,
+                              style: ts(t.typeScale.uiSmall, t.muted),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (widget.keyHint != null) ...[
+                      const SizedBox(width: 10),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: o.description == null ? 1 : 8,
                         ),
-                      ],
+                        child: KeyCap(widget.keyHint!, color: t.ink),
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
           ),
+        ),
       ),
     );
   }

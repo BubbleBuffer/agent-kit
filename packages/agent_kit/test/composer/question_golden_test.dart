@@ -48,7 +48,9 @@ Widget _kinds(double width) => _column([
   _gap(
     _prompt(
       fixtureQuestion,
-      answers: {'age': QuestionAnswer(choices: const ['Only on hover'])},
+      answers: {
+        'age': QuestionAnswer(choices: const ['Only on hover']),
+      },
     ),
   ),
   _gap(
@@ -115,7 +117,8 @@ void main() {
   };
   for (final width in [390.0, 1000.0]) {
     for (final brightness in Brightness.values) {
-      for (final MapEntry(key: name, value: (build, height)) in sheets.entries) {
+      for (final MapEntry(key: name, value: (build, height))
+          in sheets.entries) {
         testWidgets('question $name, ${width.toInt()} ${brightness.name}', (
           tester,
         ) async {
