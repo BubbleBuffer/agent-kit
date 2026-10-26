@@ -120,7 +120,7 @@ Finder _key(String k) => find.byKey(ValueKey(k));
 Future<void> _shot(WidgetTester tester, String name, Brightness b) =>
     expectLater(
       find.byType(WidgetsApp),
-      matchesGoldenFile('goldens/workspace_${name}_${b.name}.png'),
+      matchesGoldenFile('../goldens/workspace_${name}_${b.name}.png'),
     );
 
 void main() {

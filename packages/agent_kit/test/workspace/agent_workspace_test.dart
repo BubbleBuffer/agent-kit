@@ -97,6 +97,7 @@ void main() {
       expect(tester.getSize(_key('wp-leaf-t')).width, closeTo(200, .5));
 
       await g.up();
+      await tester.pump(const Duration(seconds: 1));
       await tester.pump();
       expect(_key('wp-snap-hint'), findsNothing);
       expect(c.layout.node('right')!.collapsed, isTrue);
@@ -121,6 +122,7 @@ void main() {
       await tester.pump();
       expect(find.text('Release to hide Browser'), findsOneWidget);
       await g.up();
+      await tester.pump(const Duration(seconds: 1));
       await tester.pump();
       expect(rig.controller.layout.leaf('b')!.collapsed, isTrue);
     });
@@ -134,6 +136,7 @@ void main() {
       );
       await g.moveTo(const Offset(404, 350));
       await g.up();
+      await tester.pump(const Duration(seconds: 1));
       await tester.pump();
       expect(tester.getSize(_key('wp-leaf-b')).width, closeTo(400, .5));
       expect(rig.controller.layout.leaf('b')!.collapsed, isFalse);
@@ -150,6 +153,7 @@ void main() {
       await tester.pump();
       final w = (rig.controller.layout.root! as WorkspaceSplit).weights;
       expect(w[0], closeTo(w[1], 1e-9));
+      await tester.pump(const Duration(seconds: 1));
     });
 
     testWidgets('arrow keys nudge a focused divider', (tester) async {
