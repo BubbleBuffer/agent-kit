@@ -55,6 +55,10 @@ void main() {
               ),
             ),
           );
+          // Let the chat list and the feeds load.
+          for (var i = 0; i < 8; i++) {
+            await tester.pump(const Duration(milliseconds: 50));
+          }
           if (tall) {
             final sheet = tester.getSize(find.byType(ComponentsScene));
             tester.view.physicalSize = Size(width.toDouble(), sheet.height);
