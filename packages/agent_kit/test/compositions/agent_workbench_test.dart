@@ -49,6 +49,7 @@ void main() {
 
     // The rail list ignores pointers while its scroll position settles.
     await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('rail-row-idle')));
     await _settle(tester);
     expect(find.text('Needs approval'), findsNothing);

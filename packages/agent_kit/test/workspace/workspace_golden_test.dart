@@ -170,7 +170,15 @@ void main() {
     testWidgets('add menu, ${b.name}', (tester) async {
       final c = WorkspaceController(_layout());
       await pumpKit(tester, _scene(c), brightness: b, size: wide);
-      await tester.tap(_key('wp-add-file-pane'));
+      // The + sits on the one pane that can still split.
+      await tester.tap(
+        find.byWidgetPredicate((w) {
+          final k = w.key;
+          return k is ValueKey<String> &&
+              k.value.startsWith('wp-add-') &&
+              k.value != 'wp-add-empty';
+        }),
+      );
       await tester.pump();
       await _shot(tester, 'menu_1000', b);
     });
