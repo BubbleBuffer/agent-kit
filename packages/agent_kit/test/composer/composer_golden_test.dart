@@ -39,8 +39,9 @@ Widget _sheet() {
       ),
       _gap(
         QuestionPrompt(
-          question: fixtureQuestion,
+          question: fixtureTextRequest,
           now: fixtureNow,
+          captureKeys: false,
           onAnswer: (_) {},
         ),
       ),
@@ -84,7 +85,7 @@ void main() {
           _sheet(),
           brightness: brightness,
           width: width,
-          height: 900,
+          height: 1100,
         );
         await expectLater(
           find.byType(WidgetsApp),

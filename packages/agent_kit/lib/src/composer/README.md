@@ -9,7 +9,8 @@ The bottom of a chat.
 | `MentionSource`, `StaticMentionSource` | `mention_source.dart` | What the composer asks about `@query`; the host answers with `KitRef`s. |
 | `ApprovalBar` | `approval_bar.dart` | "Needs approval" pill, "waiting 12m" (from `requestedAt`, never a countdown), the action line, Review diff, Approve / For session / Deny with keys 1, 2, 3, and Deny's optional reason field. |
 | `QueuedRow` | `queued_row.dart` | A dashed row for one queued message: Send now, Edit (inline field) and ×. |
-| `QuestionPrompt` | `question_prompt.dart` | The agent's question with option buttons and a typed answer. Not in the mockup (see below). |
+| `QuestionPrompt` | `question_prompt.dart` | A request of 1 to 5 questions (pick one, pick any, text only; scene E): vertical option rows with number keys, the Other row, tabs and "N of M" for several, Skip, Back, Next and Answer. Reports `Map<String, QuestionAnswer>`. |
+| `QuestionAnswerLines` | `question_answered.dart` | An answered request, one transcript line per question: the question muted, the answer bold or "Skipped" in italics. The transcript folder has no question row, so it lives here. |
 | `composer_parts.dart` | | Internal: Lucide glyphs, `KitButton`, key hints, the dashed outline, `WaitingLabel`. Only `formatWaiting` and `shortenPath` are public. |
 
 Mockup parts: `.approval`, `.queue`, `.composer`, `.cmp-chip`, `.seg` and the
@@ -29,6 +30,17 @@ Mockup parts: `.approval`, `.queue`, `.composer`, `.cmp-chip`, `.seg` and the
 - Approval keys: 1, 2 and 3 fire Approve, For session and Deny while focus is
   not in a text field, while focus is inside the bar (outside its reason
   field), and while the composer is empty (`ApprovalBar.composerEmpty`).
+- Question keys: 1 to 9 select or toggle the current question's options (the
+  Other number focuses its field); Enter sends, or moves to Next; Shift+Enter
+  is a newline in a text answer. Digits act under the same focus rules as the
+  approval bar (`QuestionPrompt.composerEmpty`, `captureKeys`). Tab order: the
+  tabs, the options, Other, Skip, Back, Next/Answer; Space toggles a focused
+  row, Up and Down move between rows. Number keys hide on a phone-sized
+  window or in a compact (< 600 px) card.
+- A pick-one question needs a choice, and a text question needs text, before
+  Next or Answer enables; Skip declines the question instead. A pick-any
+  question may be answered with nothing ticked. Answer on the last step
+  returns to a question left open before it sends.
 - The composer fits its own width: below `KitLayout.fitComposer` (460) Stop and
   Send drop their labels and the workspace pick hides; the model name truncates
   first. The queued row hides "Queued" below 600 px. The approval bar lays out
@@ -39,8 +51,12 @@ Mockup parts: `.approval`, `.queue`, `.composer`, `.cmp-chip`, `.seg` and the
 
 ## Departures from the mockup
 
-- The question prompt is new (same surface, pill and age line as the approval
-  bar; options as buttons, one answer field).
+- No theme role for the mockup's `--selected`: selected rows and tabs use
+  `colors.bgSelectedBlock`, and the quiet outlines `colors.borderSubtle` and
+  `colors.borderStrong`, as the queued row and the composer already do.
+- The prompt keeps focus in the card after a number key or a step change
+  (the card's own focus node, outside the tab order), so Enter right after
+  reaches the card rather than the composer. The mockup does not say.
 - Pick menus use the workspace in place of the mockup's profile.
 - Send is dimmed while the field is empty (SPEC.md 7.10), where the mockup
   draws it enabled.

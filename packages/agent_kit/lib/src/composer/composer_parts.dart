@@ -82,6 +82,16 @@ abstract final class ComposerGlyphs {
     LucideIcons.wrench,
     LucideIcons.wrench500,
   );
+  static const LucideGlyph check = (
+    LucideIcons.check300,
+    LucideIcons.check,
+    LucideIcons.check500,
+  );
+  static const LucideGlyph messageSquare = (
+    LucideIcons.messageSquare300,
+    LucideIcons.messageSquare,
+    LucideIcons.messageSquare500,
+  );
   static const LucideGlyph messageCircleQuestion = (
     LucideIcons.messageCircleQuestion300,
     LucideIcons.messageCircleQuestion,

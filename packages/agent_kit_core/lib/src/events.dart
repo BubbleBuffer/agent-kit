@@ -249,7 +249,10 @@ final Map<String, _Reader> _readers = {
     at: at,
     questionId: j.str('questionId'),
     state: j.enumOf('state', QuestionState.values, QuestionState.answered),
-    answer: j.strOpt('answer'),
+    answers: switch (j.objOpt('answers')) {
+      final Json a => Question.answersFromJson(a),
+      null => null,
+    },
     reason: j.strOpt('reason'),
   ),
   'queue.added': (j, seq, chat, at) => QueueAdded(
@@ -1040,7 +1043,7 @@ final class QuestionResolved extends KitEvent {
     required super.chat,
     required this.questionId,
     this.state = QuestionState.answered,
-    this.answer,
+    this.answers,
     this.reason,
     super.at,
   });
@@ -1051,8 +1054,8 @@ final class QuestionResolved extends KitEvent {
   /// How it was resolved.
   final QuestionState state;
 
-  /// The answer.
-  final String? answer;
+  /// The answers, keyed by item id.
+  final Map<String, QuestionAnswer>? answers;
 
   /// Why it expired or was cancelled.
   final String? reason;
@@ -1064,7 +1067,7 @@ final class QuestionResolved extends KitEvent {
   Json payload() => {
     'questionId': questionId,
     'state': state.name,
-    'answer': answer,
+    'answers': answers == null ? null : Question.answersToJson(answers!),
     'reason': reason,
   };
 }

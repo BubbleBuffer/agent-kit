@@ -426,22 +426,27 @@ final class ScriptedBackend implements AgentBackend {
   Future<void> answerQuestion(
     String chatId,
     String questionId,
-    String answer,
+    Map<String, QuestionAnswer> answers,
   ) async {
     final chat = _command(
       'answerQuestion',
-      [chatId, questionId, answer],
+      [chatId, questionId, answers],
       chatId: chatId,
       needs: KitCapability.questions,
     );
     final q = chat.state.questions.where((q) => q.id == questionId).firstOrNull;
     if (q == null) throw const KitNotFound('No such question.');
     if (!q.isPending) throw const KitConflict('That was already answered.');
+    for (final item in q.items) {
+      if (!answers.containsKey(item.id)) {
+        throw KitInvalid('Missing an answer for "${item.id}".');
+      }
+    }
     emit(chatId, {
       'kind': 'question.resolved',
       'questionId': questionId,
       'state': QuestionState.answered.name,
-      'answer': answer,
+      'answers': Question.answersToJson(answers),
     });
   }
 

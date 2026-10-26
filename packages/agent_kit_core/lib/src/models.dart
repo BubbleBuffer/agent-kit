@@ -494,52 +494,198 @@ enum QuestionState {
   cancelled,
 }
 
-/// A question the agent asks the user.
-final class Question extends KitValue {
-  /// Creates a question.
-  Question({
-    required this.id,
-    required this.text,
-    required this.requestedAt,
-    List<String> options = const [],
-    this.freeText = true,
-    this.state = QuestionState.pending,
-    this.answer,
-    this.reason,
-  }) : options = List.unmodifiable(options);
+/// How a [QuestionItem] is answered.
+enum QuestionKind {
+  /// Exactly one of the options, or typed "Other" text.
+  pickOne,
 
-  /// Reads a question from JSON.
-  factory Question.fromJson(Json j) => Question(
-    id: j.str('id'),
-    text: j.str('text'),
-    requestedAt: j.time('requestedAt'),
-    options: j.strings('options'),
-    freeText: j.boolean('freeText', fallback: true),
-    state: j.enumOf('state', QuestionState.values, QuestionState.pending),
-    answer: j.strOpt('answer'),
-    reason: j.strOpt('reason'),
+  /// Any number of the options (including none), plus typed "Other" text.
+  pickAny,
+
+  /// A typed answer only.
+  text,
+}
+
+/// The most questions one [Question] request may hold. Hosts split anything
+/// longer into several requests.
+const maxQuestionItems = 5;
+
+/// One choice of a [QuestionItem].
+final class QuestionOption extends KitValue {
+  /// Creates an option.
+  const QuestionOption({required this.label, this.description});
+
+  /// Reads an option from JSON.
+  factory QuestionOption.fromJson(Json j) => QuestionOption(
+    label: j.str('label'),
+    description: j.strOpt('description'),
   );
 
-  /// The question's id, used by `answerQuestion`.
+  /// The option's text; also what an answer's `choices` holds.
+  final String label;
+
+  /// A muted line under the label, if any.
+  final String? description;
+
+  @override
+  Json toJson() => compact({'label': label, 'description': description});
+}
+
+/// One question of a request.
+final class QuestionItem extends KitValue {
+  /// Creates an item.
+  QuestionItem({
+    required this.id,
+    required this.header,
+    required this.text,
+    this.kind = QuestionKind.pickOne,
+    List<QuestionOption> options = const [],
+    this.allowOther = false,
+  }) : options = List.unmodifiable(options);
+
+  /// Reads an item from JSON.
+  factory QuestionItem.fromJson(Json j) => QuestionItem(
+    id: j.str('id'),
+    header: j.str('header'),
+    text: j.str('text'),
+    kind: j.enumOf('kind', QuestionKind.values, QuestionKind.pickOne),
+    options: j.listOf('options', QuestionOption.fromJson),
+    allowOther: j.boolean('allowOther'),
+  );
+
+  /// The item's id within its request; the key of the answers.
   final String id;
+
+  /// The short tab label.
+  final String header;
 
   /// The question, as markdown.
   final String text;
 
+  /// How it is answered.
+  final QuestionKind kind;
+
+  /// The choices; empty for [QuestionKind.text].
+  final List<QuestionOption> options;
+
+  /// Whether a typed "Other" row follows the options. Ignored for
+  /// [QuestionKind.text].
+  final bool allowOther;
+
+  @override
+  Json toJson() => compact({
+    'id': id,
+    'header': header,
+    'text': text,
+    'kind': kind.name,
+    'options': jsonList(options),
+    'allowOther': allowOther,
+  });
+}
+
+/// The answer to one [QuestionItem].
+final class QuestionAnswer extends KitValue {
+  /// Creates an answer.
+  QuestionAnswer({
+    List<String> choices = const [],
+    this.text,
+    this.skipped = false,
+  }) : choices = List.unmodifiable(choices);
+
+  /// Reads an answer from JSON.
+  factory QuestionAnswer.fromJson(Json j) => QuestionAnswer(
+    choices: j.strings('choices'),
+    text: j.strOpt('text'),
+    skipped: j.boolean('skipped'),
+  );
+
+  /// The labels of the chosen options.
+  final List<String> choices;
+
+  /// The typed "Other" text, or the answer to a text question. For
+  /// [QuestionKind.pickOne], at most one of [choices] and [text] is set.
+  final String? text;
+
+  /// Whether the user declined to answer.
+  final bool skipped;
+
+  @override
+  Json toJson() =>
+      compact({'choices': choices, 'text': text, 'skipped': skipped});
+}
+
+/// A request from the agent to the user: 1 to [maxQuestionItems] questions,
+/// each with its own kind.
+final class Question extends KitValue {
+  /// Creates a request. Throws [ArgumentError] when [items] is empty or
+  /// longer than [maxQuestionItems], or when a pick item has no options and
+  /// no "Other" row.
+  Question({
+    required this.id,
+    required this.requestedAt,
+    required List<QuestionItem> items,
+    this.state = QuestionState.pending,
+    Map<String, QuestionAnswer>? answers,
+    this.reason,
+  }) : items = List.unmodifiable(items),
+       answers = answers == null ? null : Map.unmodifiable(answers) {
+    if (items.isEmpty || items.length > maxQuestionItems) {
+      throw ArgumentError.value(
+        items.length,
+        'items',
+        'a question holds 1 to $maxQuestionItems items',
+      );
+    }
+    for (final item in items) {
+      if (item.kind != QuestionKind.text &&
+          item.options.isEmpty &&
+          !item.allowOther) {
+        throw ArgumentError.value(
+          item.id,
+          'items',
+          'a pick item needs options or allowOther',
+        );
+      }
+    }
+  }
+
+  /// Reads a request from JSON.
+  factory Question.fromJson(Json j) {
+    final answers = j.objOpt('answers');
+    return Question(
+      id: j.str('id'),
+      requestedAt: j.time('requestedAt'),
+      items: j.listOf('items', QuestionItem.fromJson),
+      state: j.enumOf('state', QuestionState.values, QuestionState.pending),
+      answers: answers == null ? null : answersFromJson(answers),
+      reason: j.strOpt('reason'),
+    );
+  }
+
+  /// Reads a map of answers keyed by item id.
+  static Map<String, QuestionAnswer> answersFromJson(Json j) => {
+    for (final key in j.keys) key: QuestionAnswer.fromJson(j.obj(key)),
+  };
+
+  /// Writes a map of answers keyed by item id.
+  static Json answersToJson(Map<String, QuestionAnswer> answers) => {
+    for (final e in answers.entries) e.key: e.value.toJson(),
+  };
+
+  /// The request's id, used by `answerQuestion`.
+  final String id;
+
   /// When it was asked.
   final DateTime requestedAt;
 
-  /// Suggested answers, if any.
-  final List<String> options;
-
-  /// Whether a typed answer is allowed besides [options].
-  final bool freeText;
+  /// The questions, in order.
+  final List<QuestionItem> items;
 
   /// Pending or how it was resolved.
   final QuestionState state;
 
-  /// The answer given.
-  final String? answer;
+  /// The answers, keyed by item id, once answered.
+  final Map<String, QuestionAnswer>? answers;
 
   /// Why it expired or was cancelled.
   final String? reason;
@@ -550,12 +696,10 @@ final class Question extends KitValue {
   @override
   Json toJson() => compact({
     'id': id,
-    'text': text,
     'requestedAt': timeJson(requestedAt),
-    'options': options,
-    'freeText': freeText,
+    'items': jsonList(items),
     'state': state.name,
-    'answer': answer,
+    'answers': answers == null ? null : answersToJson(answers!),
     'reason': reason,
   });
 }

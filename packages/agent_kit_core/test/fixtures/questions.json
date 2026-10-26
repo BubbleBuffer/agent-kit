@@ -11,25 +11,89 @@
   "questions": [
     {
       "id": "q1",
-      "text": "Show the stale figure's age?",
       "requestedAt": "2026-10-26T09:00:00.000Z",
-      "options": [
-        "Always",
-        "On hover"
+      "items": [
+        {
+          "id": "age",
+          "header": "Stale figure",
+          "text": "Should a stale figure show its age?",
+          "kind": "pickOne",
+          "options": [
+            {
+              "label": "Always",
+              "description": "A small label sits next to the figure."
+            },
+            {
+              "label": "On hover"
+            }
+          ],
+          "allowOther": true
+        },
+        {
+          "id": "views",
+          "header": "Views",
+          "text": "Which views keep the last figure?",
+          "kind": "pickAny",
+          "options": [
+            {
+              "label": "Web quota bar"
+            },
+            {
+              "label": "Desktop tray"
+            }
+          ],
+          "allowOther": true
+        },
+        {
+          "id": "label",
+          "header": "Label",
+          "text": "What should the stale label say?",
+          "kind": "text",
+          "options": [],
+          "allowOther": false
+        }
       ],
-      "freeText": true,
       "state": "answered",
-      "answer": "On hover"
+      "answers": {
+        "age": {
+          "choices": [
+            "On hover"
+          ],
+          "skipped": false
+        },
+        "views": {
+          "choices": [
+            "Web quota bar"
+          ],
+          "text": "Hub dashboard",
+          "skipped": false
+        },
+        "label": {
+          "choices": [],
+          "skipped": true
+        }
+      }
     },
     {
       "id": "q2",
-      "text": "Which branch?",
       "requestedAt": "2026-10-26T09:05:00.000Z",
-      "options": [
-        "main",
-        "release"
+      "items": [
+        {
+          "id": "branch",
+          "header": "Branch",
+          "text": "Which branch?",
+          "kind": "pickOne",
+          "options": [
+            {
+              "label": "main"
+            },
+            {
+              "label": "release"
+            }
+          ],
+          "allowOther": false
+        }
       ],
-      "freeText": false,
       "state": "expired",
       "reason": "restart"
     }

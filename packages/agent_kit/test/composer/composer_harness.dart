@@ -13,6 +13,9 @@ import 'package:agent_kit_core/agent_kit_core.dart'
         KitChoice,
         KitRef,
         Question,
+        QuestionItem,
+        QuestionKind,
+        QuestionOption,
         QueuedInput,
         ToolKind;
 import 'package:bb_ui/tokens.dart' show FormFactor;
@@ -94,12 +97,110 @@ final fixtureQueued = QueuedInput(
   queuedAt: fixtureNow.subtract(const Duration(minutes: 2)),
 );
 
-final fixtureQuestion = Question(
-  id: 'qs1',
-  text: 'Should a stale figure show its age?',
-  requestedAt: fixtureNow.subtract(const Duration(minutes: 3)),
-  options: const ['Only on hover', 'Always'],
+/// Pick one, with descriptions and an Other row.
+final fixturePickOne = QuestionItem(
+  id: 'age',
+  header: 'Stale figure',
+  text: 'Should a stale quota figure show its age?',
+  options: const [
+    QuestionOption(
+      label: 'Only on hover',
+      description: 'The bar dims; hovering shows the last update.',
+    ),
+    QuestionOption(
+      label: 'Always',
+      description: 'A small age label sits next to the figure.',
+    ),
+    QuestionOption(
+      label: 'Never',
+      description: 'Dimming alone marks it stale.',
+    ),
+  ],
+  allowOther: true,
 );
+
+/// Pick any, with an Other row.
+final fixturePickAny = QuestionItem(
+  id: 'views',
+  header: 'Views',
+  text: 'Which views should keep the last known figure?',
+  kind: QuestionKind.pickAny,
+  options: const [
+    QuestionOption(label: 'Web quota bar'),
+    QuestionOption(label: 'Desktop tray'),
+    QuestionOption(label: 'CLI status line'),
+  ],
+  allowOther: true,
+);
+
+/// Text only.
+final fixtureText = QuestionItem(
+  id: 'label',
+  header: 'Label',
+  text:
+      'What should the stale label say? I’ll use it in the tooltip and the '
+      'screen-reader text.',
+  kind: QuestionKind.text,
+);
+
+Question _request(String id, List<QuestionItem> items, Duration waited) =>
+    Question(
+      id: id,
+      requestedAt: fixtureNow.subtract(waited),
+      items: items,
+    );
+
+/// One pick-one question, waiting 3 minutes.
+final fixtureQuestion = _request('qs1', [
+  fixturePickOne,
+], const Duration(minutes: 3));
+
+/// One pick-any question, waiting 1 minute.
+final fixturePickAnyRequest = _request('qs2', [
+  fixturePickAny,
+], const Duration(minutes: 1));
+
+/// One text-only question, waiting 40 seconds.
+final fixtureTextRequest = _request('qs3', [
+  fixtureText,
+], const Duration(seconds: 40));
+
+/// The mixed request: pick one, pick any, text; waiting 6 minutes.
+final fixtureMixed = _request('qs4', [
+  fixturePickOne,
+  fixturePickAny,
+  fixtureText,
+], const Duration(minutes: 6));
+
+/// Five questions (the most a request holds), waiting 9 minutes.
+final fixtureFive = _request('qs5', [
+  fixturePickOne,
+  fixturePickAny,
+  fixtureText,
+  QuestionItem(
+    id: 'wait',
+    header: 'Reconnect',
+    text: 'How long should the bar wait before marking the figure stale?',
+    options: const [
+      QuestionOption(label: 'Right away'),
+      QuestionOption(
+        label: 'After 5 seconds',
+        description: 'Short blips stay invisible.',
+      ),
+      QuestionOption(label: 'After 30 seconds'),
+    ],
+  ),
+  QuestionItem(
+    id: 'tests',
+    header: 'Tests to add',
+    text: 'Which tests should I add?',
+    kind: QuestionKind.pickAny,
+    options: const [
+      QuestionOption(label: 'Reconnect keeps the figure'),
+      QuestionOption(label: 'Stale clears on update'),
+    ],
+  ),
+], const Duration(minutes: 9));
 
 const fixtureModels = [
   KitChoice(id: 'flash', label: 'deepseek-v4.1-flash'),

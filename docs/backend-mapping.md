@@ -65,7 +65,7 @@ Checked against the SDK branch with the facade crate and Scratch's
 | `approval.requested` | Layer 1 `ApprovalRequested{approval}`. Layer 2 needs the diff, from the approval's arguments. | `approval_requested{approval}`. |
 | `approval.resolved` | Layer 1 `ApprovalResolved{approval_id, state, reason}`; `approved_session` → `approvedForSession`. | `approval_resolved{approvalId, approvalState, reason}`. |
 | Restart expiry | Layer 1 marks pending approvals `expired` (reason `restart`) and runs `interrupted` in `recover()` with no event. Layer 2 needs a `gap` (or the events) after recovery, from layer 1's recovery result. | Same, through the host. |
-| `question.asked` / `.resolved` | Layer 1 lacks questions (they are host-level in the runner). | Scratch lacks questions. |
+| `question.asked` / `.resolved` | Layer 1 lacks questions (they are host-level in the runner); BubblePaw has no question tool yet. | Scratch lacks questions. |
 | `queue.added` | Layer 1 `FollowupQueued{text}`, `SteeringAccepted{text}`. Layer 2 needs the input id, from layer 1 `Store::queued_inputs`. Steering an idle session queues with no event in layer 1. | `followup_queued{text}`; Scratch lacks the input id. |
 | `queue.edited` / `.removed` | Layer 1 lacks queue edit and remove. | Scratch lacks them. |
 | `child.spawned` / `.progress` / `.finished` | Layer 2 needs child events, from layer 1 child sessions (`parent_session_id`) and their events, which share the store sequence. | Scratch lacks children. |
@@ -111,6 +111,27 @@ with display-safe messages, from layer 1's error chain:
 | `KitUnavailable` | host not reachable. | "hub unreachable". |
 | `KitNotFound` | unknown session or approval id. | same. |
 | `KitFailed` | anything else, with a generic message; the original goes to the log. | same. |
+
+## Question requests from other agents
+
+A `Question` is a request of 1 to 5 `QuestionItem`s (see
+`agent-kit-core.md`). The agents whose questions a host may relay map onto it
+like this. BubblePaw has no question tool yet, so the SDK and Scratch columns
+above stay "lacks it".
+
+| Kit | Claude Code `AskUserQuestion` | Codex `request_user_input` |
+|---|---|---|
+| The request | One call of 1 to 4 questions: a `Question` with that many items. | One call of one or more questions: a `Question`, split by the host when over 5. |
+| `QuestionItem.header` | The question's short `header`. | The question's `header`. |
+| `QuestionItem.text` | `question`. | `question`. |
+| `QuestionItem.kind` | `multiSelect: false` is `pickOne`, `multiSelect: true` is `pickAny`. | `pickOne` when it has options, `text` when it has none. Codex has no multi-select. |
+| `QuestionOption` | `options[].label` and `description`. | `options[].label` and `description`. |
+| `QuestionItem.allowOther` | `true`: the tool always adds an implicit "Other" the user may type into. | The question's `isOther`. |
+| `answerQuestion` | Each item's answer is its `choices` (labels) and, for Other, `text`; a `pickAny` joins several labels. A skipped item has no answer in the tool result. | `choices.first`, or `text` for Other or a text question; a skipped item is left out of the answers. |
+
+Hosts must split anything over 5 questions into several requests (the kit
+holds at most `maxQuestionItems`, so a card stays one screen). Each request is
+answered, or its items skipped, before the next is shown.
 
 ## Settled decisions under strain
 
