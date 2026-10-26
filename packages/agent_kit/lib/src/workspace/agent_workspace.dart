@@ -108,6 +108,7 @@ class AgentWorkspace extends StatefulWidget {
     required this.paneBuilder,
     this.open = true,
     this.onClose,
+    this.sizeClass,
   });
 
   /// The layout and its operations.
@@ -118,6 +119,11 @@ class AgentWorkspace extends StatefulWidget {
 
   /// What each pane shows.
   final WorkspacePaneBuilder paneBuilder;
+
+  /// The size class to lay out for. By default the workspace measures its own
+  /// width; a host that sizes the workspace from the area around it (as
+  /// [AgentWorkbench] does) passes the area's class.
+  final SizeClass? sizeClass;
 
   /// Compact only: whether the full-screen sheet is up.
   final bool open;
@@ -390,8 +396,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    return SizeClassBuilder(
-      builder: (context, sizeClass) {
+    Widget buildFor(BuildContext context, SizeClass sizeClass) {
         _expanded = sizeClass.isExpanded;
         final layout = _c.layout;
         final Widget body;
@@ -436,7 +441,13 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
             ),
           ),
         );
-      },
+    }
+
+    final forced = widget.sizeClass;
+    if (forced == null) return SizeClassBuilder(builder: buildFor);
+    return SizeClassScope(
+      sizeClass: forced,
+      child: Builder(builder: (context) => buildFor(context, forced)),
     );
   }
 

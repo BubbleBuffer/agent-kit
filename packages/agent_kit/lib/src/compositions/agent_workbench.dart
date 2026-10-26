@@ -237,7 +237,8 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
           workspaceName: widget.workspaceName,
           groups: groupSessions(_chats, clock),
           selectedId: _selected,
-          detailFor: widget.detailFor,
+          detailFor: (chat) =>
+              widget.detailFor?.call(chat) ?? railDetail(chat, clock),
           now: clock,
           initials: widget.initials,
           onSelect: (chat) => _select(chat.id),
@@ -281,6 +282,7 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
         paneBuilder: widget.workspacePaneBuilder!,
         open: shown,
         onClose: _toggleWorkspace,
+        sizeClass: area,
       ),
     );
     if (area.isCompact) {

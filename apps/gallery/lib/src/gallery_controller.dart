@@ -144,7 +144,7 @@ class GalleryController extends ChangeNotifier {
     if (clock is! ManualClock) return;
     _chat(b, 'sess-compact', 'Compact before fork');
     await clock.advance(const Duration(minutes: 12));
-    b.emit('sess-steer', {'kind': 'chat.renamed', 'title': 'Steer vs queue'});
+    b.emit('sess-steer', {'kind': 'chat.renamed', 'title': 'Steer vs queue semantics'});
     b.emit('sess-steer', {'kind': 'run.started', 'runId': 'run-steer'});
     for (final (id, task) in const [
       ('s1', 'Read the steering code'),

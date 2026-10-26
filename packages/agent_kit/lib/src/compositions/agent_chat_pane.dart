@@ -305,23 +305,9 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       ),
   ];
 
-  String? _detail(ChatSnapshot snap) {
-    final custom = widget.statusDetail;
-    if (custom != null) return custom(snap);
-    switch (snap.status) {
-      case ChatStatus.needsYou:
-        final approval = snap.pendingApprovals.firstOrNull;
-        if (approval != null) return '${approval.tool} approval';
-        return snap.pendingQuestions.isEmpty ? null : 'question';
-      case ChatStatus.running:
-        final n = snap.children
-            .where((c) => c.state == WorkState.running)
-            .length;
-        return n == 0 ? null : '$n ${n == 1 ? 'agent' : 'agents'}';
-      default:
-        return null;
-    }
-  }
+  // The header's pill says the status alone, as in the mockup; a host can add
+  // a detail through [AgentChatPane.statusDetail].
+  String? _detail(ChatSnapshot snap) => widget.statusDetail?.call(snap);
 
   // ---------------------------------------------------------------- build
 

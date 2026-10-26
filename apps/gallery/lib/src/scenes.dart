@@ -99,10 +99,7 @@ Widget buildScene(
     initials: 'BC',
     now: controller.now,
     detailFor: controller.detailFor,
-    modelUsage: const [
-      ModelUsage('DeepSeek V4.1 Flash', 184000),
-      ModelUsage('Haiku 5.5', 41000),
-    ],
+    onReviewApproval: (_) {},
     workspaceController: scene == GalleryScene.workspace
         ? controller.workspaceController
         : null,
