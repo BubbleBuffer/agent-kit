@@ -7,6 +7,7 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:bb_ui/hover.dart';
 
 import 'fixtures.dart';
 import 'harness.dart';
@@ -139,7 +140,17 @@ void main() {
     testWidgets('Enter on the focused summary expands it', (tester) async {
       await pumpTranscript(tester, ActivityGroupView(activityGroup()));
       expect(find.text('exec'), findsNothing);
-      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      // Focus the summary, as Tab would.
+      Focus.of(
+        tester.element(
+          find
+              .descendant(
+                of: find.byType(Hover),
+                matching: find.byType(MouseRegion),
+              )
+              .first,
+        ),
+      ).requestFocus();
       await tester.pump();
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();

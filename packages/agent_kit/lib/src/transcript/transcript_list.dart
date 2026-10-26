@@ -421,7 +421,7 @@ class _TranscriptListState extends State<TranscriptList> {
                 },
                 itemBuilder: (context, index) {
                   if (hasLeading && index == 0) {
-                    return column('\u0000leading', index, 0, widget.leading!);
+                    return column('\u0000leading', index, 0, leading);
                   }
                   if (hasTrailing && index == count - 1) {
                     return column(

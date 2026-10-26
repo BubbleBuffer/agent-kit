@@ -256,7 +256,7 @@ void main() {
     await pumpComposer(tester, _bar([]), width: 500);
     final bar = tester.getRect(find.byType(ApprovalBar));
     final approve = tester.getRect(find.text('Approve'));
-    final deny = tester.getRect(find.text('Deny'));
+    final deny = tester.getRect(find.widgetWithText(KitButton, 'Deny'));
     final pill = tester.getRect(find.text('Needs approval'));
     expect(approve.top, greaterThan(pill.bottom));
     expect(deny.right, lessThan(bar.right));

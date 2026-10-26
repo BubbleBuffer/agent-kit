@@ -29,7 +29,7 @@ void main() {
 
     expect(controller.scene, GalleryScene.workbench);
     expect(controller.width, 1440);
-    expect(find.text('Waiting for you'), findsOneWidget);
+    expect(find.text('Quota bar flickers on reconnect'), findsWidgets);
 
     await tester.tap(find.text('C · Phone'));
     await tester.pump();
