@@ -3,8 +3,8 @@
 /// (uses dart:io).
 library;
 
+import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:flutter/services.dart';
 
@@ -30,19 +30,15 @@ Future<void> loadKitFonts(String directory) async {
     }
     await loader.load();
   }
-  await _loadPackageFonts(
-    'lucide_icons_flutter',
-    'package:lucide_icons_flutter/lucide_icons.dart',
-  );
+  await _loadPackageFonts('lucide_icons_flutter');
 }
 
 /// `flutter test` does not load the fonts of dependencies, so icons would
 /// draw as boxes. Reads the families and files from the package's pubspec and
 /// registers them under `packages/<package>/<family>`, the name icons use.
-Future<void> _loadPackageFonts(String package, String library) async {
-  final uri = await Isolate.resolvePackageUri(Uri.parse(library));
-  if (uri == null) return;
-  final root = File.fromUri(uri).parent.parent.path;
+Future<void> _loadPackageFonts(String package) async {
+  final root = _packageRoot(package);
+  if (root == null) return;
   final loaders = <String, FontLoader>{};
   String? family;
   final familyLine = RegExp(r'^\s*-\s*family:\s*(\S+)');
@@ -68,5 +64,29 @@ Future<void> _loadPackageFonts(String package, String library) async {
   }
   for (final loader in loaders.values) {
     await loader.load();
+  }
+}
+
+/// The directory of [package], from the nearest `.dart_tool/package_config.json`
+/// above the working directory (the workspace root's, for a workspace member).
+String? _packageRoot(String package) {
+  var dir = Directory.current.absolute;
+  while (true) {
+    final config = File('${dir.path}/.dart_tool/package_config.json');
+    if (config.existsSync()) {
+      final json = jsonDecode(config.readAsStringSync()) as Map<String, Object?>;
+      for (final entry in json['packages']! as List<Object?>) {
+        final p = entry! as Map<String, Object?>;
+        if (p['name'] == package) {
+          var root = config.uri.resolve(p['rootUri']! as String);
+          if (!root.path.endsWith('/')) root = root.replace(path: '${root.path}/');
+          return File.fromUri(root.resolve('pubspec.yaml')).parent.path;
+        }
+      }
+      return null;
+    }
+    final parent = dir.parent;
+    if (parent.path == dir.path) return null;
+    dir = parent;
   }
 }
