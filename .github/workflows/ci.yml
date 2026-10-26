@@ -73,31 +73,34 @@ jobs:
         with:
           channel: stable
           cache: true
-      # Two consumers: one declares both packages as git deps (as Scratch
-      # does), one only bb_ui, so bb_ui's path dep on bb_tokens resolves
-      # inside the git checkout.
-      - name: Resolve and analyze consumers
+      # A consumer pins bb_ui by ref name (branch or tag), as Scratch does,
+      # and gets bb_tokens through bb_ui's path dependency.
+      - name: Resolve and analyze a consumer
         env:
           URL: https://github.com/${{ github.repository }}.git
-          REF: ${{ github.sha }}
+          REF: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          dep() {
-            printf '  %s:\n    git:\n      url: %s\n      ref: %s\n      path: packages/%s\n' "$1" "$URL" "$REF" "$1"
-          }
-          for kind in both ui-only; do
-            dir="$RUNNER_TEMP/consumer-$kind"
-            mkdir -p "$dir/lib"
-            {
-              printf 'name: consumer\npublish_to: none\nenvironment:\n  sdk: ^3.13.4\ndependencies:\n  flutter:\n    sdk: flutter\n'
-              dep bb_ui
-              if [ "$kind" = both ]; then dep bb_tokens; fi
-            } > "$dir/pubspec.yaml"
-            printf "import 'package:bb_ui/bb_ui.dart';\n\nfinal colors = AppColors.light;\nconst hint = AppTooltip.hoverDelay;\n" > "$dir/lib/ui_use.dart"
-            if [ "$kind" = both ]; then
-              printf "import 'package:bb_tokens/bb_tokens.dart';\n\nconst radius = Radii.md;\n" > "$dir/lib/tokens_use.dart"
-            fi
-            echo "== consumer ($kind)"
-            cat "$dir/pubspec.yaml"
-            (cd "$dir" && flutter pub get && flutter analyze && grep -A6 '^  bb_' pubspec.lock)
-          done
+          dir="$RUNNER_TEMP/consumer"
+          mkdir -p "$dir/lib"
+          cat > "$dir/pubspec.yaml" <<YAML
+          name: consumer
+          publish_to: none
+          environment:
+            sdk: ^3.13.4
+          dependencies:
+            flutter:
+              sdk: flutter
+            bb_ui:
+              git:
+                url: $URL
+                ref: $REF
+                path: packages/bb_ui
+          YAML
+          printf "import 'package:bb_ui/bb_ui.dart';\n\nfinal colors = AppColors.light;\nconst hint = AppTooltip.hoverDelay;\n" > "$dir/lib/ui_use.dart"
+          printf "import 'package:bb_ui/tokens.dart';\n\nconst radius = Radii.md;\n" > "$dir/lib/tokens_use.dart"
+          cat "$dir/pubspec.yaml"
+          cd "$dir"
+          flutter pub get
+          flutter analyze
+          grep -A8 '^  bb_' pubspec.lock

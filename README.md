@@ -12,15 +12,12 @@ Agent packages (`agent_kit_core`, `agent_kit`) come later.
 
 ## Use it
 
-Pin a tag through git; see [docs/package-layout.md](docs/package-layout.md).
+Pin a tag of `bb_ui` through git; `bb_tokens` comes with it, and
+`package:bb_ui/tokens.dart` re-exports it. See
+[docs/package-layout.md](docs/package-layout.md).
 
 ```yaml
 dependencies:
-  bb_tokens:
-    git:
-      url: https://github.com/BubbleBuffer/agent-kit.git
-      ref: v0.1.0
-      path: packages/bb_tokens
   bb_ui:
     git:
       url: https://github.com/BubbleBuffer/agent-kit.git
