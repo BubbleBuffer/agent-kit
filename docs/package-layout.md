@@ -66,15 +66,9 @@ with Flutter's test font.
 
 ## Consuming the kit
 
-Pin a tag through git, with `path:` to the package. Declare `bb_tokens` too
-when the app imports it directly:
+Pin a tag of `bb_ui` through git, with `path:` to the package:
 
 ```yaml
-  bb_tokens:
-    git:
-      url: https://github.com/BubbleBuffer/agent-kit.git
-      ref: v0.1.0
-      path: packages/bb_tokens
   bb_ui:
     git:
       url: https://github.com/BubbleBuffer/agent-kit.git
@@ -82,13 +76,20 @@ when the app imports it directly:
       path: packages/bb_ui
 ```
 
-`bb_ui`'s path dependency on `bb_tokens` resolves inside the same git
-checkout, so both entries name the same package. CI's "git dependency
-resolves" job checks this on every push, with and without the direct
-`bb_tokens` entry.
+`bb_tokens` comes with it: `bb_ui`'s relative path dependency resolves in
+the same git checkout, at the commit the tag points to. Reach the tokens
+through `package:bb_ui/tokens.dart` (or the `bb_ui.dart` barrel); don't
+declare `bb_tokens` beside `bb_ui`. Pub records the transitive copy at the
+resolved commit and a direct `ref: v0.1.0` entry at the tag name, treats the
+two as different sources, and version solving fails. A consumer that must
+declare `bb_tokens` directly would have to pin both entries to the same
+commit sha instead of a tag.
 
-To bump: change `ref:` in both entries to the new tag, run `flutter pub get`,
-and commit the updated `pubspec.lock`.
+CI's "git dependency resolves" job checks this on every push: a consumer
+pins `bb_ui` by the pushed branch or tag name and imports both libraries.
+
+To bump: change `ref:` to the new tag, run `flutter pub get`, and commit the
+updated `pubspec.lock`.
 
 ## Releasing
 
