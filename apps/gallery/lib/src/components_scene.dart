@@ -6,6 +6,8 @@ import 'package:agent_kit_core/agent_kit_core.dart' show ChatStatus;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../components/composer.dart';
+
 class ComponentsScene extends StatelessWidget {
   const ComponentsScene({super.key});
 
@@ -31,6 +33,8 @@ class ComponentsScene extends StatelessWidget {
                 children: [
                   const _Heading('StatusMark'),
                   const _StatusSpecimens(),
+                  SizedBox(height: t.spacing.xl),
+                  const ComposerSpecimens(),
                   SizedBox(height: t.spacing.xl),
                   const _Heading('Not built yet'),
                   for (final line in _planned)
