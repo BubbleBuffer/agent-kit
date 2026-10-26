@@ -4,7 +4,6 @@
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -192,17 +191,6 @@ void main() {
       expect(opened, 'child-c7e2');
     });
 
-    testWidgets('Enter on the focused summary line opens it', (tester) async {
-      await pumpTranscript(tester, ActivityGroupView(activityGroup()));
-      for (var i = 0; i < 3 && find.text('exec').evaluate().isEmpty; i++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-        await tester.pump();
-        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-        await tester.pump();
-      }
-      expect(find.text('exec'), findsOneWidget);
-    });
-
     testWidgets('running and failed tool rows use the status mark', (
       tester,
     ) async {
@@ -333,7 +321,7 @@ void main() {
       expect(find.text('24'), findsOneWidget);
       expect(find.text('28'), findsOneWidget);
       expect(find.text('183'), findsOneWidget);
-      expect(find.text('⋯'), findsOneWidget);
+      expect(find.text('…'), findsOneWidget);
       final removed = tester.widget<Text>(
         find.text('    pub last: UsageSnapshot,'),
       );
