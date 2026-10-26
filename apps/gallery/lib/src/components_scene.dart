@@ -38,7 +38,7 @@ class ComponentsScene extends StatelessWidget {
                       padding: EdgeInsets.only(bottom: t.spacing.xs),
                       child: Text(
                         line,
-                        style: ts(t.type.ui, t.muted, weight: 400),
+                        style: ts(t.typeScale.ui, t.muted, weight: 400),
                       ),
                     ),
                 ],
@@ -69,7 +69,7 @@ class _Heading extends StatelessWidget {
     final t = context.bb;
     return Padding(
       padding: EdgeInsets.only(bottom: t.spacing.md),
-      child: Text(text, style: ts(t.type.h3, t.ink)),
+      child: Text(text, style: ts(t.typeScale.h3, t.ink)),
     );
   }
 }
@@ -100,10 +100,7 @@ class _StatusSpecimens extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 170, child: StatusMark(s)),
-                SizedBox(
-                  width: 190,
-                  child: StatusMark(s, detail: '3 agents'),
-                ),
+                SizedBox(width: 190, child: StatusMark(s, detail: '3 agents')),
                 StatusMark.pill(s),
               ],
             ),

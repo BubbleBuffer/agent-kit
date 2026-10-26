@@ -35,10 +35,7 @@ void main() {
       const StatusMark(ChatStatus.running, label: 'Busy', detail: '3 agents'),
     );
     expect(find.textContaining('Busy', findRichText: true), findsOneWidget);
-    expect(
-      find.textContaining('3 agents', findRichText: true),
-      findsOneWidget,
-    );
+    expect(find.textContaining('3 agents', findRichText: true), findsOneWidget);
     expect(find.text('Running'), findsNothing);
   });
 

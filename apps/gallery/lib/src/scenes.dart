@@ -10,17 +10,10 @@ import 'package:flutter/widgets.dart';
 import 'components_scene.dart';
 
 enum GalleryScene {
-  workbench(
-    'A',
-    'Workbench',
-    'AgentWorkbench',
-    1440,
-    'a-workbench-*.png',
-    [
-      'Rail, chat sheet and the "Still running" ledger side by side.',
-      'Folds to rail + crew strip when medium, to a sliding rail when compact.',
-    ],
-  ),
+  workbench('A', 'Workbench', 'AgentWorkbench', 1440, 'a-workbench-*.png', [
+    'Rail, chat sheet and the "Still running" ledger side by side.',
+    'Folds to rail + crew strip when medium, to a sliding rail when compact.',
+  ]),
   scratchPane(
     'B',
     'Scratch pane',
@@ -32,17 +25,10 @@ enum GalleryScene {
       'Always the crew strip; never the rail or the ledger.',
     ],
   ),
-  phone(
-    'C',
-    'Phone',
-    'AgentWorkbench, 390 px',
-    390,
-    'c-phone-*.png',
-    [
-      'The same workbench in a phone-wide container: edge-to-edge sheet,',
-      'stacked approval actions, the rail as a sliding screen.',
-    ],
-  ),
+  phone('C', 'Phone', 'AgentWorkbench, 390 px', 390, 'c-phone-*.png', [
+    'The same workbench in a phone-wide container: edge-to-edge sheet,',
+    'stacked approval actions, the rail as a sliding screen.',
+  ]),
   workspace(
     'D',
     'Workspace',
@@ -54,14 +40,7 @@ enum GalleryScene {
       'Dividers, docking by drag, collapse to 28 px edge tabs.',
     ],
   ),
-  components(
-    '+',
-    'Components',
-    'Every widget, every state',
-    1000,
-    '',
-    [],
-  );
+  components('+', 'Components', 'Every widget, every state', 1000, '', []);
 
   const GalleryScene(
     this.tag,
@@ -116,7 +95,7 @@ class ScenePlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     final s = snapshot;
-    final small = ts(t.type.uiSmall, t.muted);
+    final small = ts(t.typeScale.uiSmall, t.muted);
     return ColoredBox(
       color: t.canvas,
       child: Padding(
@@ -143,7 +122,7 @@ class ScenePlaceholder extends StatelessWidget {
                     s == null || s.title.isEmpty
                         ? 'Loading the scripted chat…'
                         : s.title,
-                    style: ts(t.type.h3, t.ink),
+                    style: ts(t.typeScale.h3, t.ink),
                   ),
                   SizedBox(height: t.spacing.sm),
                   if (s != null) ...[
@@ -164,7 +143,7 @@ class ScenePlaceholder extends StatelessWidget {
                   Text('Placeholder. It will contain:', style: small),
                   SizedBox(height: t.spacing.xs),
                   for (final line in scene.contents)
-                    Text(line, style: ts(t.type.ui, t.ink, weight: 400)),
+                    Text(line, style: ts(t.typeScale.ui, t.ink, weight: 400)),
                   SizedBox(height: t.spacing.lg),
                   Text(
                     'Compare with shots/${scene.mockupShot} in the mockup.',

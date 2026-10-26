@@ -197,7 +197,7 @@ class BbTheme extends ThemeExtension<BbTheme> {
   final BbMotion motion = const BbMotion();
 
   /// Scratch's type scale for the [formFactor].
-  TypeScale get type =>
+  TypeScale get typeScale =>
       formFactor == FormFactor.mobile ? TypeScale.mobile : TypeScale.desktop;
 
   /// The compact/medium boundary in logical px.
@@ -310,7 +310,7 @@ class BbThemeScope extends StatelessWidget {
         colors: theme.colors,
         formFactor: formFactor,
         child: DefaultTextStyle(
-          style: ts(theme.type.body, theme.ink),
+          style: ts(theme.typeScale.body, theme.ink),
           child: child,
         ),
       ),

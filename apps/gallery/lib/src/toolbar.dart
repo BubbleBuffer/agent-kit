@@ -31,7 +31,7 @@ class GalleryToolbar extends StatelessWidget {
           runSpacing: t.spacing.sm,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text('Agent kit gallery', style: ts(t.type.ui, t.ink, weight: 700)),
+            Text('Agent kit gallery', style: ts(t.typeScale.ui, t.ink, weight: 700)),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -50,7 +50,7 @@ class GalleryToolbar extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Width', style: ts(t.type.uiSmall, t.muted)),
+                Text('Width', style: ts(t.typeScale.uiSmall, t.muted)),
                 SizedBox(width: t.spacing.sm),
                 WidthSlider(
                   value: controller.width,
@@ -63,11 +63,7 @@ class GalleryToolbar extends StatelessWidget {
                   width: 64,
                   child: Text(
                     '${controller.width.round()} px',
-                    style: ts(
-                      const TypeSpec(12, 16, 400),
-                      t.ink,
-                      mono: true,
-                    ),
+                    style: ts(const TypeSpec(12, 16, 400), t.ink, mono: true),
                   ),
                 ),
               ],
@@ -78,7 +74,8 @@ class GalleryToolbar extends StatelessWidget {
                 children: [
                   TextBtn(
                     '+10 s',
-                    onTap: () => controller.advance(const Duration(seconds: 10)),
+                    onTap: () =>
+                        controller.advance(const Duration(seconds: 10)),
                   ),
                   TextBtn('Play', onTap: controller.playToEnd),
                   TextBtn('Replay', onTap: controller.replay),
@@ -119,7 +116,7 @@ class _SceneTab extends StatelessWidget {
             child: Text(
               label,
               style: ts(
-                t.type.ui,
+                t.typeScale.ui,
                 selected ? t.ink : t.muted,
                 weight: selected ? 700 : 500,
               ),
@@ -197,7 +194,11 @@ class _SliderPainter extends CustomPainter {
     final line = Paint()
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(inset, y), Offset(size.width - inset, y), line..color = track);
+    canvas.drawLine(
+      Offset(inset, y),
+      Offset(size.width - inset, y),
+      line..color = track,
+    );
     canvas.drawLine(Offset(inset, y), Offset(x, y), line..color = fill);
     canvas.drawCircle(Offset(x, y), 7, Paint()..color = thumb);
   }

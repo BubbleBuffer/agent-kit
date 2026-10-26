@@ -97,7 +97,7 @@ class StatusMark extends StatelessWidget {
 
   Widget _dotForm(BbTheme theme, BbStatusStyle style, String text) {
     final base = ts(
-      theme.type.uiSmall,
+      theme.typeScale.uiSmall,
       style.ink,
       weight: status == ChatStatus.needsYou ? 600 : 500,
     );
@@ -180,8 +180,17 @@ class StatusMark extends StatelessWidget {
     );
   }
 
-  static Widget _icon(IconData light, IconData regular, IconData bold, Color c) {
-    return LucideIcon(lucideWeight((light, regular, bold), 12, 1.5), size: 12, color: c);
+  static Widget _icon(
+    IconData light,
+    IconData regular,
+    IconData bold,
+    Color c,
+  ) {
+    return LucideIcon(
+      lucideWeight((light, regular, bold), 12, 1.5),
+      size: 12,
+      color: c,
+    );
   }
 }
 
