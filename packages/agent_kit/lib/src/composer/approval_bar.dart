@@ -211,13 +211,21 @@ class _ApprovalBarState extends State<ApprovalBar> {
       KitButton(
         label: 'Approve',
         kind: KitButtonKind.primary,
-        keyHint: '1',
+        keyHint: size.isCompact ? null : '1',
         onTap: _approve,
       ),
-      KitButton(label: 'For session', keyHint: '2', onTap: _forSession),
+      KitButton(
+        label: 'For session',
+        keyHint: size.isCompact ? null : '2',
+        onTap: _forSession,
+      ),
       Focus(
         focusNode: _denyAnchor,
-        child: KitButton(label: 'Deny', keyHint: '3', onTap: _openDeny),
+        child: KitButton(
+          label: 'Deny',
+          keyHint: size.isCompact ? null : '3',
+          onTap: _openDeny,
+        ),
       ),
     ];
     if (size.isCompact) {
