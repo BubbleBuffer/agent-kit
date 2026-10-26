@@ -61,7 +61,6 @@ class ComponentsScene extends StatelessWidget {
     );
     // A boundary of its own, so a golden can shoot the whole sheet.
     return tall ? RepaintBoundary(child: scene) : scene;
-
   }
 }
 
