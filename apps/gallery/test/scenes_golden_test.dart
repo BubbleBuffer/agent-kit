@@ -34,7 +34,7 @@ void main() {
           // then shrink the window to it.
           tester.view.physicalSize = Size(
             width.toDouble(),
-            tall ? 8000 : height,
+            tall ? 30000 : height,
           );
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.resetPhysicalSize);
