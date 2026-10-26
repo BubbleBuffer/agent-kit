@@ -1,0 +1,103 @@
+# Format, analyze and test every package; on pushes, also check that a
+# consumer can depend on the packages through git, the way Scratch pins them.
+# Public repository: GitHub-hosted runners only.
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    name: dart format
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed .
+
+  analyze:
+    name: flutter analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+
+  test:
+    name: flutter test (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [bb_tokens, bb_ui]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: flutter test
+        working-directory: packages/${{ matrix.package }}
+        run: flutter test
+
+  git-consumer:
+    name: git dependency resolves
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      # Two consumers: one declares both packages as git deps (as Scratch
+      # does), one only bb_ui, so bb_ui's path dep on bb_tokens resolves
+      # inside the git checkout.
+      - name: Resolve and analyze consumers
+        env:
+          URL: https://github.com/${{ github.repository }}.git
+          REF: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          dep() {
+            printf '  %s:\n    git:\n      url: %s\n      ref: %s\n      path: packages/%s\n' "$1" "$URL" "$REF" "$1"
+          }
+          for kind in both ui-only; do
+            dir="$RUNNER_TEMP/consumer-$kind"
+            mkdir -p "$dir/lib"
+            {
+              printf 'name: consumer\npublish_to: none\nenvironment:\n  sdk: ^3.13.4\ndependencies:\n  flutter:\n    sdk: flutter\n'
+              dep bb_ui
+              if [ "$kind" = both ]; then dep bb_tokens; fi
+            } > "$dir/pubspec.yaml"
+            printf "import 'package:bb_ui/bb_ui.dart';\n\nfinal colors = AppColors.light;\nconst hint = AppTooltip.hoverDelay;\n" > "$dir/lib/ui_use.dart"
+            if [ "$kind" = both ]; then
+              printf "import 'package:bb_tokens/bb_tokens.dart';\n\nconst radius = Radii.md;\n" > "$dir/lib/tokens_use.dart"
+            fi
+            echo "== consumer ($kind)"
+            cat "$dir/pubspec.yaml"
+            (cd "$dir" && flutter pub get && flutter analyze && grep -A6 '^  bb_' pubspec.lock)
+          done

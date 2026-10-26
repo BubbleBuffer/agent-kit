@@ -1,0 +1,20 @@
+name: bb_ui
+description: BubbleBuffer UI primitives for Flutter without Material, built on bb_tokens.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  lucide_icons_flutter: 3.1.25
+  bb_tokens:
+    path: ../bb_tokens
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

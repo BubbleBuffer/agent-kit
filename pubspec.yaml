@@ -1,0 +1,10 @@
+name: agent_kit_workspace
+description: Workspace root for the agent-kit packages.
+publish_to: none
+
+environment:
+  sdk: ^3.13.4
+
+workspace:
+  - packages/bb_tokens
+  - packages/bb_ui
