@@ -1,0 +1,40 @@
+{
+  "chatId": "c1",
+  "seq": 6,
+  "title": "",
+  "status": "idle",
+  "items": [],
+  "approvals": [],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [],
+  "jobs": [
+    {
+      "id": "j1",
+      "command": "cargo test -p host usage",
+      "state": "exited",
+      "exitCode": 101,
+      "startedAt": "2026-10-26T09:00:00.000Z",
+      "endedAt": "2026-10-26T09:00:41.000Z",
+      "output": {
+        "text": "running 14 tests\ntest result: FAILED\n"
+      },
+      "summary": "2 failed"
+    },
+    {
+      "id": "j2",
+      "command": "npm run dev",
+      "state": "cancelled"
+    },
+    {
+      "id": "j3",
+      "command": "cargo fmt --check",
+      "state": "exited",
+      "exitCode": 0,
+      "output": {
+        "text": ""
+      }
+    }
+  ]
+}

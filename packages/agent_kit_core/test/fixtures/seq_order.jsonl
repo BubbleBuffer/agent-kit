@@ -1,0 +1,17 @@
+{"note":"Duplicate and out-of-order sequences, and events of another chat."}
+{"seq":1,"chat":"c1","kind":"chat.renamed","title":"one"}
+{"seq":2,"chat":"c1","kind":"chat.renamed","title":"two"}
+{"seq":2,"chat":"c1","kind":"chat.renamed","title":"two again"}
+{"seq":1,"chat":"c1","kind":"chat.renamed","title":"one again"}
+{"note":"Sequences may skip numbers (they are global to a store)."}
+{"seq":5,"chat":"c1","kind":"chat.renamed","title":"five"}
+{"seq":4,"chat":"c1","kind":"chat.renamed","title":"four, late"}
+{"seq":9,"chat":"c2","kind":"chat.renamed","title":"another chat"}
+{"seq":9,"chat":"c2","kind":"gap"}
+{"expect":{"seq":5,"title":"five","stale":null}}
+{"note":"A transient fragment older than the snapshot is dropped."}
+{"seq":6,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":4,"chat":"c1","kind":"message.delta","itemId":"a1","offset":0,"text":"stale"}
+{"seq":6,"chat":"c1","kind":"message.delta","itemId":"a1","offset":0,"text":"fresh"}
+{"note":"A fragment past the start of a message it does not know is dropped."}
+{"seq":6,"chat":"c1","kind":"message.delta","itemId":"a2","offset":4,"text":"tail"}

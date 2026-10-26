@@ -1,4 +1,5 @@
-# Format, analyze and test every package; on pushes, also check that a
+# Format, analyze and test every package (Flutter packages with flutter
+# test, pure Dart ones with dart test); on pushes, also check that a
 # consumer can depend on the packages through git, the way Scratch pins them.
 # Public repository: GitHub-hosted runners only.
 name: ci
@@ -62,6 +63,31 @@ jobs:
       - name: flutter test
         working-directory: packages/${{ matrix.package }}
         run: flutter test
+
+  # Pure Dart packages: strict analysis (infos fail) and dart test.
+  dart-test:
+    name: dart test (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [agent_kit_core]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: dart analyze
+        working-directory: packages/${{ matrix.package }}
+        run: dart analyze --fatal-infos
+      - name: dart test
+        working-directory: packages/${{ matrix.package }}
+        run: dart test
 
   git-consumer:
     name: git dependency resolves

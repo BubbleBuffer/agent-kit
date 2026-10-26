@@ -1,0 +1,12 @@
+{"note":"Background jobs: started, streamed output (a duplicate chunk applies once), exited 101, cancelled, exited 0. Jobs do not make the chat running."}
+{"seq":1,"chat":"c1","kind":"job.started","jobId":"j1","command":"cargo test -p host usage","at":"2026-10-26T09:00:00.000Z"}
+{"expect":{"status":"idle"}}
+{"seq":1,"chat":"c1","kind":"job.output","jobId":"j1","offset":0,"text":"running 14 tests\n"}
+{"seq":1,"chat":"c1","kind":"job.output","jobId":"j1","offset":0,"text":"running 14 tests\n"}
+{"seq":1,"chat":"c1","kind":"job.output","jobId":"j1","offset":17,"text":"test result: FAILED\n"}
+{"seq":2,"chat":"c1","kind":"job.exited","jobId":"j1","exitCode":101,"summary":"2 failed","at":"2026-10-26T09:00:41.000Z"}
+{"seq":2,"chat":"c1","kind":"job.output","jobId":"j1","offset":37,"text":"late\n"}
+{"seq":3,"chat":"c1","kind":"job.started","jobId":"j2","command":"npm run dev"}
+{"seq":4,"chat":"c1","kind":"job.exited","jobId":"j2","state":"cancelled"}
+{"seq":5,"chat":"c1","kind":"job.started","jobId":"j3","command":"cargo fmt --check"}
+{"seq":6,"chat":"c1","kind":"job.exited","jobId":"j3","exitCode":0,"output":{"text":""}}

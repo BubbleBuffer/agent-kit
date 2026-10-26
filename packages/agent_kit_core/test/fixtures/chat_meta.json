@@ -1,0 +1,26 @@
+{
+  "chatId": "c1",
+  "seq": 8,
+  "title": "Quota bar flickers on reconnect",
+  "status": "idle",
+  "model": "deepseek-v4.1-flash",
+  "profile": "review",
+  "workspace": {
+    "name": "bubblepaw",
+    "branch": "bp/quota-reconnect",
+    "worktree": ".worktrees/quota-reconnect"
+  },
+  "items": [],
+  "approvals": [],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [],
+  "jobs": [],
+  "usage": {
+    "contextTokens": 48640,
+    "contextLimit": 128000,
+    "inputTokens": 112000,
+    "outputTokens": 5400
+  }
+}

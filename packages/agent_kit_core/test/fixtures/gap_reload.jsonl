@@ -1,0 +1,15 @@
+{"note":"A gap marks the snapshot stale; the consumer reloads; events already in the reloaded snapshot are dropped and later ones apply."}
+{"seq":1,"chat":"c1","kind":"message.user","itemId":"u1","text":"hi"}
+{"seq":2,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":2,"chat":"c1","kind":"message.delta","itemId":"a1","offset":0,"text":"Hel"}
+{"seq":2,"chat":"c1","kind":"gap","skipped":4}
+{"expect":{"stale":true,"seq":2}}
+{"seq":2,"chat":"c1","kind":"gap"}
+{"load":{"chatId":"c1","seq":6,"title":"Greeting","run":{"id":"r1"},"items":[{"type":"user","id":"u1","text":"hi"},{"type":"assistant","id":"a1","markdown":"Hello the","streaming":true,"runId":"r1"}]}}
+{"expect":{"stale":null,"seq":6}}
+{"note":"Buffered events from before the reload: durable ones are dropped, as is a fragment older than the snapshot; a fragment at its sequence applies by offset."}
+{"seq":3,"chat":"c1","kind":"chat.renamed","title":"old title"}
+{"seq":5,"chat":"c1","kind":"message.delta","itemId":"a1","offset":3,"text":"lo th"}
+{"seq":6,"chat":"c1","kind":"message.delta","itemId":"a1","offset":3,"text":"lo there"}
+{"seq":7,"chat":"c1","kind":"message.assistant","itemId":"a1","markdown":"Hello there!","runId":"r1"}
+{"seq":8,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"completed"}

@@ -1,0 +1,76 @@
+{
+  "chatId": "c1",
+  "seq": 11,
+  "title": "",
+  "status": "idle",
+  "run": {
+    "id": "r1",
+    "outcome": "cancelled"
+  },
+  "items": [],
+  "approvals": [
+    {
+      "id": "ap1",
+      "tool": "edit",
+      "requestedAt": "2026-10-26T09:00:00.000Z",
+      "kind": "edit",
+      "target": "src/usage/mod.rs",
+      "diff": {
+        "path": "src/usage/mod.rs",
+        "change": "modified",
+        "hunks": [
+          {
+            "oldStart": 1,
+            "newStart": 1,
+            "lines": [
+              {
+                "op": "del",
+                "text": "a"
+              },
+              {
+                "op": "add",
+                "text": "b"
+              }
+            ]
+          }
+        ]
+      },
+      "callId": "c1",
+      "runId": "r1",
+      "state": "approved",
+      "decidedAt": "2026-10-26T09:12:00.000Z"
+    },
+    {
+      "id": "ap2",
+      "tool": "exec",
+      "requestedAt": "2026-10-26T09:13:00.000Z",
+      "kind": "exec",
+      "target": "cargo test",
+      "summary": "Run the tests",
+      "arguments": "{\"cmd\":\"cargo test\"}",
+      "state": "approvedForSession"
+    },
+    {
+      "id": "ap3",
+      "tool": "exec",
+      "requestedAt": "2026-10-26T09:14:00.000Z",
+      "kind": "exec",
+      "target": "rm -rf target",
+      "state": "denied",
+      "reason": "Not the target dir"
+    },
+    {
+      "id": "ap4",
+      "tool": "write",
+      "requestedAt": "2026-10-26T09:15:00.000Z",
+      "kind": "write",
+      "target": "notes.md",
+      "state": "cancelled"
+    }
+  ],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [],
+  "jobs": []
+}

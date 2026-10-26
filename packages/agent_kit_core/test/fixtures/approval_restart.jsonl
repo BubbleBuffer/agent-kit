@@ -1,0 +1,19 @@
+{"note":"A host restart: the pending approval comes back expired with reason restart and the run interrupted, either in a snapshot reloaded after a gap or as events. A resume starts a new run."}
+{"seq":1,"chat":"c1","kind":"message.user","itemId":"u1","text":"Fix it"}
+{"seq":2,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":3,"chat":"c1","kind":"tool.started","callId":"c1","name":"edit","toolKind":"edit","target":"src/a.rs","runId":"r1"}
+{"seq":4,"chat":"c1","kind":"approval.requested","approval":{"id":"ap1","tool":"edit","kind":"edit","target":"src/a.rs","callId":"c1","runId":"r1","requestedAt":"2026-10-26T09:00:00.000Z"}}
+{"expect":{"status":"needsYou"}}
+{"seq":4,"chat":"c1","kind":"gap"}
+{"expect":{"stale":true,"status":"needsYou"}}
+{"load":{"chatId":"c1","seq":9,"run":{"id":"r1","outcome":"interrupted","endedAt":"2026-10-26T10:00:00.000Z"},"items":[{"type":"user","id":"u1","text":"Fix it"},{"type":"activity","id":"activity:c1","runId":"r1","rows":[{"type":"tool","id":"c1","name":"edit","kind":"edit","target":"src/a.rs","state":"cancelled"}]}],"approvals":[{"id":"ap1","tool":"edit","kind":"edit","target":"src/a.rs","callId":"c1","runId":"r1","requestedAt":"2026-10-26T09:00:00.000Z","state":"expired","reason":"restart","decidedAt":"2026-10-26T10:00:00.000Z"}]}}
+{"expect":{"stale":null,"status":"interrupted"}}
+{"note":"Events from before the reload are dropped."}
+{"seq":5,"chat":"c1","kind":"approval.resolved","approvalId":"ap1","state":"approved"}
+{"seq":10,"chat":"c1","kind":"run.started","runId":"r2"}
+{"expect":{"status":"running"}}
+{"seq":11,"chat":"c1","kind":"approval.requested","approval":{"id":"ap2","tool":"edit","kind":"edit","target":"src/a.rs","requestedAt":"2026-10-26T10:01:00.000Z"}}
+{"note":"The same restart expressed as events."}
+{"seq":12,"chat":"c1","kind":"approval.resolved","approvalId":"ap2","state":"expired","reason":"restart","at":"2026-10-26T11:00:00.000Z"}
+{"seq":13,"chat":"c1","kind":"run.finished","runId":"r2","outcome":"interrupted","at":"2026-10-26T11:00:00.000Z"}
+{"expect":{"status":"interrupted"}}

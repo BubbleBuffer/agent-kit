@@ -1,0 +1,62 @@
+{
+  "chatId": "c1",
+  "seq": 13,
+  "title": "",
+  "status": "interrupted",
+  "run": {
+    "id": "r2",
+    "endedAt": "2026-10-26T11:00:00.000Z",
+    "outcome": "interrupted"
+  },
+  "items": [
+    {
+      "type": "user",
+      "id": "u1",
+      "text": "Fix it"
+    },
+    {
+      "type": "activity",
+      "id": "activity:c1",
+      "runId": "r1",
+      "rows": [
+        {
+          "type": "tool",
+          "id": "c1",
+          "name": "edit",
+          "kind": "edit",
+          "target": "src/a.rs",
+          "state": "cancelled"
+        }
+      ]
+    }
+  ],
+  "approvals": [
+    {
+      "id": "ap1",
+      "tool": "edit",
+      "requestedAt": "2026-10-26T09:00:00.000Z",
+      "kind": "edit",
+      "target": "src/a.rs",
+      "callId": "c1",
+      "runId": "r1",
+      "state": "expired",
+      "reason": "restart",
+      "decidedAt": "2026-10-26T10:00:00.000Z"
+    },
+    {
+      "id": "ap2",
+      "tool": "edit",
+      "requestedAt": "2026-10-26T10:01:00.000Z",
+      "kind": "edit",
+      "target": "src/a.rs",
+      "state": "expired",
+      "reason": "restart",
+      "decidedAt": "2026-10-26T11:00:00.000Z"
+    }
+  ],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [],
+  "jobs": []
+}

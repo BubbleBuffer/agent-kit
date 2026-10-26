@@ -1,0 +1,19 @@
+{
+  "chatId": "c1",
+  "seq": 5,
+  "title": "",
+  "status": "failed",
+  "run": {
+    "id": "r1",
+    "model": "m1",
+    "outcome": "failed",
+    "error": "The provider rejected the request."
+  },
+  "items": [],
+  "approvals": [],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [],
+  "jobs": []
+}

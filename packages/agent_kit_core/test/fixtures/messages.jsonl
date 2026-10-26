@@ -1,0 +1,19 @@
+{"note":"User, assistant (streamed deltas, then completion), system and notice items."}
+{"seq":1,"chat":"c1","kind":"message.user","itemId":"u1","at":"2026-10-26T09:00:00.000Z","text":"Why does @usage/mod.rs reset?","refs":[{"kind":"file","id":"crates/host/src/usage/mod.rs","label":"usage/mod.rs","start":9,"end":22},{"kind":"page","id":"p-42","label":"Quota flicker"}]}
+{"seq":2,"chat":"c1","kind":"run.started","runId":"r1","model":"m1","at":"2026-10-26T09:00:01.000Z"}
+{"seq":2,"chat":"c1","kind":"message.delta","itemId":"a1","offset":0,"text":"It resets ","runId":"r1"}
+{"expect":{"status":"running"}}
+{"seq":2,"chat":"c1","kind":"message.delta","itemId":"a1","offset":10,"text":"the snapshot"}
+{"note":"A duplicate fragment and an overlapping one each apply once."}
+{"seq":2,"chat":"c1","kind":"message.delta","itemId":"a1","offset":10,"text":"the snapshot"}
+{"seq":2,"chat":"c1","kind":"message.delta","itemId":"a1","offset":14,"text":"snapshot on"}
+{"note":"A fragment past the end (one was lost) is skipped until completion."}
+{"seq":2,"chat":"c1","kind":"message.delta","itemId":"a1","offset":40,"text":"lost"}
+{"seq":3,"chat":"c1","kind":"message.assistant","itemId":"a1","markdown":"It resets the snapshot on disconnect:\n\n```rust\nself.last = UsageSnapshot::default();\n```\n","runId":"r1"}
+{"note":"A late fragment after completion is ignored."}
+{"seq":3,"chat":"c1","kind":"message.delta","itemId":"a1","offset":0,"text":"It resets the snapshot on disconnect: and more"}
+{"seq":4,"chat":"c1","kind":"message.system","itemId":"s1","text":"Context compacted."}
+{"seq":5,"chat":"c1","kind":"message.notice","itemId":"n1","text":"Reconnected.","tone":"warning"}
+{"seq":6,"chat":"c1","kind":"message.notice","itemId":"n2","text":"Saved.","tone":"success"}
+{"seq":7,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"completed","at":"2026-10-26T09:00:30.000Z"}
+{"expect":{"status":"done"}}

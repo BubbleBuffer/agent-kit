@@ -1,0 +1,25 @@
+{"note":"Activity groups: thinking, read, search, exec with output and exit code, spawn, web; a message closes a group; the run's end closes open rows."}
+{"seq":1,"chat":"c1","kind":"message.user","itemId":"u1","text":"Run the usage tests"}
+{"seq":2,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":3,"chat":"c1","kind":"thinking.started","rowId":"t1","runId":"r1","at":"2026-10-26T09:00:00.000Z"}
+{"seq":3,"chat":"c1","kind":"thinking.delta","rowId":"t1","offset":0,"text":"Compare the "}
+{"seq":3,"chat":"c1","kind":"thinking.delta","rowId":"t1","offset":12,"text":"two hosts"}
+{"seq":4,"chat":"c1","kind":"thinking.finished","rowId":"t1","durationMs":6000}
+{"seq":5,"chat":"c1","kind":"tool.started","callId":"c1","name":"read","toolKind":"read","target":"src/usage/mod.rs","runId":"r1","at":"2026-10-26T09:00:06.000Z"}
+{"seq":6,"chat":"c1","kind":"tool.finished","callId":"c1","meta":"212 lines","at":"2026-10-26T09:00:07.000Z"}
+{"seq":7,"chat":"c1","kind":"tool.started","callId":"c2","name":"grep","toolKind":"search","target":"reset|on_close in crates/","arguments":"{\"pattern\":\"reset|on_close\"}"}
+{"seq":8,"chat":"c1","kind":"tool.finished","callId":"c2","meta":"9 hits"}
+{"seq":9,"chat":"c1","kind":"tool.started","callId":"c3","name":"exec","toolKind":"exec","target":"cargo test -p host usage"}
+{"seq":9,"chat":"c1","kind":"tool.output","callId":"c3","offset":0,"text":"running 14 tests\n"}
+{"seq":9,"chat":"c1","kind":"tool.output","callId":"c3","offset":17,"text":"test a ... FAILED\n"}
+{"seq":10,"chat":"c1","kind":"tool.finished","callId":"c3","state":"failed","exitCode":101,"meta":"2 failed","output":{"text":"running 14 tests\ntest a ... FAILED\ntest result: FAILED\n","totalBytes":2150,"totalLines":20,"truncated":true}}
+{"seq":11,"chat":"c1","kind":"child.spawned","childId":"k1","task":"Survey quota handling","callId":"c4","runId":"r1"}
+{"seq":12,"chat":"c1","kind":"tool.started","callId":"c5","name":"web_fetch","toolKind":"web","target":"https://example.com/docs"}
+{"seq":13,"chat":"c1","kind":"tool.finished","callId":"c5","state":"done"}
+{"seq":14,"chat":"c1","kind":"message.assistant","itemId":"a1","markdown":"Two tests fail."}
+{"seq":15,"chat":"c1","kind":"tool.started","callId":"c6","name":"read","toolKind":"read","target":"tests/q.rs"}
+{"note":"An unknown tool kind reads as other."}
+{"seq":16,"chat":"c1","kind":"tool.started","callId":"c7","name":"teleport","toolKind":"teleport"}
+{"seq":17,"chat":"c1","kind":"tool.finished","callId":"c6","meta":"41 lines"}
+{"seq":18,"chat":"c1","kind":"child.finished","childId":"k1","state":"done"}
+{"seq":19,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"completed"}

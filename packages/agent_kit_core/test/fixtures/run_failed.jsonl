@@ -1,0 +1,10 @@
+{"note":"A quota wait keeps the run active; a failed run shows its error."}
+{"seq":1,"chat":"c1","kind":"run.started","runId":"r1","model":"m1"}
+{"seq":2,"chat":"c1","kind":"run.waiting","runId":"r1","until":"2026-10-27T00:00:00.000Z","reason":"weekly quota"}
+{"expect":{"status":"running"}}
+{"note":"run.started for the active run clears the wait (quota resumed)."}
+{"seq":3,"chat":"c1","kind":"run.started","runId":"r1","model":"m1"}
+{"seq":4,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"failed","error":"The provider rejected the request."}
+{"expect":{"status":"failed"}}
+{"note":"A wait for a run that is no longer active is ignored."}
+{"seq":5,"chat":"c1","kind":"run.waiting","runId":"r1"}

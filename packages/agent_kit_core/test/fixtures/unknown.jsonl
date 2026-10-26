@@ -1,0 +1,8 @@
+{"note":"Unknown kinds are ignored (and do not advance seq); unknown fields and enum values are tolerated; unknown item and row types in a snapshot are skipped."}
+{"load":{"chatId":"c1","seq":1,"title":"t","items":[{"type":"user","id":"u1","text":"hi"},{"type":"hologram","id":"h1"},{"type":"activity","id":"g1","rows":[{"type":"tool","id":"c1","name":"read","kind":"read","state":"done"},{"type":"vision","id":"v1"}]}]}}
+{"seq":2,"chat":"c1","kind":"chat.teleported","to":"mars"}
+{"expect":{"seq":1}}
+{"seq":3,"chat":"c1","kind":"chat.renamed","title":"renamed","extra":{"nested":true}}
+{"seq":4,"chat":"c1","kind":"message.notice","itemId":"n1","text":"x","tone":"rainbow"}
+{"seq":5,"chat":"c1","kind":"future.kind"}
+{"seq":6,"chat":"c1","kind":"plan.updated","items":[{"id":"p1","text":"a","state":"blocked"}]}

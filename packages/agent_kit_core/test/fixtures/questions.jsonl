@@ -1,0 +1,9 @@
+{"note":"Questions: asked (needsYou), answered; another expires with a restart, and a late answer does not revive it."}
+{"seq":1,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":2,"chat":"c1","kind":"question.asked","question":{"id":"q1","text":"Show the stale figure's age?","options":["Always","On hover"],"freeText":true,"requestedAt":"2026-10-26T09:00:00.000Z"}}
+{"expect":{"status":"needsYou"}}
+{"seq":3,"chat":"c1","kind":"question.resolved","questionId":"q1","state":"answered","answer":"On hover"}
+{"expect":{"status":"running"}}
+{"seq":4,"chat":"c1","kind":"question.asked","question":{"id":"q2","text":"Which branch?","freeText":false,"options":["main","release"],"requestedAt":"2026-10-26T09:05:00.000Z"}}
+{"seq":5,"chat":"c1","kind":"question.resolved","questionId":"q2","state":"expired","reason":"restart"}
+{"seq":6,"chat":"c1","kind":"question.resolved","questionId":"q2","state":"answered","answer":"main"}
