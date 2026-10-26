@@ -71,7 +71,7 @@ void main() {
     expect(find.byType(EditableText), findsNothing);
   });
 
-  testWidgets('Enter saves and Esc cancels', (tester) async {
+  testWidgets('Enter saves', (tester) async {
     final edits = <String>[];
     await pumpComposer(
       tester,
@@ -85,7 +85,10 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
     expect(edits, ['Edited']);
+  });
 
+  testWidgets('Esc cancels without reporting', (tester) async {
+    final edits = <String>[];
     await pumpComposer(
       tester,
       QueuedRow(
@@ -98,7 +101,7 @@ void main() {
     await tester.enterText(find.byType(EditableText), 'Dropped');
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
-    expect(edits, ['Edited']);
+    expect(edits, isEmpty);
     expect(find.byType(EditableText), findsNothing);
   });
 }
