@@ -85,11 +85,12 @@ class SettingsRow extends StatelessWidget {
         ],
       ],
     );
-    if (trailing == null)
+    if (trailing == null) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: text,
       );
+    }
     if (stack) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
