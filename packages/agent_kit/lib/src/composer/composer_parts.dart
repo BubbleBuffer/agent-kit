@@ -93,8 +93,7 @@ abstract final class ComposerGlyphs {
 bool isTouch(BbTheme t) => t.formFactor == FormFactor.mobile;
 
 /// The height of the agent's buttons (`--ctl-h`: 32, and 40 on touch).
-double controlHeight(BbTheme t) =>
-    isTouch(t) ? 40 : t.layout.controlHeight;
+double controlHeight(BbTheme t) => isTouch(t) ? 40 : t.layout.controlHeight;
 
 /// A Lucide glyph at [size], drawn at the mockup's 1.5 px visual stroke.
 class KitIcon extends StatelessWidget {
@@ -276,9 +275,8 @@ class KitButton extends StatelessWidget {
             ? t.accentHover
             : t.pressed,
         border: switch (kind) {
-          KitButtonKind.secondary || KitButtonKind.danger => Border.all(
-            color: t.thread,
-          ),
+          KitButtonKind.secondary ||
+          KitButtonKind.danger => Border.all(color: t.thread),
           _ => null,
         },
         padding: iconOnly

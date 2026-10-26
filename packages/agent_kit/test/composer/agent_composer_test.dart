@@ -81,10 +81,7 @@ void main() {
     tester,
   ) async {
     final got = <ComposerSubmission>[];
-    await pumpComposer(
-      tester,
-      AgentComposer(running: true, onSubmit: got.add),
-    );
+    await pumpComposer(tester, AgentComposer(running: true, onSubmit: got.add));
     await _type(tester, 'one');
     await _enter(tester);
     await _type(tester, 'two');
@@ -105,11 +102,7 @@ void main() {
     final modes = <ComposerMode>[];
     await pumpComposer(
       tester,
-      AgentComposer(
-        running: true,
-        onSubmit: got.add,
-        onModeChanged: modes.add,
-      ),
+      AgentComposer(running: true, onSubmit: got.add, onModeChanged: modes.add),
     );
     await tester.tap(find.text('Queue'));
     await tester.pump();

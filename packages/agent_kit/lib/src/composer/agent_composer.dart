@@ -199,9 +199,8 @@ class _AgentComposerState extends State<AgentComposer> {
     }
     final caret = math.min(math.max(v.selection.baseOffset, 0), v.text.length);
     final trigger = RegExp.escape(source.trigger);
-    final match = RegExp(
-      '(^|\\s)$trigger([^\\s$trigger]*)\$',
-    ).firstMatch(v.text.substring(0, caret));
+    final match = RegExp('(^|\\s)$trigger([^\\s$trigger]*)\$')
+        .firstMatch(v.text.substring(0, caret));
     if (match == null) {
       _dismissedAt = null;
       _clearSuggest();
@@ -317,8 +316,8 @@ class _AgentComposerState extends State<AgentComposer> {
       }
       if (key == LogicalKeyboardKey.arrowUp) {
         setState(
-          () => _active = (_active - 1 + _suggestions.length) %
-              _suggestions.length,
+          () => _active =
+              (_active - 1 + _suggestions.length) % _suggestions.length,
         );
         return KeyEventResult.handled;
       }
@@ -629,11 +628,7 @@ class ComposerModeToggle extends StatelessWidget {
             child: Text(
               label,
               maxLines: 1,
-              style: ts(
-                t.typeScale.uiSmall,
-                on ? t.ink : t.muted,
-                weight: 600,
-              ),
+              style: ts(t.typeScale.uiSmall, on ? t.ink : t.muted, weight: 600),
             ),
           ),
         ),
@@ -756,9 +751,7 @@ class _MentionList extends StatelessWidget {
                       excludeSemantics: true,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: i == active
-                              ? t.colors.bgSelectedBlock
-                              : null,
+                          color: i == active ? t.colors.bgSelectedBlock : null,
                           borderRadius: BorderRadius.circular(t.radii.md),
                         ),
                         child: SizedBox(
