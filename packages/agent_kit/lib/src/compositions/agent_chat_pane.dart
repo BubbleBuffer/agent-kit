@@ -228,7 +228,10 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       error is KitError ? error.message : 'Something went wrong.';
 
   /// Runs a backend command. A failure becomes the dock's error line.
-  Future<void> _run(Future<void> Function() command, {VoidCallback? onFail}) async {
+  Future<void> _run(
+    Future<void> Function() command, {
+    VoidCallback? onFail,
+  }) async {
     try {
       await command();
       if (mounted && _error != null) setState(() => _error = null);
@@ -385,10 +388,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
             ? Semantics(
                 liveRegion: true,
                 label: 'Loading the chat',
-                child: Text(
-                  'Loading…',
-                  style: ts(t.typeScale.ui, t.faint),
-                ),
+                child: Text('Loading…', style: ts(t.typeScale.ui, t.faint)),
               )
             : Semantics(
                 liveRegion: true,
@@ -464,8 +464,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
     double contentWidth,
   ) {
     final t = context.bb;
-    final interrupted =
-        !running && snap.run?.outcome == RunOutcome.interrupted;
+    final interrupted = !running && snap.run?.outcome == RunOutcome.interrupted;
     final transcript = TranscriptList(
       key: ValueKey('transcript-${widget.chatId}'),
       items: snap.items,
@@ -486,7 +485,9 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: snap.stale ? Opacity(opacity: .6, child: transcript) : transcript,
+          child: snap.stale
+              ? Opacity(opacity: .6, child: transcript)
+              : transcript,
         ),
         Padding(
           padding: const EdgeInsets.only(top: 10, bottom: 14),
@@ -526,7 +527,12 @@ class _AgentChatPaneState extends State<AgentChatPane> {
     return out;
   }
 
-  Widget _dock(BuildContext context, BbTheme t, ChatSnapshot snap, bool running) {
+  Widget _dock(
+    BuildContext context,
+    BbTheme t,
+    ChatSnapshot snap,
+    bool running,
+  ) {
     final backend = widget.backend;
     final id = widget.chatId;
     final approvals = snap.pendingApprovals.toList();

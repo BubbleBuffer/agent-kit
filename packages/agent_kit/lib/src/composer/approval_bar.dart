@@ -472,7 +472,10 @@ typedef _Plan = ({Size size, Offset what, Offset acts});
 
 class _RenderWrapActs extends RenderBox
     with
-        ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
+        ContainerRenderObjectMixin<
+          RenderBox,
+          ContainerBoxParentData<RenderBox>
+        >,
         RenderBoxContainerDefaultsMixin<
           RenderBox,
           ContainerBoxParentData<RenderBox>

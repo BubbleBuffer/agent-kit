@@ -160,7 +160,12 @@ class GalleryController extends ChangeNotifier {
     }
   }
 
-  void _chat(ScriptedBackend b, String id, String title, {bool failed = false}) {
+  void _chat(
+    ScriptedBackend b,
+    String id,
+    String title, {
+    bool failed = false,
+  }) {
     b.emit(id, {'kind': 'chat.renamed', 'title': title});
     b.emit(id, {'kind': 'run.started', 'runId': 'run-$id'});
     b.emit(id, {

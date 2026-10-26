@@ -44,7 +44,10 @@ class SceneFrame extends StatelessWidget {
                   : constraints.maxWidth;
               return Align(
                 alignment: Alignment.topCenter,
-                child: SizedBox(width: w, child: buildScene(scene, controller, tall: tall)),
+                child: SizedBox(
+                  width: w,
+                  child: buildScene(scene, controller, tall: tall),
+                ),
               );
             },
           ),

@@ -130,11 +130,11 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
   late bool _workspaceShown = widget.initialWorkspaceShown;
   int _listing = 0;
 
-  RailController get _rail => widget.railController ?? (_ownRail ??= RailController());
+  RailController get _rail =>
+      widget.railController ?? (_ownRail ??= RailController());
 
   bool get _hasWorkspace =>
-      widget.workspaceController != null &&
-      widget.workspacePaneBuilder != null;
+      widget.workspaceController != null && widget.workspacePaneBuilder != null;
 
   @override
   void initState() {
@@ -179,7 +179,9 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
       if (!mounted || ticket != _listing) return;
       setState(() {
         _listed = true;
-        _listError = error is KitError ? error.message : 'Something went wrong.';
+        _listError = error is KitError
+            ? error.message
+            : 'Something went wrong.';
       });
     }
   }
@@ -284,7 +286,10 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
     if (area.isCompact) {
       return Stack(
         fit: StackFit.expand,
-        children: [sheet, Positioned.fill(child: workspace)],
+        children: [
+          sheet,
+          Positioned.fill(child: workspace),
+        ],
       );
     }
     if (!shown) return sheet;

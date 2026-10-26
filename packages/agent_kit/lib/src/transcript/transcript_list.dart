@@ -385,7 +385,8 @@ class _TranscriptListState extends State<TranscriptList> {
     _built = true;
     _indexById = {
       for (var i = 0; i < entries.length; i++)
-        (entries[i].item?.id ?? entries[i].insert!.id): i + (hasLeading ? 1 : 0),
+        (entries[i].item?.id ?? entries[i].insert!.id):
+            i + (hasLeading ? 1 : 0),
     };
     return SizeClassBuilder(
       builder: (context, sizeClass) {

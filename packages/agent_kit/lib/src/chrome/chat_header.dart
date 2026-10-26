@@ -141,18 +141,18 @@ class ChatHeader extends StatelessWidget {
                       onTap: onToggleWorkspace,
                     ),
                   if (!hideEmptyMenu || menuItems.isNotEmpty)
-                  Builder(
-                    builder: (buttonContext) => ChromeIconButton(
-                      glyphEllipsis,
-                      key: const ValueKey('header-menu'),
-                      label: 'Session menu',
-                      size: button,
-                      glyphSize: 20,
-                      onTap: menuItems.isEmpty
-                          ? null
-                          : () => _openMenu(buttonContext),
+                    Builder(
+                      builder: (buttonContext) => ChromeIconButton(
+                        glyphEllipsis,
+                        key: const ValueKey('header-menu'),
+                        label: 'Session menu',
+                        size: button,
+                        glyphSize: 20,
+                        onTap: menuItems.isEmpty
+                            ? null
+                            : () => _openMenu(buttonContext),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

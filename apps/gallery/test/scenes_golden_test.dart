@@ -32,7 +32,10 @@ void main() {
           final tall = scene == GalleryScene.components;
           // The Components sheet is shot whole: measure it in a tall window,
           // then shrink the window to it.
-          tester.view.physicalSize = Size(width.toDouble(), tall ? 8000 : height);
+          tester.view.physicalSize = Size(
+            width.toDouble(),
+            tall ? 8000 : height,
+          );
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);

@@ -61,7 +61,6 @@ class ComponentsScene extends StatelessWidget {
   }
 }
 
-
 class _Heading extends StatelessWidget {
   const _Heading(this.text);
 
