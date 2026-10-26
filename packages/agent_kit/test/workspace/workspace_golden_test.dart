@@ -164,6 +164,7 @@ void main() {
       await tester.pump();
       await _shot(tester, 'snap_1000', b);
       await g.up();
+      await tester.pump(const Duration(seconds: 1));
     });
 
     testWidgets('add menu, ${b.name}', (tester) async {
