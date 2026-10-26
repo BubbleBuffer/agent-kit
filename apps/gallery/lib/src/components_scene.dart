@@ -21,6 +21,7 @@ class ComponentsScene extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     final sheet = Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _Heading('StatusMark'),
