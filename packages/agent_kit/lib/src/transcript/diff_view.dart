@@ -39,7 +39,9 @@ class DiffView extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minWidth: constraints.hasBoundedWidth ? constraints.maxWidth : 0,
+                minWidth: constraints.hasBoundedWidth
+                    ? constraints.maxWidth
+                    : 0,
               ),
               child: IntrinsicWidth(
                 child: Column(

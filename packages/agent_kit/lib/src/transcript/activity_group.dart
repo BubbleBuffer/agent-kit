@@ -136,9 +136,7 @@ class _ActivityGroupViewState extends State<ActivityGroupView> {
             padding: const EdgeInsets.only(top: 2, left: 6),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(color: t.colors.borderSubtle),
-                ),
+                border: Border(left: BorderSide(color: t.colors.borderSubtle)),
               ),
               child: Padding(
                 padding: const EdgeInsets.only(left: 12),
@@ -199,10 +197,7 @@ class EvidenceRow extends StatelessWidget {
     };
     final metaStyle = ts(t.typeScale.uiSmall, t.faint);
     final meta = spec.meta(context, metaStyle);
-    final targetStyle = ts(
-      const TypeSpec(13, 16, 500),
-      open ? t.ink : t.muted,
-    );
+    final targetStyle = ts(const TypeSpec(13, 16, 500), open ? t.ink : t.muted);
     Widget? body;
     if (open && expandable) {
       body = Padding(
@@ -224,7 +219,9 @@ class EvidenceRow extends StatelessWidget {
             lift: 0,
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: isTouch(context) ? 36 : 20),
+              constraints: BoxConstraints(
+                minHeight: isTouch(context) ? 36 : 20,
+              ),
               child: Row(
                 children: [
                   SizedBox(
@@ -261,11 +258,8 @@ class EvidenceRow extends StatelessWidget {
     final SpawnRow r => _RowSpec(
       verb: 'spawn',
       target: r.task,
-      meta: (context, style) => Text(
-        'child ${_shortId(r.childId)}',
-        maxLines: 1,
-        style: style,
-      ),
+      meta: (context, style) =>
+          Text('child ${_shortId(r.childId)}', maxLines: 1, style: style),
     ),
   };
 

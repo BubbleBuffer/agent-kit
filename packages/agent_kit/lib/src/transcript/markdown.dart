@@ -457,7 +457,10 @@ class _MarkdownTextState extends State<MarkdownText> {
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 child: Text(
                   m.text,
-                  style: monoStyle(TypeSpec(size * .85, size * 1.2, 400), t.codeInk),
+                  style: monoStyle(
+                    TypeSpec(size * .85, size * 1.2, 400),
+                    t.codeInk,
+                  ),
                 ),
               ),
             ),

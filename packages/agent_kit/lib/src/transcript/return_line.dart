@@ -73,7 +73,11 @@ class ReturnLine extends StatelessWidget {
               Expanded(child: line),
               if (!compact) ...[const SizedBox(width: 8), pill],
               if (open != null)
-                KitTextButton('Open', color: t.ink, onTap: () => open(result.childId)),
+                KitTextButton(
+                  'Open',
+                  color: t.ink,
+                  onTap: () => open(result.childId),
+                ),
             ],
           ),
         ),

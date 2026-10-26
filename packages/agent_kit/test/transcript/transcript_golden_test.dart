@@ -162,7 +162,11 @@ Widget _states() {
     (12, ActivityGroupView(mixed, initiallyOpen: true)),
     (
       12,
-      FileEditRow(modifiedEdit(undone: true), onReviewDiff: () {}, onUndo: () {}),
+      FileEditRow(
+        modifiedEdit(undone: true),
+        onReviewDiff: () {},
+        onUndo: () {},
+      ),
     ),
     (6, FileEditRow(deleted, onReviewDiff: () {}, onUndo: () {})),
     (28, const SystemLineView(SystemLine(id: 's', text: 'Context compacted'))),

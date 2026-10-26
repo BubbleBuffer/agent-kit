@@ -115,10 +115,7 @@ class _ExecOutputState extends State<ExecOutput> {
       if (bytes != null) Text(formatBytes(bytes), style: metaStyle),
       if (bytes != null && failed) Text('·', style: metaStyle),
       if (failed)
-        Text(
-          'exited $exit',
-          style: metaStyle.copyWith(color: t.dangerInk),
-        ),
+        Text('exited $exit', style: metaStyle.copyWith(color: t.dangerInk)),
     ];
     final showAllLabel = _expanded
         ? 'Show fewer lines'

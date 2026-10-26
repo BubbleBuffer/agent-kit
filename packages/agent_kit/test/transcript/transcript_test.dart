@@ -53,7 +53,10 @@ void main() {
         tester,
         SingleChildScrollView(child: AssistantProse(assistantMessage())),
       );
-      expect(find.textContaining('Both tools hold the last figure'), findsOneWidget);
+      expect(
+        find.textContaining('Both tools hold the last figure'),
+        findsOneWidget,
+      );
       expect(find.byType(CodeBlock), findsOneWidget);
       expect(find.textContaining('self.stale_since.is_some()'), findsOneWidget);
     });
@@ -82,7 +85,10 @@ void main() {
         tester,
         UserBubble(userMessage(), onRefTap: (r) => tapped = r),
       );
-      expect(find.textContaining('The quota bar in the web view'), findsOneWidget);
+      expect(
+        find.textContaining('The quota bar in the web view'),
+        findsOneWidget,
+      );
       await tester.tap(find.text('usage/mod.rs'));
       expect(tapped?.id, 'f1');
     });
@@ -92,9 +98,17 @@ void main() {
         tester,
         Column(
           children: [
-            const SystemLineView(SystemLine(id: 's', text: 'Context compacted')),
+            const SystemLineView(
+              SystemLine(id: 's', text: 'Context compacted'),
+            ),
             for (final tone in NoticeTone.values)
-              NoticeLineView(NoticeLine(id: tone.name, text: 'Tone ${tone.name}', tone: tone)),
+              NoticeLineView(
+                NoticeLine(
+                  id: tone.name,
+                  text: 'Tone ${tone.name}',
+                  tone: tone,
+                ),
+              ),
           ],
         ),
       );
@@ -113,7 +127,10 @@ void main() {
       );
       expect(
         activitySummary(
-          ActivityGroup(id: 'g', rows: [const ToolRow(id: 't', name: 'x')]),
+          ActivityGroup(
+            id: 'g',
+            rows: [const ToolRow(id: 't', name: 'x')],
+          ),
         ),
         'Working · 1 tool call',
       );
@@ -178,6 +195,7 @@ void main() {
     testWidgets('Enter on the focused summary line opens it', (tester) async {
       await pumpTranscript(tester, ActivityGroupView(activityGroup()));
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
       expect(find.text('exec'), findsOneWidget);
@@ -192,7 +210,12 @@ void main() {
           ActivityGroup(
             id: 'g',
             rows: const [
-              ToolRow(id: 'a', name: 'read', kind: ToolKind.read, target: 'a.rs'),
+              ToolRow(
+                id: 'a',
+                name: 'read',
+                kind: ToolKind.read,
+                target: 'a.rs',
+              ),
               ToolRow(
                 id: 'b',
                 name: 'web',
@@ -301,7 +324,10 @@ void main() {
 
     testWidgets('the diff numbers lines and strikes removals', (tester) async {
       final diff = modifiedEdit().diff;
-      await pumpTranscript(tester, SingleChildScrollView(child: DiffView(diff)));
+      await pumpTranscript(
+        tester,
+        SingleChildScrollView(child: DiffView(diff)),
+      );
       expect(find.text('24'), findsOneWidget);
       expect(find.text('28'), findsOneWidget);
       expect(find.text('183'), findsOneWidget);
@@ -416,14 +442,21 @@ void main() {
       addTearDown(controller.dispose);
       await pumpTranscript(
         tester,
-        list(longTranscript(60), controller, anchor: const TranscriptAnchor('u30')),
+        list(
+          longTranscript(60),
+          controller,
+          anchor: const TranscriptAnchor('u30'),
+        ),
       );
       await tester.pumpAndSettle();
       expect(controller.following, isFalse);
       final anchor = controller.anchor!;
       expect(anchor.itemId, 'u30');
       expect(anchor.offset.abs(), lessThan(2));
-      expect(find.text('Question number 30 about the quota bar.'), findsOneWidget);
+      expect(
+        find.text('Question number 30 about the quota bar.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('renders every item kind', (tester) async {

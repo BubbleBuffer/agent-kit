@@ -60,11 +60,8 @@ pub fn is_stale(&self) -> bool {
 AssistantMessage assistantMessage() =>
     const AssistantMessage(id: 'm1', markdown: proseMarkdown);
 
-ToolOutput failingOutput() => ToolOutput(
-  text: execOutput.join('\n'),
-  totalBytes: 2150,
-  totalLines: 20,
-);
+ToolOutput failingOutput() =>
+    ToolOutput(text: execOutput.join('\n'), totalBytes: 2150, totalLines: 20);
 
 ToolRow execRow({WorkState state = WorkState.failed, int? exitCode = 101}) =>
     ToolRow(

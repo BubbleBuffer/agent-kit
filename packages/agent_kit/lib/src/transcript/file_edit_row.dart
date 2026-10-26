@@ -57,13 +57,11 @@ class _FileEditRowState extends State<FileEditRow> {
     };
     final path = tailPath(diff.path);
     final name = compact ? path : '$verb $path';
-    final nameStyle = ts(
-      const TypeSpec(13, 16, 600),
-      edit.undone ? t.faint : t.ink,
-    ).copyWith(
-      decoration: edit.undone ? TextDecoration.lineThrough : null,
-      decorationColor: t.faint,
-    );
+    final nameStyle =
+        ts(const TypeSpec(13, 16, 600), edit.undone ? t.faint : t.ink).copyWith(
+          decoration: edit.undone ? TextDecoration.lineThrough : null,
+          decorationColor: t.faint,
+        );
     final primary = created
         ? (widget.onOpen == null
               ? null
@@ -163,7 +161,7 @@ class _FileEditRowState extends State<FileEditRow> {
                       ),
                     )
                   else ...[
-                    if (primary != null) primary,
+                    ?primary,
                     if (edit.undoable && widget.onUndo != null)
                       KitTextButton('Undo', color: t.ink, onTap: widget.onUndo),
                   ],

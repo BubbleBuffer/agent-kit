@@ -60,7 +60,11 @@ class TranscriptSpecimens extends StatelessWidget {
           for (final tone in NoticeTone.values) ...[
             const SizedBox(height: 8),
             NoticeLineView(
-              NoticeLine(id: tone.name, text: 'A ${tone.name} notice', tone: tone),
+              NoticeLine(
+                id: tone.name,
+                text: 'A ${tone.name} notice',
+                tone: tone,
+              ),
             ),
           ],
           const _Sub('Activity group: collapsed'),
@@ -75,7 +79,9 @@ class TranscriptSpecimens extends StatelessWidget {
           ),
           const _Sub('Activity group: running, thinking streaming'),
           ActivityGroupView(_running(), initiallyOpen: true),
-          const _Sub('Activity group: thinking text open, failed and cancelled rows'),
+          const _Sub(
+            'Activity group: thinking text open, failed and cancelled rows',
+          ),
           ActivityGroupView(
             _activity(),
             initiallyOpen: true,

@@ -68,10 +68,7 @@ class UserBubble extends StatelessWidget {
                     horizontal: 14,
                     vertical: 9,
                   ),
-                  child: Text(
-                    message.text,
-                    style: ts(t.typeScale.body, t.ink),
-                  ),
+                  child: Text(message.text, style: ts(t.typeScale.body, t.ink)),
                 ),
               ),
             );
