@@ -12,11 +12,30 @@ import '../components/transcript.dart';
 import '../components/workspace.dart';
 
 class ComponentsScene extends StatelessWidget {
-  const ComponentsScene({super.key});
+  const ComponentsScene({super.key, this.tall = false});
+
+  /// Whether to size to the content instead of scrolling inside the window.
+  final bool tall;
 
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
+    final sheet = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Heading('StatusMark'),
+        const _StatusSpecimens(),
+        const TranscriptSpecimens(),
+        SizedBox(height: t.spacing.xl),
+        const ComposerSpecimens(),
+        SizedBox(height: t.spacing.xl),
+        const _Heading('Workspace'),
+        const WorkspaceSpecimens(),
+        SizedBox(height: t.spacing.xl),
+        const _Heading('Chrome'),
+        const ChromeSpecimens(),
+      ],
+    );
     return ColoredBox(
       color: t.canvas,
       child: Padding(
@@ -28,50 +47,20 @@ class ComponentsScene extends StatelessWidget {
             border: Border.all(color: t.seam),
             boxShadow: t.colors.stack,
           ),
-          child: SizedBox.expand(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(t.spacing.xl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _Heading('StatusMark'),
-                  const _StatusSpecimens(),
-                  const TranscriptSpecimens(),
-                  SizedBox(height: t.spacing.xl),
-                  const ComposerSpecimens(),
-                  SizedBox(height: t.spacing.xl),
-                  const _Heading('Workspace'),
-                  const WorkspaceSpecimens(),
-                  SizedBox(height: t.spacing.xl),
-                  const _Heading('Chrome'),
-                  const ChromeSpecimens(),
-                  SizedBox(height: t.spacing.xl),
-                  const _Heading('Not built yet'),
-                  for (final line in _planned)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: t.spacing.xs),
-                      child: Text(
-                        line,
-                        style: ts(t.typeScale.ui, t.muted, weight: 400),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
+          child: tall
+              ? Padding(padding: EdgeInsets.all(t.spacing.xl), child: sheet)
+              : SizedBox.expand(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(t.spacing.xl),
+                    child: sheet,
+                  ),
+                ),
         ),
       ),
     );
   }
 }
 
-const _planned = [
-  'transcript: items, activity and evidence rows, edits, diff, plan',
-  'composer: composer, approval bar, queue row, picks',
-  'chrome: rail, header, crew strip, ledger',
-  'workspace: split tree, panes, docking, edge tabs',
-  'compositions: AgentWorkbench, AgentChatPane',
-];
 
 class _Heading extends StatelessWidget {
   const _Heading(this.text);

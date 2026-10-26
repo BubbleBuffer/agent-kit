@@ -60,3 +60,7 @@ Mockup parts: `.approval`, `.queue`, `.composer`, `.cmp-chip`, `.seg` and the
 - Pick menus use the workspace in place of the mockup's profile.
 - Send is dimmed while the field is empty (SPEC.md 7.10), where the mockup
   draws it enabled.
+
+## Hiding what a backend lacks
+
+`QueuedRow.hideUnavailable` omits the actions whose callback is null; `AgentComposer.showModelPick` and `showModeToggle` hide those controls. `ChatHeader.hideEmptyMenu` drops the menu button with no items. `AgentChatPane` sets them from `KitCapabilities`. The approval bar follows its own width: actions sit beside the request when there is room, else under it.

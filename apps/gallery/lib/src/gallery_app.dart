@@ -66,7 +66,7 @@ class _Shell extends StatelessWidget {
           Expanded(
             child: SceneFrame(
               scene: controller.scene,
-              snapshot: controller.snapshot,
+              controller: controller,
               width: controller.width,
               brightness: controller.brightness,
             ),

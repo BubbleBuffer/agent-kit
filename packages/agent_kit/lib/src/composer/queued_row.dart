@@ -23,6 +23,7 @@ class QueuedRow extends StatefulWidget {
     this.onEdit,
     this.onRemove,
     this.initiallyEditing = false,
+    this.hideUnavailable = false,
   });
 
   /// The message (its `id` goes back through the callbacks).
@@ -39,6 +40,10 @@ class QueuedRow extends StatefulWidget {
 
   /// Starts as the inline field (the gallery's specimen of it).
   final bool initiallyEditing;
+
+  /// Leaves out an action whose callback is null instead of drawing it
+  /// disabled (a backend without that capability).
+  final bool hideUnavailable;
 
   @override
   State<QueuedRow> createState() => _QueuedRowState();
@@ -97,6 +102,8 @@ class _QueuedRowState extends State<QueuedRow> {
     );
   }
 
+  bool _show(Object? callback) => callback != null || !widget.hideUnavailable;
+
   Widget _row(BbTheme t, SizeClass size) {
     const buttonHeight = 24.0;
     final touch = isTouch(t);
@@ -132,38 +139,44 @@ class _QueuedRowState extends State<QueuedRow> {
               ).copyWith(fontSize: 13),
             ),
           ),
-          const SizedBox(width: 8),
-          KitTip(
-            message: 'Deliver now as a steer',
-            child: KitButton(
-              label: 'Send now',
+          if (_show(widget.onSendNow)) ...[
+            const SizedBox(width: 8),
+            KitTip(
+              message: 'Deliver now as a steer',
+              child: KitButton(
+                label: 'Send now',
+                kind: KitButtonKind.quiet,
+                icon: ComposerGlyphs.sendHorizontal,
+                height: touch ? 40 : buttonHeight,
+                fontSize: 13,
+                hoverBackground: t.colors.bgSelectedBlock,
+                onTap: widget.onSendNow == null
+                    ? null
+                    : () => widget.onSendNow!(widget.input),
+              ),
+            ),
+          ],
+          if (_show(widget.onEdit)) ...[
+            const SizedBox(width: 8),
+            KitButton(
+              label: 'Edit',
               kind: KitButtonKind.quiet,
-              icon: ComposerGlyphs.sendHorizontal,
               height: touch ? 40 : buttonHeight,
               fontSize: 13,
-              hoverBackground: t.colors.bgSelectedBlock,
-              onTap: widget.onSendNow == null
-                  ? null
-                  : () => widget.onSendNow!(widget.input),
+              onTap: widget.onEdit == null ? null : _startEdit,
             ),
-          ),
-          const SizedBox(width: 8),
-          KitButton(
-            label: 'Edit',
-            kind: KitButtonKind.quiet,
-            height: touch ? 40 : buttonHeight,
-            fontSize: 13,
-            onTap: widget.onEdit == null ? null : _startEdit,
-          ),
-          const SizedBox(width: 8),
-          KitIconButton(
-            ComposerGlyphs.x,
-            label: 'Remove',
-            size: touch ? 40 : buttonHeight,
-            onTap: widget.onRemove == null
-                ? null
-                : () => widget.onRemove!(widget.input),
-          ),
+          ],
+          if (_show(widget.onRemove)) ...[
+            const SizedBox(width: 8),
+            KitIconButton(
+              ComposerGlyphs.x,
+              label: 'Remove',
+              size: touch ? 40 : buttonHeight,
+              onTap: widget.onRemove == null
+                  ? null
+                  : () => widget.onRemove!(widget.input),
+            ),
+          ],
         ],
       ),
     );

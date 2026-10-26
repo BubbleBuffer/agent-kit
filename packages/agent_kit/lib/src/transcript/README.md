@@ -43,3 +43,7 @@ callbacks, never a backend.
 Add a widget here as its own file, export it from `transcript.dart`, and add
 a gallery specimen (`apps/gallery/lib/components/transcript.dart`) and a golden
 (see `docs/agent-kit.md`).
+
+## Plan and inserts
+
+`TranscriptList.plan` draws the snapshot plan as the first row (the `leading` slot stays for notices). `inserts` places extra rows (the resolved-question answer lines) after a given item id; unknown ids go to the end.

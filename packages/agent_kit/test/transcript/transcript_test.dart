@@ -4,6 +4,7 @@
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -133,6 +134,19 @@ void main() {
         ),
         'Working · 1 tool call',
       );
+    });
+
+    testWidgets('Enter on the focused summary expands it', (tester) async {
+      await pumpTranscript(tester, ActivityGroupView(activityGroup()));
+      expect(find.text('exec'), findsNothing);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(find.text('exec'), findsWidgets);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(find.text('exec'), findsNothing);
     });
 
     testWidgets('opens into rows, one at a time', (tester) async {
@@ -473,6 +487,37 @@ void main() {
       expect(find.text('Heads up'), findsOneWidget);
       expect(find.text('Interrupted by a restart'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('draws the plan, and inserts after their item', (tester) async {
+      final items = <TranscriptItem>[
+        userMessage(),
+        assistantMessage(),
+        const SystemLine(id: 's', text: 'Context compacted'),
+      ];
+      await pumpTranscript(
+        tester,
+        TranscriptList(
+          items: items,
+          plan: planItems,
+          inserts: [
+            TranscriptInsert(
+              id: 'ins-1',
+              afterItemId: items[1].id,
+              child: const Text('inserted answers'),
+            ),
+            const TranscriptInsert(id: 'ins-2', child: Text('at the end')),
+          ],
+        ),
+        height: 3000,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Plan'), findsOneWidget);
+      final ins = tester.getTopLeft(find.text('inserted answers')).dy;
+      final sys = tester.getTopLeft(find.text('Context compacted')).dy;
+      final end = tester.getTopLeft(find.text('at the end')).dy;
+      expect(ins, lessThan(sys));
+      expect(end, greaterThan(sys));
     });
   });
 }

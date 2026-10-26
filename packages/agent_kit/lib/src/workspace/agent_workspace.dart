@@ -492,6 +492,19 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
             ? null
             : (layout.leaf(drag.leafId)?.tabs.length == 1 ? drag.leafId : null);
 
+        // Only the last pane that can still split shows +; a new pane goes
+        // beside it (right, or below in a column), so it needs room for two.
+        String? adder;
+        for (final leaf in layout.leaves) {
+          final r = max == null ? geo.leaves[leaf.id] : geo.bounds;
+          if (r == null || (max != null && max != leaf.id)) continue;
+          final parent = layout.parentOf(leaf.id);
+          final below = parent != null && parent.axis == SplitAxis.column;
+          final need =
+              2 * (below ? metrics.minHeight : metrics.minWidth) +
+              metrics.divider;
+          if ((below ? r.height : r.width) >= need) adder = leaf.id;
+        }
         final frames = <Widget>[];
         final contents = <Widget>[];
         for (final leaf in layout.leaves) {
@@ -518,6 +531,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                       layout,
                       leaf,
                       max == leaf.id,
+                      adder == leaf.id,
                     ),
                   ),
                 ),
@@ -587,8 +601,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                   label: _nodeLabel(node),
                   icon: _nodeIcon(node),
                   vertical: e.axis.isRow,
-                  enabled: !e.auto,
-                  onTap: () => _c.restore(e.nodeId),
+                  enabled: true,
+                  onTap: () => _c.unfold(e.nodeId, geo.nodes.keys.toSet()),
                 ),
               ),
             );
@@ -681,6 +695,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
     WorkspaceLayout layout,
     WorkspaceLeaf leaf,
     bool maximised,
+    bool showAdd,
   ) {
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -693,7 +708,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
         children: [
           SizedBox(
             height: _headerHeight,
-            child: _buildHeader(context, t, leaf, maximised),
+            child: _buildHeader(context, t, leaf, maximised, showAdd),
           ),
         ],
       ),
@@ -705,6 +720,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
     BbTheme t,
     WorkspaceLeaf leaf,
     bool maximised,
+    bool showAdd,
   ) {
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -745,14 +761,15 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                 ),
               ),
             ),
-            Builder(
-              builder: (context) => _HeadButton(
-                key: ValueKey('wp-add-${leaf.id}'),
-                icon: LucideIcons.plus,
-                label: 'Add pane',
-                onTap: () => _openMenu(leaf.id, globalRectOf(context)),
+            if (showAdd)
+              Builder(
+                builder: (context) => _HeadButton(
+                  key: ValueKey('wp-add-${leaf.id}'),
+                  icon: LucideIcons.plus,
+                  label: 'Add pane',
+                  onTap: () => _openMenu(leaf.id, globalRectOf(context)),
+                ),
               ),
-            ),
             _HeadButton(
               key: ValueKey('wp-max-${leaf.id}'),
               icon: maximised ? LucideIcons.minimize2 : LucideIcons.maximize2,

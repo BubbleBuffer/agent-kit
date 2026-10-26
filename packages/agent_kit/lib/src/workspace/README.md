@@ -24,3 +24,7 @@ gallery specimen and a golden (see `docs/agent-kit.md`).
   `paneBuilder` keyed by tab kind and id, a `kinds` list for the + menu, and
   `open` for the compact sheet.
 
+
+## Edge tabs and the add button
+
+An edge tab of an auto-folded pane is a button: tapping it unfolds the pane (`WorkspaceController.unfold`), folding the smallest visible sibling instead. The `+` shows only on the last pane (tree order) that is big enough to split.

@@ -1,0 +1,409 @@
+// AgentWorkbench: the whole agent app in one widget.
+//
+// The session rail (the chat list comes from the backend), the chat pane for
+// the selected chat, the crew ledger or crew strip, and an optional workspace
+// beside the chat. The layout follows the width the widget is given:
+//
+//  * the whole width picks the rail (a column, or a sliding screen when
+//    compact) and whether the crew shows as a ledger beside the transcript
+//    (expanded, no workspace) or as a strip under the header;
+//  * the width beside the rail picks how the workspace sits: next to the chat
+//    when expanded (the chat takes 44%, 444 to 584 px), a narrower column when
+//    medium (40%, 240 to 420 px), a full-screen sheet over the chat when
+//    compact.
+//
+// What the host supplies: per-model usage, the rail's detail text, the
+// workspace's panes, and the actions the kit cannot know (opening a file).
+
+import 'dart:math' as math;
+
+import 'package:agent_kit_core/agent_kit_core.dart';
+import 'package:bb_ui/bb_ui.dart';
+import 'package:flutter/widgets.dart';
+
+import '../chrome/chrome.dart';
+import '../composer/composer.dart';
+import '../composer/composer_parts.dart' show KitButton;
+import '../theme/theme.dart';
+import '../transcript/transcript.dart';
+import '../workspace/workspace.dart';
+import 'agent_chat_pane.dart';
+
+/// The agent app: rail, chat, crew and workspace on one [backend].
+class AgentWorkbench extends StatefulWidget {
+  /// Creates the workbench.
+  const AgentWorkbench({
+    super.key,
+    required this.backend,
+    this.initialChatId,
+    this.workspaceName = '',
+    this.initials = '',
+    this.now,
+    this.modelUsage = const [],
+    this.detailFor,
+    this.railController,
+    this.workspaceController,
+    this.workspaceKinds = const [],
+    this.workspacePaneBuilder,
+    this.initialWorkspaceShown = false,
+    this.onNewChat,
+    this.onSearch,
+    this.onSwitchWorkspace,
+    this.onSettings,
+    this.transcriptActions = const TranscriptActions(),
+    this.mentions,
+    this.onReviewApproval,
+    this.onOpenAgent,
+    this.onOpenJob,
+  });
+
+  /// Where the chats live.
+  final AgentBackend backend;
+
+  /// The chat to open first; the newest chat when null.
+  final String? initialChatId;
+
+  /// The project switcher's label in the rail.
+  final String workspaceName;
+
+  /// The avatar's letters.
+  final String initials;
+
+  /// Replaces the wall clock for ages (tests, the gallery).
+  final DateTime? now;
+
+  /// Tokens per model, for the ledger's "By model" bars. The kit cannot know
+  /// them from a backend, so the host supplies them.
+  final List<ModelUsage> modelUsage;
+
+  /// The text after a rail row's status label ("edit approval").
+  final String? Function(ChatSummary chat)? detailFor;
+
+  /// Hides and shows the rail from outside; the workbench makes one if null.
+  final RailController? railController;
+
+  /// The workspace's layout. Without it, and without
+  /// [workspacePaneBuilder], the workbench has no workspace.
+  final WorkspaceController? workspaceController;
+
+  /// The kinds the workspace's + menu lists.
+  final List<WorkspaceKind> workspaceKinds;
+
+  /// What each workspace pane shows.
+  final WorkspacePaneBuilder? workspacePaneBuilder;
+
+  /// Whether the workspace starts open.
+  final bool initialWorkspaceShown;
+
+  /// The rail's new-chat button. By default the workbench creates a chat
+  /// through the backend and opens it.
+  final VoidCallback? onNewChat;
+  final VoidCallback? onSearch;
+  final VoidCallback? onSwitchWorkspace;
+  final VoidCallback? onSettings;
+
+  /// What the transcript's rows open.
+  final TranscriptActions transcriptActions;
+
+  /// Where `@` mentions in the composer come from.
+  final MentionSource? mentions;
+
+  /// "Review diff" on an approval.
+  final ValueChanged<Approval>? onReviewApproval;
+
+  /// A crew chip was opened.
+  final ValueChanged<ChildAgent>? onOpenAgent;
+  final ValueChanged<BackgroundJob>? onOpenJob;
+
+  @override
+  State<AgentWorkbench> createState() => _AgentWorkbenchState();
+}
+
+class _AgentWorkbenchState extends State<AgentWorkbench> {
+  final GlobalKey _sheetKey = GlobalKey(debugLabel: 'workbench sheet');
+  final GlobalKey _workspaceKey = GlobalKey(debugLabel: 'workbench workspace');
+  RailController? _ownRail;
+  List<ChatSummary> _chats = const [];
+  String? _selected;
+  bool _listed = false;
+  String? _listError;
+  late bool _workspaceShown = widget.initialWorkspaceShown;
+  int _listing = 0;
+
+  RailController get _rail => widget.railController ?? (_ownRail ??= RailController());
+
+  bool get _hasWorkspace =>
+      widget.workspaceController != null &&
+      widget.workspacePaneBuilder != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.initialChatId;
+    _refresh();
+  }
+
+  @override
+  void didUpdateWidget(AgentWorkbench old) {
+    super.didUpdateWidget(old);
+    if (old.backend != widget.backend) {
+      _selected = widget.initialChatId;
+      _chats = const [];
+      _listed = false;
+      _refresh();
+    } else if (old.initialChatId != widget.initialChatId &&
+        widget.initialChatId != null) {
+      _selected = widget.initialChatId;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ownRail?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    final ticket = ++_listing;
+    final backend = widget.backend;
+    try {
+      final page = await backend.listChats();
+      if (!mounted || ticket != _listing || backend != widget.backend) return;
+      setState(() {
+        _chats = page.chats;
+        _listed = true;
+        _listError = null;
+        _selected ??= page.chats.isEmpty ? null : page.chats.first.id;
+      });
+    } catch (error) {
+      if (!mounted || ticket != _listing) return;
+      setState(() {
+        _listed = true;
+        _listError = error is KitError ? error.message : 'Something went wrong.';
+      });
+    }
+  }
+
+  void _select(String id) {
+    if (id == _selected) return;
+    setState(() => _selected = id);
+  }
+
+  void _onSnapshot(ChatSnapshot snap) {
+    // Keep the rail's row in step with the open chat.
+    final row = _chats.where((c) => c.id == snap.chatId).firstOrNull;
+    final now = ChatSummary.of(snap);
+    if (row == null ||
+        row.status != now.status ||
+        row.title != now.title ||
+        row.runningChildren != now.runningChildren) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _refresh();
+      });
+    }
+  }
+
+  Future<void> _newChat() async {
+    final custom = widget.onNewChat;
+    if (custom != null) {
+      custom();
+      return;
+    }
+    try {
+      final chat = await widget.backend.createChat();
+      if (!mounted) return;
+      setState(() => _selected = chat.id);
+      _refresh();
+    } catch (_) {
+      // The rail stays as it was.
+    }
+  }
+
+  void _toggleWorkspace() => setState(() => _workspaceShown = !_workspaceShown);
+
+  // ---------------------------------------------------------------- build
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.bb;
+    final clock = widget.now ?? DateTime.now();
+    return ColoredBox(
+      color: t.canvas,
+      child: RailLayout(
+        controller: _rail,
+        rail: SessionRail(
+          workspaceName: widget.workspaceName,
+          groups: groupSessions(_chats, clock),
+          selectedId: _selected,
+          detailFor: widget.detailFor,
+          now: clock,
+          initials: widget.initials,
+          onSelect: (chat) => _select(chat.id),
+          onNewChat: _newChat,
+          onSearch: widget.onSearch,
+          onSwitchWorkspace: widget.onSwitchWorkspace,
+          onSettings: widget.onSettings,
+        ),
+        child: Builder(
+          builder: (context) {
+            final whole =
+                RailScope.maybeOf(context)?.sizeClass ?? SizeClass.expanded;
+            return SizeClassBuilder(
+              builder: (context, area) => LayoutBuilder(
+                builder: (context, box) =>
+                    _area(context, t, whole, area, box.maxWidth),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _area(
+    BuildContext context,
+    BbTheme t,
+    SizeClass whole,
+    SizeClass area,
+    double width,
+  ) {
+    final shown = _hasWorkspace && _workspaceShown;
+    final ledger = whole.isExpanded && !shown;
+    final sheet = _sheet(context, t, whole, ledger);
+    if (!_hasWorkspace) return sheet;
+    final workspace = KeyedSubtree(
+      key: _workspaceKey,
+      child: AgentWorkspace(
+        controller: widget.workspaceController!,
+        kinds: widget.workspaceKinds,
+        paneBuilder: widget.workspacePaneBuilder!,
+        open: shown,
+        onClose: _toggleWorkspace,
+      ),
+    );
+    if (area.isCompact) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [sheet, Positioned.fill(child: workspace)],
+      );
+    }
+    if (!shown) return sheet;
+    final padded = Padding(
+      padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+      child: workspace,
+    );
+    if (area.isMedium) {
+      final w = math.min(420.0, math.max(240.0, width * .4));
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: sheet),
+          SizedBox(width: w, child: padded),
+        ],
+      );
+    }
+    final w = math.min(584.0, math.max(444.0, width * .44));
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: w, child: sheet),
+        Expanded(child: padded),
+      ],
+    );
+  }
+
+  Widget _sheet(BuildContext context, BbTheme t, SizeClass whole, bool ledger) {
+    final selected = _selected;
+    final Widget content;
+    if (selected == null) {
+      content = _empty(t);
+    } else {
+      content = AgentChatPane(
+        backend: widget.backend,
+        chatId: selected,
+        now: widget.now,
+        showCrewStrip: !ledger,
+        sideBuilder: ledger ? _ledger : null,
+        workspaceShown: _hasWorkspace && _workspaceShown,
+        onToggleWorkspace: _hasWorkspace ? _toggleWorkspace : null,
+        onSnapshot: _onSnapshot,
+        onOpenChat: (id) {
+          _select(id);
+          _refresh();
+        },
+        onChatsChanged: _refresh,
+        transcriptActions: widget.transcriptActions,
+        mentions: widget.mentions,
+        onReviewApproval: widget.onReviewApproval,
+        onOpenAgent: widget.onOpenAgent,
+        onOpenJob: widget.onOpenJob,
+      );
+    }
+    if (whole.isCompact) {
+      return KeyedSubtree(
+        key: _sheetKey,
+        child: ColoredBox(color: t.surface, child: content),
+      );
+    }
+    final radius = BorderRadius.vertical(top: Radius.circular(t.radii.sheet));
+    return KeyedSubtree(
+      key: _sheetKey,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: t.surface,
+            borderRadius: radius,
+            boxShadow: t.colors.stack,
+          ),
+          child: ClipRRect(borderRadius: radius, child: content),
+        ),
+      ),
+    );
+  }
+
+  Widget? _ledger(BuildContext context, ChatSnapshot snap) {
+    final clock = widget.now;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CrewLedger(
+          agents: snap.children,
+          jobs: snap.jobs,
+          now: clock,
+          onOpenAgent: widget.onOpenAgent,
+          onOpenJob: widget.onOpenJob,
+        ),
+        if (widget.modelUsage.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          UsageByModel(models: widget.modelUsage, usage: snap.usage),
+        ],
+      ],
+    );
+  }
+
+  Widget _empty(BbTheme t) {
+    if (!_listed) {
+      return Center(
+        child: Text('Loading…', style: ts(t.typeScale.ui, t.faint)),
+      );
+    }
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _listError ?? 'No chats yet',
+            style: ts(t.typeScale.ui, t.muted),
+          ),
+          const SizedBox(height: 12),
+          if (_listError == null)
+            KitButton(label: 'New chat', onTap: _newChat)
+          else
+            KitButton(label: 'Retry', onTap: _refresh),
+        ],
+      ),
+    );
+  }
+}

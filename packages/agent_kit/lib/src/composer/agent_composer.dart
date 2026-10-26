@@ -84,6 +84,8 @@ class AgentComposer extends StatefulWidget {
     this.mentions,
     this.mode = ComposerMode.steer,
     this.onModeChanged,
+    this.showModelPick = true,
+    this.showModeToggle = true,
     this.controller,
     this.focusNode,
     this.autofocus = false,
@@ -121,6 +123,15 @@ class AgentComposer extends StatefulWidget {
   /// The Steer/Queue switch's value.
   final ComposerMode mode;
   final ValueChanged<ComposerMode>? onModeChanged;
+
+  /// Whether the model pick is drawn (off for a backend that cannot switch
+  /// models).
+  final bool showModelPick;
+
+  /// Whether the Steer/Queue switch is drawn while running (off for a backend
+  /// that cannot steer: a message then always queues). [mode] should be
+  /// [ComposerMode.queue] with it off.
+  final bool showModeToggle;
 
   /// The text, if the host wants to hold a draft. Created when null.
   final TextEditingController? controller;
@@ -433,17 +444,18 @@ class _AgentComposerState extends State<AgentComposer> {
         Expanded(
           child: Row(
             children: [
-              Flexible(
-                child: ComposerPick(
-                  title: 'Model',
-                  choices: widget.models,
-                  selectedId: widget.modelId,
-                  placeholder: 'Model',
-                  onSelected: (c) => widget.onModelChanged?.call(c),
+              if (widget.showModelPick)
+                Flexible(
+                  child: ComposerPick(
+                    title: 'Model',
+                    choices: widget.models,
+                    selectedId: widget.modelId,
+                    placeholder: 'Model',
+                    onSelected: (c) => widget.onModelChanged?.call(c),
+                  ),
                 ),
-              ),
               if (!tight && widget.workspaces.isNotEmpty) ...[
-                const SizedBox(width: 6),
+                if (widget.showModelPick) const SizedBox(width: 6),
                 ComposerPick(
                   title: 'Workspace',
                   choices: widget.workspaces,
@@ -456,8 +468,10 @@ class _AgentComposerState extends State<AgentComposer> {
           ),
         ),
         if (widget.running) ...[
-          ComposerModeToggle(mode: _mode, onChanged: _setMode),
-          const SizedBox(width: 6),
+          if (widget.showModeToggle) ...[
+            ComposerModeToggle(mode: _mode, onChanged: _setMode),
+            const SizedBox(width: 6),
+          ],
           KitButton(
             label: 'Stop',
             icon: ComposerGlyphs.square,
