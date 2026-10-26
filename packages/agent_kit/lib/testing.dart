@@ -74,12 +74,15 @@ String? _packageRoot(String package) {
   while (true) {
     final config = File('${dir.path}/.dart_tool/package_config.json');
     if (config.existsSync()) {
-      final json = jsonDecode(config.readAsStringSync()) as Map<String, Object?>;
+      final json =
+          jsonDecode(config.readAsStringSync()) as Map<String, Object?>;
       for (final entry in json['packages']! as List<Object?>) {
         final p = entry! as Map<String, Object?>;
         if (p['name'] == package) {
           var root = config.uri.resolve(p['rootUri']! as String);
-          if (!root.path.endsWith('/')) root = root.replace(path: '${root.path}/');
+          if (!root.path.endsWith('/')) {
+            root = root.replace(path: '${root.path}/');
+          }
           return File.fromUri(root.resolve('pubspec.yaml')).parent.path;
         }
       }
