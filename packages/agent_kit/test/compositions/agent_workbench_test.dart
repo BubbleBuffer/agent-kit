@@ -5,6 +5,7 @@
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/fake.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -56,6 +57,9 @@ void main() {
     );
     // ignore: avoid_print
     print('DIAG ${hit.path.take(14).map((e) => e.target.runtimeType).join(' ')}');
+    final vp = tester.renderObject<RenderViewport>(find.byType(Viewport).first);
+    // ignore: avoid_print
+    print('DIAG vp ${vp.size} ${vp.offset.pixels} ${vp.firstChild?.geometry} ${vp.firstChild?.runtimeType}');
     await tester.tap(find.byKey(const ValueKey('rail-row-idle')));
     await _settle(tester);
     expect(find.text('Needs approval'), findsNothing);

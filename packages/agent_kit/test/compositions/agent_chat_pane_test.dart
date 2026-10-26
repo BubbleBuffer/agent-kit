@@ -197,8 +197,10 @@ void main() {
     testWidgets('draws the snapshot plan', (tester) async {
       final s = await playedBackend(tester);
       await pumpApp(tester, _pane(s.backend, s.clock));
-      // ignore: avoid_print
-      print('DIAG plan ${s.backend.stateOf(quotaChatId)?.plan.length} ${tester.widget<TranscriptList>(find.byType(TranscriptList)).plan.length}');
+      for (var i = 0; i < 8; i++) {
+        await tester.drag(find.byType(TranscriptList), const Offset(0, 2000));
+        await tester.pump();
+      }
       expect(find.text('Plan'), findsOneWidget);
     });
   });
