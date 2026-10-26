@@ -865,7 +865,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
         children: [
           bar,
           if (!compact) const SizedBox(height: 6),
-          Expanded(child: pane),
+          Expanded(child: SizedBox(width: double.infinity, child: pane)),
         ],
       ),
     );
