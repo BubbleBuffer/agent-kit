@@ -1,0 +1,101 @@
+// One transcript item as a widget, and the callbacks the transcript offers
+// its host. Widgets take `agent_kit_core` items and callbacks; they never
+// reach a backend.
+
+import 'package:agent_kit_core/agent_kit_core.dart'
+    show
+        ActivityGroup,
+        AssistantMessage,
+        ChildResult,
+        FileEdit,
+        KitRef,
+        NoticeLine,
+        SystemLine,
+        ToolRow,
+        TranscriptItem,
+        UserMessage;
+import 'package:flutter/widgets.dart';
+
+import 'activity_group.dart';
+import 'file_edit_row.dart';
+import 'markdown.dart';
+import 'messages.dart';
+import 'return_line.dart';
+
+/// What the host does when the user acts on a transcript item. Every
+/// callback is optional; a control whose callback is missing is not drawn.
+@immutable
+class TranscriptActions {
+  const TranscriptActions({
+    this.markdown = const LeanMarkdownRenderer(),
+    this.onReviewDiff,
+    this.onUndo,
+    this.onOpenFile,
+    this.onOpenOutput,
+    this.onOpenChild,
+    this.onLinkTap,
+    this.onRefTap,
+  });
+
+  /// Renders assistant prose.
+  final MarkdownRenderer markdown;
+
+  /// "Review diff" on an edit row.
+  final ValueChanged<FileEdit>? onReviewDiff;
+
+  /// "Undo" on an edit row.
+  final ValueChanged<FileEdit>? onUndo;
+
+  /// "Open" on a created file's row.
+  final ValueChanged<FileEdit>? onOpenFile;
+
+  /// "Open full output" on an exec row.
+  final ValueChanged<ToolRow>? onOpenOutput;
+
+  /// A spawn row or a return line was opened; gets the child's id.
+  final ValueChanged<String>? onOpenChild;
+
+  /// A markdown link was tapped.
+  final ValueChanged<String>? onLinkTap;
+
+  /// A context chip of a user message was tapped.
+  final ValueChanged<KitRef>? onRefTap;
+}
+
+/// The widget for [item].
+class TranscriptItemView extends StatelessWidget {
+  const TranscriptItemView(
+    this.item, {
+    super.key,
+    this.actions = const TranscriptActions(),
+  });
+
+  final TranscriptItem item;
+  final TranscriptActions actions;
+
+  @override
+  Widget build(BuildContext context) => switch (item) {
+    final UserMessage m => UserBubble(m, onRefTap: actions.onRefTap),
+    final AssistantMessage m => AssistantProse(
+      m,
+      renderer: actions.markdown,
+      onLinkTap: actions.onLinkTap,
+    ),
+    final SystemLine l => SystemLineView(l),
+    final NoticeLine l => NoticeLineView(l),
+    final ActivityGroup g => ActivityGroupView(
+      g,
+      onOpenOutput: actions.onOpenOutput,
+      onOpenChild: actions.onOpenChild,
+    ),
+    final FileEdit e => FileEditRow(
+      e,
+      onReviewDiff: actions.onReviewDiff == null
+          ? null
+          : () => actions.onReviewDiff!(e),
+      onUndo: actions.onUndo == null ? null : () => actions.onUndo!(e),
+      onOpen: actions.onOpenFile == null ? null : () => actions.onOpenFile!(e),
+    ),
+    final ChildResult r => ReturnLine(r, onOpen: actions.onOpenChild),
+  };
+}

@@ -1,13 +1,45 @@
 # transcript
 
-Everything drawn inside the transcript sheet: user and assistant messages,
-the activity group and its evidence rows (think, read, grep, exec, spawn), the
-output block with its 12-line clamp, file-edit rows, the diff view, child
-results, notices and the plan list.
+Everything drawn inside the transcript sheet. Input is `ChatSnapshot.items`
+(and `ChatSnapshot.plan`) from `agent_kit_core`; widgets take those models and
+callbacks, never a backend.
 
-Mockup parts: `.prose`, `.msg`, `.activity` and `.ev-*` rows, `.out`,
-`.edit`, `.diff`, `.plan-list` in `app.css`; the transcript builder in
-`app.js`. Input is `ChatSnapshot.items` from `agent_kit_core`.
+| File | Widgets | Mockup |
+|---|---|---|
+| `transcript_list.dart` | `TranscriptList`, `TranscriptController`, `TranscriptAnchor`, `JumpToLatestButton` | `.transcript`, `.scroll` |
+| `transcript_item.dart` | `TranscriptItemView` (dispatch on the item), `TranscriptActions` (the host's callbacks and markdown renderer) | |
+| `messages.dart` | `UserBubble`, `AssistantProse`, `SystemLineView`, `NoticeLineView` | `.turn-user`, `.bubble`, `.prose` |
+| `markdown.dart`, `code_block.dart` | `MarkdownRenderer` (interface), `LeanMarkdownRenderer` (default), `MarkdownText`, `CodeBlock` | `.prose`, `pre.code` |
+| `activity_group.dart` | `ActivityGroupView`, `EvidenceRow`, `activitySummary` | `.activity`, `.ev-*` |
+| `exec_output.dart` | `ExecOutput` (12-line clamp with fade, footer, callbacks) | `pre.out`, `.ev-foot` |
+| `file_edit_row.dart`, `diff_view.dart` | `FileEditRow`, `DiffView` | `.edit-row`, `.diff`, `.fl` (Scene D) |
+| `plan_checklist.dart` | `PlanChecklist` | `.plan` |
+| `return_line.dart` | `ReturnLine`, `InterruptedNotice` | `.return-line` |
+| `transcript_support.dart` | internal: glyphs, `KitTextButton`, formatting | |
+
+## Behaviour
+
+- **Follow tail.** The list stays pinned to the bottom while content arrives
+  (new items, streaming text, a row expanding) until the user scrolls up;
+  then "Jump to latest" shows, and pressing it (or `controller.jumpToLatest`)
+  follows again. Within `followThreshold` (24 px) of the bottom counts as
+  at the bottom.
+- **Anchor restore.** `controller.anchor` is the first visible item's id and
+  how many px of it are above the top edge; pass it back as
+  `TranscriptList.initialAnchor` (or `controller.restore`) to reopen there.
+- **One evidence row open at a time** in an activity group. An exec row opens
+  into its output, a thinking row into its reasoning text (only when the
+  backend sent it), a spawn row calls `onOpenChild`.
+- **Layout by `SizeClass`** of the list's own width: item gaps 28 (22
+  compact), evidence indent 58 (0 compact), edit rows drop the verb when
+  compact.
+- Expansion state lives in each row's `State`, keyed by item id, so it
+  survives rebuilds but not scrolling the row far off screen.
+- Hosts compose the plan (`PlanChecklist(snapshot.plan)`) and the interrupted
+  notice (`InterruptedNotice`, from `RunInfo.outcome`) through
+  `TranscriptList.leading` / `trailing`.
+- A control whose callback is missing is not drawn.
 
 Add a widget here as its own file, export it from `transcript.dart`, and add
-a gallery specimen and a golden (see `docs/agent-kit.md`).
+a gallery specimen (`apps/gallery/lib/components/transcript.dart`) and a golden
+(see `docs/agent-kit.md`).
