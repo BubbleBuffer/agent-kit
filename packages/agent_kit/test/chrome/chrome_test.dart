@@ -333,10 +333,7 @@ void main() {
       expect(find.text('Survey quota'), findsOneWidget);
       expect(find.text('Map transitions'), findsOneWidget);
       expect(find.text('cargo test'), findsOneWidget);
-      expect(
-        find.textContaining('1m 04s', findRichText: true),
-        findsOneWidget,
-      );
+      expect(find.textContaining('1m 04s', findRichText: true), findsOneWidget);
       expect(find.textContaining('ready', findRichText: true), findsOneWidget);
       expect(
         find.textContaining('2 failed', findRichText: true),

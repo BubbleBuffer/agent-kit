@@ -119,7 +119,9 @@ class ChromeSpecimens extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _Label('SessionRail: the 240 px column, and a sliding screen at 390 px'),
+        const _Label(
+          'SessionRail: the 240 px column, and a sliding screen at 390 px',
+        ),
         Wrap(
           spacing: t.spacing.xl,
           runSpacing: t.spacing.lg,
@@ -135,7 +137,9 @@ class ChromeSpecimens extends StatelessWidget {
         const _Label('ChatHeader at 1000 px: needs you, running, failed, done'),
         const _Headers(maxWidth: 1000),
         SizedBox(height: t.spacing.xl),
-        const _Label('ChatHeader at 390 px: tile, branch and meter label dropped'),
+        const _Label(
+          'ChatHeader at 390 px: tile, branch and meter label dropped',
+        ),
         const _Headers(maxWidth: 390),
         SizedBox(height: t.spacing.xl),
         const _Label('CrewStrip at 1000 px and 390 px (scrolls sideways)'),

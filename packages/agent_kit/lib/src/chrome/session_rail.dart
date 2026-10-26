@@ -70,9 +70,7 @@ class SessionRail extends StatelessWidget {
     final clock = now ?? DateTime.now();
     final hide =
         onHide ??
-        (scope == null
-            ? null
-            : () => scope.controller.hide(scope.sizeClass));
+        (scope == null ? null : () => scope.controller.hide(scope.sizeClass));
     void select(ChatSummary chat) {
       onSelect?.call(chat);
       if (scope != null && scope.sizeClass.isCompact) {

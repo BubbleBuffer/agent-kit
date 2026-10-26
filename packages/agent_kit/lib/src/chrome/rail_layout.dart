@@ -62,9 +62,15 @@ class RailLayout extends StatelessWidget {
             visible: visible,
             child: CallbackShortcuts(
               bindings: {
-                const SingleActivator(LogicalKeyboardKey.keyB, control: true):
-                    () => controller.toggle(sizeClass),
-                const SingleActivator(LogicalKeyboardKey.keyB, meta: true): () =>
+                const SingleActivator(
+                  LogicalKeyboardKey.keyB,
+                  control: true,
+                ): () =>
+                    controller.toggle(sizeClass),
+                const SingleActivator(
+                  LogicalKeyboardKey.keyB,
+                  meta: true,
+                ): () =>
                     controller.toggle(sizeClass),
               },
               child: body,
@@ -112,10 +118,7 @@ class _Column extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(child: rail),
-                      SizedBox(
-                        width: 1,
-                        child: ColoredBox(color: line),
-                      ),
+                      SizedBox(width: 1, child: ColoredBox(color: line)),
                     ],
                   ),
                 ),
@@ -202,6 +205,9 @@ class RailShowButton extends StatelessWidget {
     } else {
       return const SizedBox.shrink();
     }
-    return Padding(padding: EdgeInsets.only(right: gap), child: button);
+    return Padding(
+      padding: EdgeInsets.only(right: gap),
+      child: button,
+    );
   }
 }

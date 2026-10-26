@@ -94,14 +94,15 @@ class ChatHeader extends StatelessWidget {
                   Expanded(
                     child: Row(
                       children: [
-                        if (!narrow) ...[
-                          const _Tile(),
-                          SizedBox(width: gap),
-                        ],
+                        if (!narrow) ...[const _Tile(), SizedBox(width: gap)],
                         Flexible(
                           child: Text(
                             chat.title,
-                            style: ts(theme.typeScale.ui, theme.ink, weight: 700),
+                            style: ts(
+                              theme.typeScale.ui,
+                              theme.ink,
+                              weight: 700,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

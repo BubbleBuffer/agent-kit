@@ -69,9 +69,7 @@ class CrewStrip extends StatelessWidget {
       label: 'Still running',
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: theme.colors.borderSubtle),
-          ),
+          border: Border(bottom: BorderSide(color: theme.colors.borderSubtle)),
         ),
         child: SizedBox(
           height: touch ? 32 : 40,

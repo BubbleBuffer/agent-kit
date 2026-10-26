@@ -140,10 +140,7 @@ class _LedgerRow extends StatelessWidget {
                 width: 22,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: ChromeIcon(
-                    glyph,
-                    color: theme.colors.iconSecondary,
-                  ),
+                  child: ChromeIcon(glyph, color: theme.colors.iconSecondary),
                 ),
               ),
               const SizedBox(width: 8),
