@@ -4,7 +4,6 @@
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/fake.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,19 +50,6 @@ void main() {
     // The rail list ignores pointers while its scroll position settles.
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
-    final center = tester.getCenter(find.byKey(const ValueKey('rail-row-idle')));
-    final buf = StringBuffer();
-    void walk(RenderObject o, int d) {
-      if (d > 14) return;
-      if (o is RenderBox && o.hasSize) {
-        final p = o.globalToLocal(center);
-        buf.write('${'.' * d}${o.runtimeType} ${o.size} $p ${o.hitTest(BoxHitTestResult(), position: p)}; ');
-      }
-      o.visitChildren((c) => walk(c, d + 1));
-    }
-    walk(tester.renderObject(find.byKey(const ValueKey('rail-row-idle'))), 0);
-    // ignore: avoid_print
-    print('DIAG walk $buf');
     await tester.tap(find.byKey(const ValueKey('rail-row-idle')));
     await _settle(tester);
     expect(find.text('Needs approval'), findsNothing);
