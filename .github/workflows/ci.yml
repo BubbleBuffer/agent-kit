@@ -24,9 +24,21 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.5
           cache: true
       - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed .
+      # When the check fails, hand over the formatted result as a patch
+      # (git apply format.patch), since formatting is not run on the PC.
+      - name: Save a format patch
+        if: failure()
+        run: dart format . && git diff > format.patch
+      - name: Upload the format patch
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: format-patch
+          path: format.patch
 
   analyze:
     name: flutter analyze
@@ -39,6 +51,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.5
           cache: true
       - run: flutter pub get
       - run: flutter analyze
@@ -50,7 +63,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [bb_tokens, bb_ui]
+        include:
+          - {package: bb_tokens, dir: packages/bb_tokens}
+          - {package: bb_ui, dir: packages/bb_ui}
+          - {package: agent_kit, dir: packages/agent_kit}
+          - {package: gallery, dir: apps/gallery}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,11 +75,68 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.5
           cache: true
       - run: flutter pub get
       - name: flutter test
-        working-directory: packages/${{ matrix.package }}
-        run: flutter test
+        working-directory: ${{ matrix.dir }}
+        # Goldens run in the goldens job.
+        run: flutter test --exclude-tags golden
+
+  # Golden screenshots of the StatusMark specimens and of every gallery scene
+  # (1440, 1000 and 390 px, light and dark), rendered with the bundled fonts.
+  # Pushes and pull requests compare with the committed PNGs. A manual run
+  # (workflow_dispatch) re-renders them without comparing; download the
+  # artifact (`gh run download <id> -n gallery-shots`) to look at them next to
+  # the mockup shots, or to commit them. Either way the PNGs are uploaded as
+  # the `gallery-shots` artifact: components/ from packages/agent_kit and
+  # scenes/ from apps/gallery.
+  goldens:
+    name: goldens
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+          cache: true
+      - run: flutter pub get
+      - name: Compare with the committed goldens
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          set -euo pipefail
+          (cd packages/agent_kit && flutter test --tags golden)
+          (cd apps/gallery && flutter test --tags golden)
+      - name: Re-render the goldens (no comparison)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          set -euo pipefail
+          (cd packages/agent_kit && flutter test --tags golden --update-goldens)
+          (cd apps/gallery && flutter test --tags golden --update-goldens)
+      - name: Collect the shots
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p shots/components shots/scenes
+          cp packages/agent_kit/test/goldens/*.png shots/components/ || true
+          cp apps/gallery/test/goldens/*.png shots/scenes/ || true
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: gallery-shots
+          path: shots
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: golden-failures
+          path: |
+            packages/agent_kit/test/failures
+            apps/gallery/test/failures
+          if-no-files-found: ignore
 
   # Pure Dart packages: strict analysis (infos fail) and dart test.
   dart-test:
@@ -80,6 +154,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.5
           cache: true
       - run: flutter pub get
       - name: dart analyze
@@ -98,6 +173,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.5
           cache: true
       # A consumer pins bb_ui by ref name (branch or tag), as Scratch does,
       # and gets bb_tokens through bb_ui's path dependency.

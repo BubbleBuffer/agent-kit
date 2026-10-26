@@ -11,14 +11,15 @@ packages/
   bb_tokens/   design tokens, no dependencies besides Flutter
   bb_ui/       primitives; depends on bb_tokens (path) and lucide_icons_flutter
   agent_kit_core/  pure Dart chat models, backend port, reducer, fake backend
+  agent_kit/   Flutter widgets (theme, status, ...); see agent-kit.md
 ```
 
 `agent_kit_core` has its own stricter `analysis_options.yaml` (strict casts,
 inference and raw types; `package:lints` recommended) and is described in
 [agent-kit-core.md](agent-kit-core.md).
 
-New packages (`agent_kit`, later `apps/gallery`) are added
-under `packages/` or `apps/` and to the root `workspace:` list. Members depend
+New packages are added under `packages/` or `apps/` and to the root
+`workspace:` list (`apps/gallery` is the gallery app). Members depend
 on each other with relative `path:` dependencies.
 
 ## bb_tokens
@@ -26,6 +27,7 @@ on each other with relative `path:` dependencies.
 `lib/tokens.dart` is Scratch's `app/lib/ui/tokens.dart` as of 0.1.0:
 `AppColors` (light, dark), `TypeScale`, `Layout`, `Radii`, `Motion`,
 `FormFactor`, `AppTheme` and the `context.colors` / `context.type` lookups.
+The kit tokens `KitLayout`, `KitSpacing`, `KitMotion` and `KitInks` follow, with the values of the mockup's `theme.css` (see [agent-kit.md](agent-kit.md)).
 The only cut: Scratch's file re-exported its app clock (`clockNow`); that
 re-export stays in Scratch. The values are hand-written for now; a generator
 from the BubbleBuffer design tokens comes later.
@@ -105,8 +107,9 @@ updated `pubspec.lock`.
 
 ## CI
 
-`.github/workflows/ci.yml`: `dart format --set-exit-if-changed`,
-`flutter analyze`, `flutter test` per Flutter package, `dart analyze
+`.github/workflows/ci.yml`: `dart format --set-exit-if-changed` (a patch is
+uploaded on failure), `flutter analyze`, `flutter test` per Flutter package
+(golden tests excluded), a `goldens` job (see [agent-kit.md](agent-kit.md)), `dart analyze
 --fatal-infos` and `dart test` per pure Dart package (`agent_kit_core`), and
 the git-consumer check on pushes. `.github/workflows/private-strings.yml` runs
 `scripts/check-private-strings.sh` with the `PRIVATE_STRINGS` secret (patterns
