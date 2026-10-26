@@ -397,50 +397,50 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
   Widget build(BuildContext context) {
     final t = context.bb;
     Widget buildFor(BuildContext context, SizeClass sizeClass) {
-        _expanded = sizeClass.isExpanded;
-        final layout = _c.layout;
-        final Widget body;
-        if (layout.isEmpty) {
-          body = _buildEmpty(context, t);
-        } else if (sizeClass.isExpanded) {
-          body = _buildTree(context, t, layout);
-        } else {
-          body = _buildTabbed(context, t, layout, sizeClass.isCompact);
-        }
-        Widget result = body;
-        if (sizeClass.isCompact) {
-          final dur = BbTheme.reducedMotion(context)
-              ? Duration.zero
-              : t.motion.sheet;
-          result = ExcludeSemantics(
-            excluding: !widget.open,
-            child: IgnorePointer(
-              ignoring: !widget.open,
-              child: AnimatedSlide(
-                offset: Offset(0, widget.open ? 0 : 1),
-                duration: dur,
-                curve: t.motion.ease,
-                child: result,
-              ),
-            ),
-          );
-        }
-        return Focus(
-          focusNode: _focus,
-          onKeyEvent: _key,
-          child: Semantics(
-            container: true,
-            label: 'Workspace',
-            child: Stack(
-              key: _rootKey,
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(child: result),
-                if (_menuOpen) ..._buildMenu(context, t),
-              ],
+      _expanded = sizeClass.isExpanded;
+      final layout = _c.layout;
+      final Widget body;
+      if (layout.isEmpty) {
+        body = _buildEmpty(context, t);
+      } else if (sizeClass.isExpanded) {
+        body = _buildTree(context, t, layout);
+      } else {
+        body = _buildTabbed(context, t, layout, sizeClass.isCompact);
+      }
+      Widget result = body;
+      if (sizeClass.isCompact) {
+        final dur = BbTheme.reducedMotion(context)
+            ? Duration.zero
+            : t.motion.sheet;
+        result = ExcludeSemantics(
+          excluding: !widget.open,
+          child: IgnorePointer(
+            ignoring: !widget.open,
+            child: AnimatedSlide(
+              offset: Offset(0, widget.open ? 0 : 1),
+              duration: dur,
+              curve: t.motion.ease,
+              child: result,
             ),
           ),
         );
+      }
+      return Focus(
+        focusNode: _focus,
+        onKeyEvent: _key,
+        child: Semantics(
+          container: true,
+          label: 'Workspace',
+          child: Stack(
+            key: _rootKey,
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(child: result),
+              if (_menuOpen) ..._buildMenu(context, t),
+            ],
+          ),
+        ),
+      );
     }
 
     final forced = widget.sizeClass;
