@@ -57,9 +57,21 @@ void main() {
     );
     // ignore: avoid_print
     print('DIAG ${hit.path.take(14).map((e) => e.target.runtimeType).join(' ')}');
-    final vp = tester.renderObject<RenderViewport>(find.byType(Viewport).first);
+    RenderObject? ro = tester.renderObject(
+      find.byKey(const ValueKey('rail-row-idle')),
+    );
+    final chain = StringBuffer();
+    while (ro != null && chain.length < 1500) {
+      chain.write('${ro.runtimeType}');
+      if (ro is RenderBox && ro.hasSize) chain.write('[${ro.size}]');
+      if (ro.parentData is SliverMultiBoxAdaptorParentData) {
+        chain.write('{lo ${(ro.parentData! as SliverMultiBoxAdaptorParentData).layoutOffset}}');
+      }
+      chain.write(' < ');
+      ro = ro.parent;
+    }
     // ignore: avoid_print
-    print('DIAG vp ${vp.size} ${vp.offset.pixels} ${vp.firstChild?.geometry} ${vp.firstChild?.runtimeType}');
+    print('DIAG chain $chain');
     await tester.tap(find.byKey(const ValueKey('rail-row-idle')));
     await _settle(tester);
     expect(find.text('Needs approval'), findsNothing);
