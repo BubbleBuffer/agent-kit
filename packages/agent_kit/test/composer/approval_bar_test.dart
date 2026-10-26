@@ -1,4 +1,5 @@
 import 'package:agent_kit/agent_kit.dart';
+import 'package:agent_kit/src/composer/composer_parts.dart' show KitButton;
 import 'package:agent_kit_core/agent_kit_core.dart'
     show Approval, ApprovalChoice, ApprovalDecision, ToolKind;
 import 'package:flutter/services.dart';
