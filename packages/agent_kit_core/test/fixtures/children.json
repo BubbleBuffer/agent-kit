@@ -1,0 +1,83 @@
+{
+  "chatId": "c1",
+  "seq": 12,
+  "title": "",
+  "status": "done",
+  "run": {
+    "id": "r1",
+    "outcome": "completed"
+  },
+  "items": [
+    {
+      "type": "activity",
+      "id": "activity:c1",
+      "at": "2026-10-26T09:00:00.000Z",
+      "runId": "r1",
+      "rows": [
+        {
+          "type": "spawn",
+          "id": "c1",
+          "childId": "k1",
+          "task": "Survey quota handling in Codex"
+        },
+        {
+          "type": "spawn",
+          "id": "k2",
+          "childId": "k2",
+          "task": "Map UsageState transitions"
+        },
+        {
+          "type": "spawn",
+          "id": "k3",
+          "childId": "k3",
+          "task": "Check the web client"
+        }
+      ]
+    },
+    {
+      "type": "childResult",
+      "id": "return:k2",
+      "at": "2026-10-26T09:01:04.000Z",
+      "childId": "k2",
+      "task": "Map UsageState transitions",
+      "state": "done",
+      "result": "Live, then Stale, then Live."
+    },
+    {
+      "type": "childResult",
+      "id": "return:k3",
+      "childId": "k3",
+      "task": "Check the web client",
+      "state": "failed"
+    }
+  ],
+  "approvals": [],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [
+    {
+      "id": "k1",
+      "task": "Survey quota handling in Codex",
+      "state": "cancelled",
+      "activity": "read rate_limits.rs",
+      "toolCalls": 6,
+      "startedAt": "2026-10-26T09:00:00.000Z"
+    },
+    {
+      "id": "k2",
+      "task": "Map UsageState transitions",
+      "state": "done",
+      "toolCalls": 0,
+      "endedAt": "2026-10-26T09:01:04.000Z",
+      "result": "Live, then Stale, then Live."
+    },
+    {
+      "id": "k3",
+      "task": "Check the web client",
+      "state": "failed",
+      "toolCalls": 0
+    }
+  ],
+  "jobs": []
+}

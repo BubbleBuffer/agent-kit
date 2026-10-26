@@ -1,0 +1,16 @@
+{"note":"Child agents: spawned (spawn rows and crew), progress, done with a result (a return line), failed, cancelled. A running child keeps the chat running."}
+{"seq":1,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":2,"chat":"c1","kind":"child.spawned","childId":"k1","task":"Survey quota handling in Codex","callId":"c1","runId":"r1","at":"2026-10-26T09:00:00.000Z"}
+{"seq":3,"chat":"c1","kind":"child.spawned","childId":"k2","task":"Map UsageState transitions","runId":"r1"}
+{"seq":4,"chat":"c1","kind":"child.spawned","childId":"k3","task":"Check the web client"}
+{"seq":5,"chat":"c1","kind":"child.progress","childId":"k1","activity":"read rate_limits.rs","toolCalls":5}
+{"seq":6,"chat":"c1","kind":"child.progress","childId":"k1","toolCalls":6}
+{"seq":7,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"completed"}
+{"expect":{"status":"running"}}
+{"seq":8,"chat":"c1","kind":"child.finished","childId":"k2","state":"done","result":"Live, then Stale, then Live.","at":"2026-10-26T09:01:04.000Z"}
+{"seq":9,"chat":"c1","kind":"child.finished","childId":"k3","state":"failed"}
+{"seq":10,"chat":"c1","kind":"child.finished","childId":"k1","state":"cancelled"}
+{"note":"Progress or a second finish after the end changes nothing."}
+{"seq":11,"chat":"c1","kind":"child.progress","childId":"k1","activity":"late"}
+{"seq":12,"chat":"c1","kind":"child.finished","childId":"k2","state":"failed"}
+{"expect":{"status":"done"}}

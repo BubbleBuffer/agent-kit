@@ -1,0 +1,37 @@
+{
+  "chatId": "c1",
+  "seq": 9,
+  "title": "",
+  "status": "running",
+  "run": {
+    "id": "r1"
+  },
+  "items": [
+    {
+      "type": "user",
+      "id": "u2",
+      "text": "Dim the bar while stale, don't hide it",
+      "inputId": "q1"
+    }
+  ],
+  "approvals": [],
+  "questions": [],
+  "queue": [
+    {
+      "id": "q2",
+      "text": "Also check the web app",
+      "queuedAt": "2026-10-26T09:01:00.000Z",
+      "mode": "steer",
+      "refs": [
+        {
+          "kind": "file",
+          "id": "web/src/quota-bar.tsx",
+          "label": "quota-bar.tsx"
+        }
+      ]
+    }
+  ],
+  "plan": [],
+  "children": [],
+  "jobs": []
+}

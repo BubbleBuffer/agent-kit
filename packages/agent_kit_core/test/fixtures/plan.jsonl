@@ -1,0 +1,4 @@
+{"note":"The plan is replaced whole on each update."}
+{"seq":1,"chat":"c1","kind":"plan.updated","items":[{"id":"p1","text":"Survey","state":"now"},{"id":"p2","text":"Keep last","state":"todo"},{"id":"p3","text":"Run tests","state":"todo"}]}
+{"seq":2,"chat":"c1","kind":"plan.updated","items":[{"id":"p1","text":"Survey","state":"done"},{"id":"p2","text":"Keep last","state":"now"},{"id":"p3","text":"Run tests","state":"todo"}]}
+{"seq":3,"chat":"c1","kind":"plan.updated","items":[{"id":"p1","text":"Survey","state":"done"},{"id":"p2","text":"Keep last","state":"done"},{"id":"p4","text":"Dim while stale","state":"now"},{"id":"p3","text":"Run tests","state":"todo"}]}

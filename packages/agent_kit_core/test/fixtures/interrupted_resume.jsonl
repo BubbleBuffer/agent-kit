@@ -1,0 +1,18 @@
+{"note":"A run interrupted by a host restart, then resumed. Open rows are closed."}
+{"seq":1,"chat":"c1","kind":"message.user","itemId":"u1","text":"Run it"}
+{"seq":2,"chat":"c1","kind":"run.started","runId":"r1","model":"m1","at":"2026-10-26T09:00:00.000Z"}
+{"seq":2,"chat":"c1","kind":"message.delta","itemId":"a1","offset":0,"text":"Starting","runId":"r1"}
+{"seq":3,"chat":"c1","kind":"thinking.started","rowId":"t1","runId":"r1"}
+{"seq":4,"chat":"c1","kind":"tool.started","callId":"c1","name":"exec","toolKind":"exec","target":"cargo build","runId":"r1"}
+{"seq":5,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"interrupted","error":"The host restarted.","at":"2026-10-26T09:05:00.000Z"}
+{"expect":{"status":"interrupted"}}
+{"seq":6,"chat":"c1","kind":"message.system","itemId":"s1","text":"Resumed after a host restart."}
+{"seq":7,"chat":"c1","kind":"run.started","runId":"r2","at":"2026-10-26T09:06:00.000Z"}
+{"expect":{"status":"running"}}
+{"note":"A late finish of the old run does not touch the new one."}
+{"seq":8,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"failed"}
+{"expect":{"status":"running"}}
+{"seq":9,"chat":"c1","kind":"tool.started","callId":"c2","name":"exec","toolKind":"exec","target":"cargo build","runId":"r2"}
+{"seq":10,"chat":"c1","kind":"tool.finished","callId":"c2","exitCode":0}
+{"seq":11,"chat":"c1","kind":"run.finished","runId":"r2","outcome":"completed","at":"2026-10-26T09:07:00.000Z"}
+{"expect":{"status":"done"}}

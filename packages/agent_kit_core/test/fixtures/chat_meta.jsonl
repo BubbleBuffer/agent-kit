@@ -1,0 +1,10 @@
+{"note":"Chat metadata: rename, settings, workspace, usage, archive and restore."}
+{"seq":1,"chat":"c1","kind":"chat.renamed","title":"Quota bar flickers"}
+{"seq":2,"chat":"c1","kind":"chat.settings","model":"deepseek-v4.1-flash","profile":"workspace"}
+{"seq":3,"chat":"c1","kind":"chat.settings","profile":"review"}
+{"seq":4,"chat":"c1","kind":"chat.workspace","workspace":{"name":"bubblepaw","branch":"bp/quota-reconnect","worktree":".worktrees/quota-reconnect"}}
+{"seq":5,"chat":"c1","kind":"usage.updated","usage":{"contextTokens":48640,"contextLimit":128000,"inputTokens":112000,"outputTokens":5400}}
+{"seq":6,"chat":"c1","kind":"chat.archived","archived":true}
+{"expect":{"archived":true,"status":"idle"}}
+{"seq":7,"chat":"c1","kind":"chat.archived","archived":false}
+{"seq":8,"chat":"c1","kind":"chat.renamed","title":"Quota bar flickers on reconnect"}

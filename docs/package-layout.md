@@ -10,9 +10,14 @@ root (the same rules as Scratch's app) covers every package.
 packages/
   bb_tokens/   design tokens, no dependencies besides Flutter
   bb_ui/       primitives; depends on bb_tokens (path) and lucide_icons_flutter
+  agent_kit_core/  pure Dart chat models, backend port, reducer, fake backend
 ```
 
-New packages (`agent_kit_core`, `agent_kit`, later `apps/gallery`) are added
+`agent_kit_core` has its own stricter `analysis_options.yaml` (strict casts,
+inference and raw types; `package:lints` recommended) and is described in
+[agent-kit-core.md](agent-kit-core.md).
+
+New packages (`agent_kit`, later `apps/gallery`) are added
 under `packages/` or `apps/` and to the root `workspace:` list. Members depend
 on each other with relative `path:` dependencies.
 
@@ -101,8 +106,9 @@ updated `pubspec.lock`.
 ## CI
 
 `.github/workflows/ci.yml`: `dart format --set-exit-if-changed`,
-`flutter analyze`, `flutter test` per package, and the git-consumer check on
-pushes. `.github/workflows/private-strings.yml` runs
+`flutter analyze`, `flutter test` per Flutter package, `dart analyze
+--fatal-infos` and `dart test` per pure Dart package (`agent_kit_core`), and
+the git-consumer check on pushes. `.github/workflows/private-strings.yml` runs
 `scripts/check-private-strings.sh` with the `PRIVATE_STRINGS` secret (patterns
 for private host names, addresses and domains), plus secret formats,
 self-hosted runners and personal tool folders. Every job runs on GitHub-hosted

@@ -1,0 +1,17 @@
+{"note":"Approval lifecycle: requested (needsYou), approved once, approved for the session, denied with a reason, cancelled with the run. No deadline."}
+{"seq":1,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":2,"chat":"c1","kind":"approval.requested","approval":{"id":"ap1","tool":"edit","kind":"edit","target":"src/usage/mod.rs","callId":"c1","runId":"r1","requestedAt":"2026-10-26T09:00:00.000Z","diff":{"path":"src/usage/mod.rs","hunks":[{"oldStart":1,"newStart":1,"lines":[{"op":"del","text":"a"},{"op":"add","text":"b"}]}]}}}
+{"expect":{"status":"needsYou"}}
+{"seq":3,"chat":"c1","kind":"approval.resolved","approvalId":"ap1","state":"approved","at":"2026-10-26T09:12:00.000Z"}
+{"expect":{"status":"running"}}
+{"seq":4,"chat":"c1","kind":"approval.requested","approval":{"id":"ap2","tool":"exec","kind":"exec","target":"cargo test","summary":"Run the tests","arguments":"{\"cmd\":\"cargo test\"}","requestedAt":"2026-10-26T09:13:00.000Z"}}
+{"seq":5,"chat":"c1","kind":"approval.resolved","approvalId":"ap2","state":"approvedForSession"}
+{"seq":6,"chat":"c1","kind":"approval.requested","approval":{"id":"ap3","tool":"exec","kind":"exec","target":"rm -rf target","requestedAt":"2026-10-26T09:14:00.000Z"}}
+{"seq":7,"chat":"c1","kind":"approval.resolved","approvalId":"ap3","state":"denied","reason":"Not the target dir"}
+{"note":"Resolving again does not change the first decision."}
+{"seq":8,"chat":"c1","kind":"approval.resolved","approvalId":"ap3","state":"approved"}
+{"seq":9,"chat":"c1","kind":"approval.requested","approval":{"id":"ap4","tool":"write","kind":"write","target":"notes.md","requestedAt":"2026-10-26T09:15:00.000Z"}}
+{"seq":10,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"cancelled"}
+{"expect":{"status":"needsYou"}}
+{"seq":11,"chat":"c1","kind":"approval.resolved","approvalId":"ap4","state":"cancelled"}
+{"expect":{"status":"idle"}}

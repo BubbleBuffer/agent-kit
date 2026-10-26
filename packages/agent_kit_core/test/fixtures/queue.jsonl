@@ -1,0 +1,12 @@
+{"note":"The queue: follow-up and steer queued, edited, removed, and one sent now (delivered as a user message with its input id, which leaves the queue)."}
+{"seq":1,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":2,"chat":"c1","kind":"queue.added","input":{"id":"q1","text":"Dim the bar while stale","mode":"followup","queuedAt":"2026-10-26T09:00:00.000Z"}}
+{"seq":3,"chat":"c1","kind":"queue.added","input":{"id":"q2","text":"Also check the web app","mode":"steer","queuedAt":"2026-10-26T09:01:00.000Z","refs":[{"kind":"file","id":"web/src/quota-bar.tsx","label":"quota-bar.tsx"}]}}
+{"seq":4,"chat":"c1","kind":"queue.added","input":{"id":"q3","text":"typo","mode":"followup","queuedAt":"2026-10-26T09:02:00.000Z"}}
+{"seq":5,"chat":"c1","kind":"queue.edited","inputId":"q1","text":"Dim the bar while stale, don't hide it"}
+{"seq":6,"chat":"c1","kind":"queue.removed","inputId":"q3"}
+{"note":"Send now: q1 is delivered into the running turn."}
+{"seq":7,"chat":"c1","kind":"message.user","itemId":"u2","text":"Dim the bar while stale, don't hide it","inputId":"q1"}
+{"note":"Edits and removals of inputs that are gone change nothing."}
+{"seq":8,"chat":"c1","kind":"queue.edited","inputId":"q1","text":"late edit"}
+{"seq":9,"chat":"c1","kind":"queue.removed","inputId":"q9"}

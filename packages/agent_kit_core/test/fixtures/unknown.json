@@ -1,0 +1,44 @@
+{
+  "chatId": "c1",
+  "seq": 6,
+  "title": "renamed",
+  "status": "idle",
+  "items": [
+    {
+      "type": "user",
+      "id": "u1",
+      "text": "hi"
+    },
+    {
+      "type": "activity",
+      "id": "g1",
+      "rows": [
+        {
+          "type": "tool",
+          "id": "c1",
+          "name": "read",
+          "kind": "read",
+          "state": "done"
+        }
+      ]
+    },
+    {
+      "type": "notice",
+      "id": "n1",
+      "text": "x",
+      "tone": "info"
+    }
+  ],
+  "approvals": [],
+  "questions": [],
+  "queue": [],
+  "plan": [
+    {
+      "id": "p1",
+      "text": "a",
+      "state": "todo"
+    }
+  ],
+  "children": [],
+  "jobs": []
+}

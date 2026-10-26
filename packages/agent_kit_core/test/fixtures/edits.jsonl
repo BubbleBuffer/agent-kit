@@ -1,0 +1,8 @@
+{"note":"File edits with diffs (counts derived, not stored) and undo."}
+{"seq":1,"chat":"c1","kind":"edit.applied","itemId":"e1","callId":"c1","diff":{"path":"src/usage/mod.rs","change":"modified","hunks":[{"oldStart":52,"newStart":52,"lines":[{"op":"ctx","text":"impl UsageState {"},{"op":"del","text":"    self.last = UsageSnapshot::default();"},{"op":"add","text":"    self.stale_since = Some(now);"},{"op":"ctx","text":"}"}]}]}}
+{"seq":2,"chat":"c1","kind":"edit.applied","itemId":"e2","callId":"c2","diff":{"path":"tests/quota_reconnect.rs","change":"created","hunks":[{"oldStart":0,"newStart":1,"lines":[{"op":"add","text":"#[test]"},{"op":"add","text":"fn survives() {}"}]}]}}
+{"seq":3,"chat":"c1","kind":"edit.applied","itemId":"e3","diff":{"path":"old.txt","change":"deleted"},"undoable":false}
+{"seq":4,"chat":"c1","kind":"edit.undone","itemId":"e1"}
+{"note":"Undoing twice, or an unknown edit, changes nothing."}
+{"seq":5,"chat":"c1","kind":"edit.undone","itemId":"e1"}
+{"seq":6,"chat":"c1","kind":"edit.undone","itemId":"nope"}

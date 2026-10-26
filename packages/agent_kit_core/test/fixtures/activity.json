@@ -1,0 +1,124 @@
+{
+  "chatId": "c1",
+  "seq": 19,
+  "title": "",
+  "status": "done",
+  "run": {
+    "id": "r1",
+    "outcome": "completed"
+  },
+  "items": [
+    {
+      "type": "user",
+      "id": "u1",
+      "text": "Run the usage tests"
+    },
+    {
+      "type": "activity",
+      "id": "activity:t1",
+      "at": "2026-10-26T09:00:00.000Z",
+      "runId": "r1",
+      "rows": [
+        {
+          "type": "thinking",
+          "id": "t1",
+          "text": "Compare the two hosts",
+          "durationMs": 6000
+        },
+        {
+          "type": "tool",
+          "id": "c1",
+          "name": "read",
+          "kind": "read",
+          "target": "src/usage/mod.rs",
+          "state": "done",
+          "meta": "212 lines",
+          "startedAt": "2026-10-26T09:00:06.000Z",
+          "endedAt": "2026-10-26T09:00:07.000Z"
+        },
+        {
+          "type": "tool",
+          "id": "c2",
+          "name": "grep",
+          "kind": "search",
+          "target": "reset|on_close in crates/",
+          "arguments": "{\"pattern\":\"reset|on_close\"}",
+          "state": "done",
+          "meta": "9 hits"
+        },
+        {
+          "type": "tool",
+          "id": "c3",
+          "name": "exec",
+          "kind": "exec",
+          "target": "cargo test -p host usage",
+          "state": "failed",
+          "meta": "2 failed",
+          "output": {
+            "text": "running 14 tests\ntest a ... FAILED\ntest result: FAILED\n",
+            "totalBytes": 2150,
+            "totalLines": 20,
+            "truncated": true
+          },
+          "exitCode": 101
+        },
+        {
+          "type": "spawn",
+          "id": "c4",
+          "childId": "k1",
+          "task": "Survey quota handling"
+        },
+        {
+          "type": "tool",
+          "id": "c5",
+          "name": "web_fetch",
+          "kind": "web",
+          "target": "https://example.com/docs",
+          "state": "done"
+        }
+      ]
+    },
+    {
+      "type": "assistant",
+      "id": "a1",
+      "markdown": "Two tests fail.",
+      "runId": "r1"
+    },
+    {
+      "type": "activity",
+      "id": "activity:c6",
+      "runId": "r1",
+      "rows": [
+        {
+          "type": "tool",
+          "id": "c6",
+          "name": "read",
+          "kind": "read",
+          "target": "tests/q.rs",
+          "state": "done",
+          "meta": "41 lines"
+        },
+        {
+          "type": "tool",
+          "id": "c7",
+          "name": "teleport",
+          "kind": "other",
+          "state": "done"
+        }
+      ]
+    }
+  ],
+  "approvals": [],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [
+    {
+      "id": "k1",
+      "task": "Survey quota handling",
+      "state": "done",
+      "toolCalls": 0
+    }
+  ],
+  "jobs": []
+}
