@@ -50,9 +50,42 @@ panes are not part of core.
   question), then `running` (active run, quota wait included, or a running
   child; jobs do not count), then `failed` / `interrupted` / `done` from the
   last run, else `idle`.
+- **Questions** are requests of 1 to 5 questions (see below).
 - **Approvals** have `requestedAt` and no deadline. After a host restart they
   come back `expired` with reason `restart`, and the run `interrupted`, which
   offers `resume`.
+
+## Questions
+
+A `Question` is one request from the agent: `{id, requestedAt, items, state,
+answers?, reason?}`. It holds 1 to `maxQuestionItems` (5) `QuestionItem`s, and
+the constructor (so `fromJson` too) throws `ArgumentError` for an empty or
+longer list, or for a pick item with no options and no `allowOther`. Hosts
+must split anything over 5 into several requests.
+
+- `QuestionItem {id, header, text, kind, options, allowOther}`: `header` is
+  the short tab label, `text` is markdown. `kind` is a `QuestionKind`:
+  `pickOne` (one option, or typed Other text), `pickAny` (any number,
+  including none, plus Other text) or `text` (a typed answer only; `options`
+  is empty and `allowOther` is ignored). Kinds can vary within a request.
+- `QuestionOption {label, description?}`.
+- `QuestionAnswer {choices, text?, skipped}`: `choices` are option labels,
+  `text` is the Other text or the answer to a `text` item, and `skipped`
+  marks a declined item. For `pickOne`, at most one of `choices` and `text`
+  is set.
+- `Question.answers` maps item ids to answers once the request is answered.
+  The port's `answerQuestion(chatId, questionId, answers)` takes the same map
+  and every item gets an entry (a skipped item has `skipped: true`);
+  the fake backend rejects a map with a missing item as `KitInvalid`.
+- Events keep their shape: `question.asked` carries the `Question`;
+  `question.resolved` carries `questionId`, `state` and `answers`.
+- Like approvals, questions never expire on their own; `requestedAt` gives
+  the age ("waiting 12m").
+
+`mixedQuestionScript()` (in `fake.dart`) ends a chat waiting on a request of
+a pick-one item with descriptions and Other, a pick-any item and a text item.
+The widgets are `QuestionPrompt` and `QuestionAnswerLines` in `agent_kit`'s
+composer folder.
 
 ## Backend port
 
@@ -83,6 +116,9 @@ reconnecting sends a `gap`. `failNext` makes the next command fail;
   the snapshot with `<name>.json`. The format is a shared contract, written
   up in `test/fixtures/README.md`, so the SDK's layer 2 can replay the same
   files. `UPDATE_GOLDENS=1 dart test` rewrites the expected files.
+- `test/question_test.dart`: the question model (every kind round-trips,
+  0 and 6 items and an option-less pick item are rejected) and the mixed
+  question scenario with `answerQuestion`.
 - `test/backend_test.dart`: the clock, the fake backend's commands and
   errors, and the quota scenario end to end through a reconnect, checking
   the final snapshot holds every element of the mockup.

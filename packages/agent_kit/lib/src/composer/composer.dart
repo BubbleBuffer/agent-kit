@@ -7,5 +7,6 @@ export 'approval_bar.dart';
 export 'composer_parts.dart' show formatWaiting, shortenPath;
 export 'composer_pick.dart';
 export 'mention_source.dart';
+export 'question_answered.dart';
 export 'question_prompt.dart';
 export 'queued_row.dart';

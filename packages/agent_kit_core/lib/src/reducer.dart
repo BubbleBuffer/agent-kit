@@ -431,12 +431,10 @@ ChatSnapshot _resolveQuestion(ChatSnapshot s, QuestionResolved e) {
         q.id == e.questionId
             ? Question(
                 id: q.id,
-                text: q.text,
                 requestedAt: q.requestedAt,
-                options: q.options,
-                freeText: q.freeText,
+                items: q.items,
                 state: e.state,
-                answer: e.answer,
+                answers: e.answers,
                 reason: e.reason,
               )
             : q,

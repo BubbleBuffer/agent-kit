@@ -333,8 +333,13 @@ abstract interface class AgentBackend {
     ApprovalDecision decision,
   );
 
-  /// Answers a pending question.
-  Future<void> answerQuestion(String chatId, String questionId, String answer);
+  /// Answers a pending question request. [answers] is keyed by item id and
+  /// has an entry for every item; skipped items have `skipped: true`.
+  Future<void> answerQuestion(
+    String chatId,
+    String questionId,
+    Map<String, QuestionAnswer> answers,
+  );
 
   /// Renames the chat.
   Future<void> rename(String chatId, String title);

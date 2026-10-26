@@ -15,6 +15,11 @@ import 'package:agent_kit_core/agent_kit_core.dart'
         KitChoice,
         KitRef,
         Question,
+        QuestionAnswer,
+        QuestionItem,
+        QuestionKind,
+        QuestionOption,
+        QuestionState,
         QueuedInput,
         ToolKind;
 import 'package:bb_ui/bb_ui.dart';
@@ -65,17 +70,103 @@ final _longQueued = QueuedInput(
   queuedAt: _now.subtract(const Duration(minutes: 2)),
 );
 
-final _question = Question(
-  id: 'qs1',
-  text: 'Should a stale figure show its age?',
-  requestedAt: _now.subtract(const Duration(minutes: 3)),
-  options: const ['Only on hover', 'Always', 'Never'],
+final _pickOne = QuestionItem(
+  id: 'age',
+  header: 'Stale figure',
+  text: 'Should a stale quota figure show its age?',
+  options: const [
+    QuestionOption(
+      label: 'Only on hover',
+      description: 'The bar dims; hovering shows the last update.',
+    ),
+    QuestionOption(
+      label: 'Always',
+      description: 'A small age label sits next to the figure.',
+    ),
+    QuestionOption(
+      label: 'Never',
+      description: 'Dimming alone marks it stale.',
+    ),
+  ],
+  allowOther: true,
 );
 
-final _openQuestion = Question(
-  id: 'qs2',
-  text: 'Which branch should the fix go on?',
-  requestedAt: _now.subtract(const Duration(seconds: 40)),
+final _pickAny = QuestionItem(
+  id: 'views',
+  header: 'Views',
+  text: 'Which views should keep the last known figure?',
+  kind: QuestionKind.pickAny,
+  options: const [
+    QuestionOption(label: 'Web quota bar'),
+    QuestionOption(label: 'Desktop tray'),
+    QuestionOption(label: 'CLI status line'),
+  ],
+  allowOther: true,
+);
+
+final _textOnly = QuestionItem(
+  id: 'label',
+  header: 'Label',
+  text:
+      'What should the stale label say? I’ll use it in the tooltip and the '
+      'screen-reader text.',
+  kind: QuestionKind.text,
+);
+
+Question _request(String id, List<QuestionItem> items, Duration waited) =>
+    Question(id: id, requestedAt: _now.subtract(waited), items: items);
+
+final _one = _request('qs1', [_pickOne], const Duration(minutes: 3));
+final _any = _request('qs2', [_pickAny], const Duration(minutes: 1));
+final _text = _request('qs3', [_textOnly], const Duration(seconds: 40));
+final _mixed = _request('qs4', [
+  _pickOne,
+  _pickAny,
+  _textOnly,
+], const Duration(minutes: 6));
+
+final _five = _request('qs5', [
+  _pickOne,
+  _pickAny,
+  _textOnly,
+  QuestionItem(
+    id: 'wait',
+    header: 'Reconnect',
+    text: 'How long should the bar wait before marking the figure stale?',
+    options: const [
+      QuestionOption(label: 'Right away'),
+      QuestionOption(
+        label: 'After 5 seconds',
+        description: 'Short blips stay invisible.',
+      ),
+      QuestionOption(label: 'After 30 seconds'),
+    ],
+  ),
+  QuestionItem(
+    id: 'tests',
+    header: 'Tests to add',
+    text: 'Which tests should I add?',
+    kind: QuestionKind.pickAny,
+    options: const [
+      QuestionOption(label: 'Reconnect keeps the figure'),
+      QuestionOption(label: 'Stale clears on update'),
+    ],
+  ),
+], const Duration(minutes: 9));
+
+final _answered = Question(
+  id: 'qs6',
+  requestedAt: _mixed.requestedAt,
+  items: _mixed.items,
+  state: QuestionState.answered,
+  answers: {
+    'age': QuestionAnswer(choices: const ['Only on hover']),
+    'views': QuestionAnswer(
+      choices: const ['Web quota bar', 'Desktop tray'],
+      text: 'Hub dashboard',
+    ),
+    'label': QuestionAnswer(skipped: true),
+  },
 );
 
 const _models = [
@@ -148,11 +239,24 @@ class _ComposerSpecimensState extends State<ComposerSpecimens> {
     onRemove: (q) => _log('remove ${q.id}'),
   );
 
-  Widget _answer(Question q) => QuestionPrompt(
+  Widget _answer(
+    Question q, {
+    int step = 0,
+    Map<String, QuestionAnswer> answers = const {},
+    bool keys = false,
+  }) => QuestionPrompt(
     question: q,
     now: _now,
-    onAnswer: (a) => _log('answer $a'),
+    captureKeys: keys,
+    initialStep: step,
+    initialAnswers: answers,
+    onAnswer: (a) => _log('answer ${_summarize(a)}'),
   );
+
+  static String _summarize(Map<String, QuestionAnswer> answers) => [
+    for (final e in answers.entries)
+      '${e.key}: ${e.value.skipped ? 'skipped' : [...e.value.choices, ?e.value.text].join('+')}',
+  ].join(', ');
 
   @override
   Widget build(BuildContext context) {
@@ -221,9 +325,73 @@ class _ComposerSpecimensState extends State<ComposerSpecimens> {
         _Frame('editing, 640', 640, _queue(editing: true)),
         _Frame('phone 390: "Queued" hidden', 390, _queue(), phone: true),
         const _Sub('QuestionPrompt'),
-        _Frame('options and an answer field, 520', 520, _answer(_question)),
-        _Frame('free text only, 520', 520, _answer(_openQuestion)),
-        _Frame('phone 390', 390, _answer(_question), phone: true),
+        _Frame(
+          'pick one, descriptions and Other, 520',
+          520,
+          _answer(
+            _one,
+            answers: {
+              'age': QuestionAnswer(choices: const ['Only on hover']),
+            },
+          ),
+        ),
+        _Frame(
+          'pick any, 520',
+          520,
+          _answer(
+            _any,
+            answers: {
+              'views': QuestionAnswer(
+                choices: const ['Web quota bar', 'Desktop tray'],
+                text: 'Hub dashboard',
+              ),
+            },
+          ),
+        ),
+        _Frame('text only, Answer off while empty, 520', 520, _answer(_text)),
+        _Frame(
+          'three questions, at step 2, 520',
+          520,
+          _answer(
+            _mixed,
+            step: 1,
+            answers: {
+              'age': QuestionAnswer(choices: const ['Only on hover']),
+              'views': QuestionAnswer(choices: const ['Web quota bar']),
+            },
+          ),
+        ),
+        _Frame(
+          'five questions, at step 4, 520',
+          520,
+          _answer(
+            _five,
+            step: 3,
+            answers: {
+              'age': QuestionAnswer(choices: const ['Always']),
+              'views': QuestionAnswer(choices: const ['Desktop tray']),
+              'label': QuestionAnswer(skipped: true),
+            },
+          ),
+        ),
+        _Frame(
+          'answered, in the transcript, 520',
+          520,
+          QuestionAnswerLines(question: _answered),
+        ),
+        _Frame(
+          'phone 390: pick one, no number keys',
+          390,
+          _answer(_one),
+          phone: true,
+        ),
+        _Frame(
+          'phone 390: five questions, tabs wrap',
+          390,
+          _answer(_five, step: 3),
+          phone: true,
+        ),
+        _Frame('phone 390: text only', 390, _answer(_text), phone: true),
       ],
     );
   }
