@@ -4,8 +4,6 @@
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/fake.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -49,29 +47,8 @@ void main() {
     expect(find.byKey(const ValueKey('rail-row-idle')), findsOneWidget);
     expect(find.text('Needs approval'), findsOneWidget);
 
-    final hit = HitTestResult();
-    tester.binding.hitTestInView(
-      hit,
-      tester.getCenter(find.byKey(const ValueKey('rail-row-idle'))),
-      tester.view.viewId,
-    );
-    // ignore: avoid_print
-    print('DIAG ${hit.path.take(14).map((e) => e.target.runtimeType).join(' ')}');
-    RenderObject? ro = tester.renderObject(
-      find.byKey(const ValueKey('rail-row-idle')),
-    );
-    final chain = StringBuffer();
-    while (ro != null && chain.length < 1500) {
-      chain.write('${ro.runtimeType}');
-      if (ro is RenderBox && ro.hasSize) chain.write('[${ro.size}]');
-      if (ro.parentData is SliverMultiBoxAdaptorParentData) {
-        chain.write('{lo ${(ro.parentData! as SliverMultiBoxAdaptorParentData).layoutOffset}}');
-      }
-      chain.write(' < ');
-      ro = ro.parent;
-    }
-    // ignore: avoid_print
-    print('DIAG chain $chain');
+    // The rail list ignores pointers while its scroll position settles.
+    await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.byKey(const ValueKey('rail-row-idle')));
     await _settle(tester);
     expect(find.text('Needs approval'), findsNothing);
