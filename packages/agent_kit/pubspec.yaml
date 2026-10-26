@@ -1,0 +1,22 @@
+name: agent_kit
+description: Flutter widgets for the BubbleBuffer agent kit (theme, status, transcript, composer, chrome, workspace), built on bb_ui and agent_kit_core.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  agent_kit_core:
+    path: ../agent_kit_core
+  bb_ui:
+    path: ../bb_ui
+  lucide_icons_flutter: 3.1.25
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

@@ -1,0 +1,39 @@
+name: agent_kit_gallery
+description: Gallery of the agent kit's widgets, running on the scripted fake backend.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  agent_kit:
+    path: ../../packages/agent_kit
+  agent_kit_core:
+    path: ../../packages/agent_kit_core
+  bb_ui:
+    path: ../../packages/bb_ui
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  fonts:
+    - family: Bricolage Grotesque
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque[opsz,wdth,wght].ttf
+    - family: Atkinson Hyperlegible Next
+      fonts:
+        - asset: assets/fonts/AtkinsonHyperlegibleNext[wght].ttf
+        - asset: assets/fonts/AtkinsonHyperlegibleNext-Italic[wght].ttf
+          style: italic
+    - family: Fragment Mono
+      fonts:
+        - asset: assets/fonts/FragmentMono-Regular.ttf
+        - asset: assets/fonts/FragmentMono-Italic.ttf
+          style: italic

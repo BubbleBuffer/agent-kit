@@ -9,3 +9,5 @@ workspace:
   - packages/bb_tokens
   - packages/bb_ui
   - packages/agent_kit_core
+  - packages/agent_kit
+  - apps/gallery

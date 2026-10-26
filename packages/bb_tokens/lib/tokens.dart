@@ -463,3 +463,112 @@ extension ThemeX on BuildContext {
   FormFactor get formFactor => AppTheme.of(this).formFactor;
   bool get mobile => AppTheme.of(this).mobile;
 }
+
+// ---------------------------------------------------------------------------
+// Agent kit tokens: the values of the approved Scratch-skin mockup's
+// `theme.css` that Scratch's own tokens do not have. Widgets read them through
+// the agent kit's `BbTheme`.
+// ---------------------------------------------------------------------------
+
+/// Layout thresholds and sizes of the agent kit (`--size-*`, `--fit-composer`,
+/// `--pane-min-*`, `--edge-tab`, `--ctl-h`, `--row` in `theme.css`).
+///
+/// The kit lays out by the width of its own container, never the window:
+/// compact is below [sizeMedium], medium from there to below [sizeExpanded],
+/// expanded from [sizeExpanded] up.
+class KitLayout {
+  const KitLayout({
+    this.sizeMedium = 600,
+    this.sizeExpanded = 1000,
+    this.fitComposer = 460,
+    this.paneMinWidth = 200,
+    this.paneMinHeight = 120,
+    this.edgeTab = 28,
+    this.controlHeight = 32,
+    this.rowHeight = 28,
+  });
+
+  /// The values of `theme.css`.
+  static const standard = KitLayout();
+
+  /// Container width where compact ends.
+  final double sizeMedium;
+
+  /// Container width where medium ends.
+  final double sizeExpanded;
+
+  /// Composer width below which Stop and Send drop their labels.
+  final double fitComposer;
+
+  /// A workspace pane never renders narrower than this.
+  final double paneMinWidth;
+
+  /// A workspace pane never renders shorter than this.
+  final double paneMinHeight;
+
+  /// Width of a collapsed pane's edge tab.
+  final double edgeTab;
+
+  /// Height of the agent's buttons (`--ctl-h`).
+  final double controlHeight;
+
+  /// Height of a list row (`--row`).
+  final double rowHeight;
+}
+
+/// The kit's spacing scale. `theme.css` has no scale, so these are the steps
+/// `app.css` uses (2, 4, 6/8, 10/12, 16, 24 px).
+class KitSpacing {
+  const KitSpacing({
+    this.hair = 2,
+    this.xs = 4,
+    this.sm = 8,
+    this.md = 12,
+    this.lg = 16,
+    this.xl = 24,
+  });
+
+  static const standard = KitSpacing();
+
+  final double hair, xs, sm, md, lg, xl;
+}
+
+/// Motion that Scratch's [Motion] lacks.
+class KitMotion {
+  const KitMotion({this.breathe = const Duration(milliseconds: 2400)});
+
+  static const standard = KitMotion();
+
+  /// One cycle of the running mark's breathing loop (`--breathe`).
+  final Duration breathe;
+}
+
+/// Text colours for the state roles. Scratch has only fills for them
+/// (`okBg`, `dangerBg`, ...); these are the inks the mockup chose:
+/// constructive and danger from the edit-row counts in Scratch's
+/// `agent_turn.dart`, attention from `accentText` (light) or the attention
+/// hue at full strength (dark, 5.3:1 on the 20% fill).
+class KitInks {
+  const KitInks({
+    required this.constructive,
+    required this.danger,
+    required this.attention,
+  });
+
+  static const light = KitInks(
+    constructive: Color(0xFF397748),
+    danger: Color(0xFFAD4B4B),
+    attention: Color(0xFF874016),
+  );
+
+  static const dark = KitInks(
+    constructive: Color(0xFF93BD9B),
+    danger: Color(0xFFE0A3A3),
+    attention: Color(0xFFF0D29C),
+  );
+
+  /// The inks that go with [colors].
+  static KitInks of(AppColors colors) => colors.dark ? dark : light;
+
+  final Color constructive, danger, attention;
+}

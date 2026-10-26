@@ -22,6 +22,19 @@ void main() {
     expect(displayFamily, 'Bricolage Grotesque');
   });
 
+  test('kit tokens match the Scratch-skin theme.css', () {
+    const layout = KitLayout.standard;
+    expect(layout.sizeMedium, 600);
+    expect(layout.sizeExpanded, 1000);
+    expect(layout.fitComposer, 460);
+    expect(layout.paneMinWidth, 200);
+    expect(layout.paneMinHeight, 120);
+    expect(layout.edgeTab, 28);
+    expect(KitMotion.standard.breathe, const Duration(milliseconds: 2400));
+    expect(KitInks.of(AppColors.light).danger, const Color(0xFFAD4B4B));
+    expect(KitInks.of(AppColors.darkTheme).attention, const Color(0xFFF0D29C));
+  });
+
   testWidgets('context reads the nearest AppTheme', (tester) async {
     late TypeScale type;
     late AppColors colors;
