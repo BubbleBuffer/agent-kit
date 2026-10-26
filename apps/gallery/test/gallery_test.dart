@@ -27,6 +27,9 @@ void main() {
     await tester.runAsync(controller.start);
     await tester.pumpWidget(GalleryApp(controller: controller));
 
+    for (var i = 0; i < 6; i++) {
+      await tester.pump();
+    }
     expect(controller.scene, GalleryScene.workbench);
     expect(controller.width, 1440);
     expect(find.text('Quota bar flickers on reconnect'), findsWidgets);

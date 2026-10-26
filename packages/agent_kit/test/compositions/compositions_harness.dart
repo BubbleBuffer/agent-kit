@@ -47,8 +47,9 @@ Future<void> pumpApp(
       ),
     ),
   );
-  await tester.pump();
-  await tester.pump();
+  for (var i = 0; i < 6; i++) {
+    await tester.pump();
+  }
 }
 
 const testModels = [

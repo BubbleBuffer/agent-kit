@@ -47,6 +47,8 @@ void main() {
     expect(find.byKey(const ValueKey('rail-row-idle')), findsOneWidget);
     expect(find.text('Needs approval'), findsOneWidget);
 
+    // ignore: avoid_print
+    print('DIAG ${tester.getRect(find.byType(ListView).first)} ${tester.getRect(find.byKey(const ValueKey('rail-row-idle')))} ${find.byType(ListView).evaluate().length}');
     await tester.tap(find.byKey(const ValueKey('rail-row-idle')));
     await _settle(tester);
     expect(find.text('Needs approval'), findsNothing);
