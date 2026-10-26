@@ -12,3 +12,15 @@ kit owns the tree; the host supplies what a pane shows.
 
 Add a widget here as its own file, export it from `workspace.dart`, and add a
 gallery specimen and a golden (see `docs/agent-kit.md`).
+
+## Files
+
+- `workspace_model.dart`: the immutable split tree and its pure operations
+  (split, close, dock, resize, collapse, restore, maximise), with JSON.
+- `workspace_geometry.dart`: pure layout of the tree into rects, dividers and
+  edge tabs; minimums are 200x120 and a pane that cannot fit folds to a tab.
+- `workspace_controller.dart`: a `ChangeNotifier` holding the layout.
+- `agent_workspace.dart`: `AgentWorkspace`, the widget. The host passes a
+  `paneBuilder` keyed by tab kind and id, a `kinds` list for the + menu, and
+  `open` for the compact sheet.
+

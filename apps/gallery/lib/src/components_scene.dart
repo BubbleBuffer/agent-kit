@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 
 import '../components/composer.dart';
 import '../components/transcript.dart';
+import '../components/workspace.dart';
 
 class ComponentsScene extends StatelessWidget {
   const ComponentsScene({super.key});
@@ -37,6 +38,9 @@ class ComponentsScene extends StatelessWidget {
                   const TranscriptSpecimens(),
                   SizedBox(height: t.spacing.xl),
                   const ComposerSpecimens(),
+                  SizedBox(height: t.spacing.xl),
+                  const _Heading('Workspace'),
+                  const WorkspaceSpecimens(),
                   SizedBox(height: t.spacing.xl),
                   const _Heading('Not built yet'),
                   for (final line in _planned)
