@@ -3,6 +3,7 @@
 // passes the per-model figures as [ModelUsage] values.
 
 import 'package:agent_kit_core/agent_kit_core.dart' show Usage;
+import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import '../theme/theme.dart';

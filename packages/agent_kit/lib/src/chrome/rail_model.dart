@@ -1,7 +1,6 @@
 // The rail's data and its hidden state.
 
 import 'package:agent_kit_core/agent_kit_core.dart' show ChatSummary;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../theme/theme.dart';
@@ -19,9 +18,7 @@ class SessionGroup {
 /// [hidden] folds away; in compact it is a sliding screen that [open] shows.
 /// The two are kept apart, as in the mockup, so resizing keeps each choice.
 class RailController extends ChangeNotifier {
-  RailController({bool hidden = false, bool open = false})
-    : _hidden = hidden,
-      _open = open;
+  RailController({this._hidden = false, this._open = false});
 
   bool _hidden;
   bool _open;
