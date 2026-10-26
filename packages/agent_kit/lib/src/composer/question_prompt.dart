@@ -7,6 +7,7 @@
 
 import 'package:agent_kit_core/agent_kit_core.dart' show ChatStatus, Question;
 import 'package:bb_ui/bb_ui.dart';
+import 'package:flutter/services.dart' show TextInputAction;
 import 'package:flutter/widgets.dart';
 
 import '../status/status.dart';
