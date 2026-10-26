@@ -31,7 +31,8 @@ Each file is the Scratch file of the same name from `app/lib/ui/`, unchanged
 except as noted. `package:bb_ui/bb_ui.dart` exports them all. Eight files
 (`buttons`, `icons`, `lines`, `lucide`, `marked_list`, `selection`,
 `settings_controls`, `tooltip`) were also run through `dart format`, which
-changed only whitespace and trailing commas.
+changed only whitespace and trailing commas; four `if`s it split over two
+lines got braces for the `curly_braces_in_flow_control_structures` lint.
 
 | File | Contents | Change from Scratch |
 |---|---|---|

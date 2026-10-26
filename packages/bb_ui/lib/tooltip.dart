@@ -99,8 +99,9 @@ class _AppTooltipState extends State<AppTooltip>
 
   void _show() {
     _timer?.cancel();
-    if (!mounted || _portal.isShowing || Overlay.maybeOf(context) == null)
+    if (!mounted || _portal.isShowing || Overlay.maybeOf(context) == null) {
       return;
+    }
     if (_shown != this) _shown?._hide();
     _shown = this;
     _fade.duration = Motion.of(context).fast;
@@ -165,8 +166,9 @@ class _AppTooltipState extends State<AppTooltip>
         onFocusChange: _onFocus,
         child: MouseRegion(
           onEnter: (e) {
-            if (e.kind == PointerDeviceKind.mouse)
+            if (e.kind == PointerDeviceKind.mouse) {
               _schedule(AppTooltip.hoverDelay);
+            }
           },
           onExit: (_) => _hide(),
           child: Listener(
@@ -209,8 +211,9 @@ class _AppTooltipState extends State<AppTooltip>
     final box = this.context.findRenderObject() as RenderBox?;
     final overlay =
         Overlay.maybeOf(this.context)?.context.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize || overlay == null)
+    if (box == null || !box.hasSize || overlay == null) {
       return const SizedBox.shrink();
+    }
     final anchor = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
     final c = context.colors;
     final type = context.type;
