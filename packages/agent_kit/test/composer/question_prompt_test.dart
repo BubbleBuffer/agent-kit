@@ -79,7 +79,10 @@ void main() {
   ) async {
     final handle = tester.ensureSemantics();
     await pumpComposer(tester, _prompt(fixtureQuestion, []));
-    expect(find.bySemanticsLabel(RegExp('Question from the agent')), findsWidgets);
+    expect(
+      find.bySemanticsLabel(RegExp('Question from the agent')),
+      findsWidgets,
+    );
     expect(find.bySemanticsLabel(RegExp('Pick one')), findsWidgets);
     expect(
       find.bySemanticsLabel(
