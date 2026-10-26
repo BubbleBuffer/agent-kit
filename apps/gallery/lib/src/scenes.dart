@@ -129,11 +129,11 @@ class ScenePlaceholder extends StatelessWidget {
                     StatusMark.pill(s.status),
                     SizedBox(height: t.spacing.sm),
                     Text(
-                      '${s.items.length} items · '
-                      '${s.children.length} agents · '
-                      '${s.jobs.length} jobs · '
+                      '${_count(s.items.length, 'item')} · '
+                      '${_count(s.children.length, 'agent')} · '
+                      '${_count(s.jobs.length, 'job')} · '
                       '${s.queue.length} queued · '
-                      '${s.approvals.length} approval',
+                      '${_count(s.approvals.length, 'approval')}',
                       style: small,
                     ),
                   ],
@@ -173,3 +173,5 @@ class _AreaLine extends StatelessWidget {
     ),
   );
 }
+
+String _count(int n, String noun) => '$n $noun${n == 1 ? '' : 's'}';

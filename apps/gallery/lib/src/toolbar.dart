@@ -31,7 +31,10 @@ class GalleryToolbar extends StatelessWidget {
           runSpacing: t.spacing.sm,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text('Agent kit gallery', style: ts(t.typeScale.ui, t.ink, weight: 700)),
+            Text(
+              'Agent kit gallery',
+              style: ts(t.typeScale.ui, t.ink, weight: 700),
+            ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [

@@ -30,6 +30,7 @@ void main() {
           await tester.pumpWidget(
             WidgetsApp(
               color: const Color(0xFF000000),
+              debugShowCheckedModeBanner: false,
               builder: (context, _) => MediaQuery(
                 data: MediaQuery.of(context).copyWith(disableAnimations: true),
                 child: SceneFrame(
