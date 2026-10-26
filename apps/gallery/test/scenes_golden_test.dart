@@ -59,13 +59,15 @@ void main() {
           for (var i = 0; i < 8; i++) {
             await tester.pump(const Duration(milliseconds: 50));
           }
-          if (tall) {
-            final sheet = tester.getSize(find.byType(ComponentsScene));
-            tester.view.physicalSize = Size(width.toDouble(), sheet.height);
-            await tester.pump();
-          }
           await expectLater(
-            find.byType(WidgetsApp),
+            tall
+                ? find
+                      .descendant(
+                        of: find.byType(ComponentsScene),
+                        matching: find.byType(RepaintBoundary),
+                      )
+                      .first
+                : find.byType(WidgetsApp),
             matchesGoldenFile('goldens/$name.png'),
           );
         });

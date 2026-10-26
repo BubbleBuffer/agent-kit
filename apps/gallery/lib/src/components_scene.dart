@@ -36,7 +36,7 @@ class ComponentsScene extends StatelessWidget {
         const ChromeSpecimens(),
       ],
     );
-    return ColoredBox(
+    final scene = ColoredBox(
       color: t.canvas,
       child: Padding(
         padding: EdgeInsets.all(t.spacing.md),
@@ -58,6 +58,9 @@ class ComponentsScene extends StatelessWidget {
         ),
       ),
     );
+    // A boundary of its own, so a golden can shoot the whole sheet.
+    return tall ? RepaintBoundary(child: scene) : scene;
+
   }
 }
 
