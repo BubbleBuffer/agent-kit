@@ -155,10 +155,7 @@ void main() {
     test('a lone pane dropped on itself changes nothing', () {
       final l = sampleLayout();
       expect(
-        identical(
-          l.dock('file', const DockTarget.pane('f', DockZone.left)),
-          l,
-        ),
+        identical(l.dock('file', const DockTarget.pane('f', DockZone.left)), l),
         isTrue,
       );
     });
@@ -171,10 +168,9 @@ void main() {
     });
 
     test('docking onto a collapsed pane opens it', () {
-      final l = sampleLayout().collapse('b').dock(
-        'file',
-        const DockTarget.pane('b', DockZone.center),
-      );
+      final l = sampleLayout()
+          .collapse('b')
+          .dock('file', const DockTarget.pane('b', DockZone.center));
       expect(l.leaf('b')!.collapsed, isFalse);
     });
   });
@@ -221,15 +217,18 @@ void main() {
       expect(identical(l.maximise('zzz'), l), isTrue);
     });
 
-    test('activate shows a tab, makes it front and opens collapsed parents', () {
-      final l = sampleLayout()
-          .addTab(leafId: 'b', kind: 'file')
-          .collapse('b')
-          .activate('browser');
-      expect(l.leaf('b')!.active, 'browser');
-      expect(l.front, 'browser');
-      expect(l.leaf('b')!.collapsed, isFalse);
-    });
+    test(
+      'activate shows a tab, makes it front and opens collapsed parents',
+      () {
+        final l = sampleLayout()
+            .addTab(leafId: 'b', kind: 'file')
+            .collapse('b')
+            .activate('browser');
+        expect(l.leaf('b')!.active, 'browser');
+        expect(l.front, 'browser');
+        expect(l.leaf('b')!.collapsed, isFalse);
+      },
+    );
   });
 
   group('JSON', () {

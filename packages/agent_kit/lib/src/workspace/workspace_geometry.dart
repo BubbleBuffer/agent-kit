@@ -177,8 +177,7 @@ WorkspaceGeometry layoutWorkspace(
     };
     final auto = <String>{};
 
-    double avail() =>
-        extent - gaps - (shut.length + auto.length) * m.edgeTab;
+    double avail() => extent - gaps - (shut.length + auto.length) * m.edgeTab;
     bool isOpen(WorkspaceNode c) =>
         !shut.contains(c.id) && !auto.contains(c.id);
 
@@ -191,12 +190,7 @@ WorkspaceGeometry layoutWorkspace(
       if (open.length < 2) break;
       var need = 0.0;
       for (final i in open) {
-        need += minAlong(
-          node.children[i],
-          axis,
-          m,
-          autoCollapsed: auto,
-        );
+        need += minAlong(node.children[i], axis, m, autoCollapsed: auto);
       }
       if (need <= avail() + 0.01) break;
       var small = open.first;
@@ -217,7 +211,9 @@ WorkspaceGeometry layoutWorkspace(
     final sizes = <int, double>{};
     final mins = <int, double>{};
     for (final i in open) {
-      sizes[i] = total <= 0 ? room / open.length : room * node.weights[i] / total;
+      sizes[i] = total <= 0
+          ? room / open.length
+          : room * node.weights[i] / total;
       mins[i] = minAlong(node.children[i], axis, m, autoCollapsed: auto);
     }
     var lack = 0.0;

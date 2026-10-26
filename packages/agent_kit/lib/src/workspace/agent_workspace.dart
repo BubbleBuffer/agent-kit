@@ -15,7 +15,8 @@
 
 import 'dart:math' as math;
 
-import 'package:bb_ui/bb_ui.dart' show AppTooltip, Hover, LucideIcon, globalRectOf, ts;
+import 'package:bb_ui/bb_ui.dart'
+    show AppTooltip, Hover, LucideIcon, globalRectOf, ts;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -80,8 +81,10 @@ abstract final class WorkspaceIcons {
 
 /// Builds what a pane shows. [tab] carries the pane [WorkspaceTab.kind] and
 /// [WorkspaceTab.id].
-typedef WorkspacePaneBuilder =
-    Widget Function(BuildContext context, WorkspaceTab tab);
+typedef WorkspacePaneBuilder = Widget Function(
+  BuildContext context,
+  WorkspaceTab tab,
+);
 
 /// Height of a pane header (`.wp-head`).
 const double _headerHeight = 32;
@@ -305,7 +308,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
   }
 
   KeyEventResult _key(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
       if (_drag != null) {
         setState(() {
           _drag = null;
@@ -372,8 +376,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
   }
 
   void _dividerNudge(DividerSpec spec, double delta) {
-    final prev = (spec.axis.isRow ? spec.rect.left : spec.rect.top) -
-        spec.pairStart;
+    final prev =
+        (spec.axis.isRow ? spec.rect.left : spec.rect.top) - spec.pairStart;
     final lo = spec.prevMin;
     final hi = spec.pairExtent - spec.nextMin;
     if (hi < lo) return;
@@ -486,9 +490,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
         final drag = _drag;
         final dragLeaf = drag == null
             ? null
-            : (layout.leaf(drag.leafId)?.tabs.length == 1
-                  ? drag.leafId
-                  : null);
+            : (layout.leaf(drag.leafId)?.tabs.length == 1 ? drag.leafId : null);
 
         final frames = <Widget>[];
         final contents = <Widget>[];
@@ -503,17 +505,23 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
               : (dragLeaf == leaf.id ? .4 : 1.0);
           if (placed != null) {
             frames.add(
-            Positioned.fromRect(
-              key: ValueKey('wp-leaf-${leaf.id}'),
-              rect: rect,
-              child: Offstage(
-                offstage: hidden,
-                child: Opacity(
-                  opacity: dim,
-                  child: _buildFrame(context, t, layout, leaf, max == leaf.id),
+              Positioned.fromRect(
+                key: ValueKey('wp-leaf-${leaf.id}'),
+                rect: rect,
+                child: Offstage(
+                  offstage: hidden,
+                  child: Opacity(
+                    opacity: dim,
+                    child: _buildFrame(
+                      context,
+                      t,
+                      layout,
+                      leaf,
+                      max == leaf.id,
+                    ),
+                  ),
                 ),
               ),
-            ),
             );
           }
           final body = Rect.fromLTRB(
@@ -556,7 +564,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                 rect: spec.rect,
                 child: _Divider(
                   spec: spec,
-                  dragging: _dividerDrag?.spec.splitId == spec.splitId &&
+                  dragging:
+                      _dividerDrag?.spec.splitId == spec.splitId &&
                       _dividerDrag?.spec.index == spec.index,
                   onStart: (p) => _dividerStart(spec, p),
                   onUpdate: _dividerUpdate,
@@ -595,7 +604,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                       padding: const EdgeInsets.all(8),
                       child: _Pill(
                         key: const ValueKey('wp-snap-hint'),
-                        text: 'Release to hide ${_nodeLabel(layout.node(snapNode)!)}',
+                        text:
+                            'Release to hide ${_nodeLabel(layout.node(snapNode)!)}',
                         inverse: true,
                       ),
                     ),
@@ -706,9 +716,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
           children: [
             Expanded(
               child: MouseRegion(
-                cursor: maximised
-                    ? MouseCursor.defer
-                    : SystemMouseCursors.grab,
+                cursor: maximised ? MouseCursor.defer : SystemMouseCursors.grab,
                 child: Listener(
                   behavior: HitTestBehavior.opaque,
                   onPointerDown: (e) => _headerDown(e, leaf),
@@ -816,10 +824,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                   label: 'Add pane',
                   size: compact ? 18 : 16,
                   box: compact ? 40 : 26,
-                  onTap: () => _openMenu(
-                    layout.frontLeaf?.id,
-                    globalRectOf(context),
-                  ),
+                  onTap: () =>
+                      _openMenu(layout.frontLeaf?.id, globalRectOf(context)),
                 ),
               ),
               if (compact)
@@ -873,7 +879,9 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
     final anchor = root == null
         ? _menuAnchor
         : root.globalToLocal(_menuAnchor.topLeft) & _menuAnchor.size;
-    final maxLeft = root == null ? 8.0 : math.max(8.0, root.size.width - width - 8);
+    final maxLeft = root == null
+        ? 8.0
+        : math.max(8.0, root.size.width - width - 8);
     final left = (anchor.right + 30 - width).clamp(8.0, maxLeft).toDouble();
     return [
       Positioned.fill(
@@ -1007,11 +1015,19 @@ Rect? dockPreviewRect(DockTarget target, WorkspaceGeometry geo) {
   return switch (target.zone!) {
     DockZone.center => r.deflate(6),
     DockZone.left => Rect.fromLTWH(r.left, r.top, r.width / 2, r.height),
-    DockZone.right =>
-      Rect.fromLTWH(r.left + r.width / 2, r.top, r.width / 2, r.height),
+    DockZone.right => Rect.fromLTWH(
+      r.left + r.width / 2,
+      r.top,
+      r.width / 2,
+      r.height,
+    ),
     DockZone.top => Rect.fromLTWH(r.left, r.top, r.width, r.height / 2),
-    DockZone.bottom =>
-      Rect.fromLTWH(r.left, r.top + r.height / 2, r.width, r.height / 2),
+    DockZone.bottom => Rect.fromLTWH(
+      r.left,
+      r.top + r.height / 2,
+      r.width,
+      r.height / 2,
+    ),
   };
 }
 

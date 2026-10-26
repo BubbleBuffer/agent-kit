@@ -54,7 +54,10 @@ Widget galleryPaneBuilder(BuildContext context, WorkspaceTab tab) =>
       'file' => const FakeFilePane(),
       'activity' => const FakeActivityPane(),
       _ => Center(
-        child: Text(tab.kind, style: ts(context.bb.typeScale.ui, context.bb.muted)),
+        child: Text(
+          tab.kind,
+          style: ts(context.bb.typeScale.ui, context.bb.muted),
+        ),
       ),
     };
 
@@ -82,7 +85,14 @@ class _WorkspaceSpecimensState extends State<WorkspaceSpecimens> {
 
   @override
   void dispose() {
-    for (final c in [_live, _collapsed, _maximised, _medium, _compact, _empty]) {
+    for (final c in [
+      _live,
+      _collapsed,
+      _maximised,
+      _medium,
+      _compact,
+      _empty,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -131,12 +141,7 @@ class _WorkspaceSpecimensState extends State<WorkspaceSpecimens> {
           sheet: true,
         ),
         gap(),
-        _Stage(
-          title: 'Empty',
-          width: 700,
-          height: 160,
-          controller: _empty,
-        ),
+        _Stage(title: 'Empty', width: 700, height: 160, controller: _empty),
       ],
     );
   }
@@ -314,7 +319,10 @@ class FakeBrowserPane extends StatelessWidget {
                     const SizedBox(height: 12),
                     _AppCard(
                       children: [
-                        Text('This week', style: ts(t.typeScale.uiSmall, t.muted)),
+                        Text(
+                          'This week',
+                          style: ts(t.typeScale.uiSmall, t.muted),
+                        ),
                         Text(
                           '62%',
                           style: ts(t.typeScale.h2, t.ink, weight: 700),
@@ -350,7 +358,10 @@ class FakeBrowserPane extends StatelessWidget {
                     const SizedBox(height: 8),
                     _AppCard(
                       children: [
-                        Text('By model', style: ts(t.typeScale.uiSmall, t.muted)),
+                        Text(
+                          'By model',
+                          style: ts(t.typeScale.uiSmall, t.muted),
+                        ),
                         const SizedBox(height: 4),
                         for (final (name, share) in const [
                           ('deepseek-v4.1-flash', '48%'),
@@ -453,7 +464,10 @@ const _terminal = <(String, String)>[
   ('', '  left: None'),
   ('', ' right: Some(UsageSnapshot { percent: 62, .. })'),
   ('', ''),
-  ('b', 'test result: FAILED. 12 passed; 2 failed; 0 ignored; finished in 0.04s'),
+  (
+    'b',
+    'test result: FAILED. 12 passed; 2 failed; 0 ignored; finished in 0.04s',
+  ),
   ('p', r'$ '),
 ];
 
@@ -489,18 +503,14 @@ class FakeTerminalPane extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.clip,
-                  style: _mono(
-                    t,
-                    switch (kind) {
-                      'p' => t.ink,
-                      'b' => t.dangerInk,
-                      _ => t.muted,
-                    },
-                  ).copyWith(
-                    fontWeight: kind == 'b' || kind == 'p'
-                        ? fw(600)
-                        : null,
-                  ),
+                  style:
+                      _mono(t, switch (kind) {
+                        'p' => t.ink,
+                        'b' => t.dangerInk,
+                        _ => t.muted,
+                      }).copyWith(
+                        fontWeight: kind == 'b' || kind == 'p' ? fw(600) : null,
+                      ),
                 ),
             ],
           ),

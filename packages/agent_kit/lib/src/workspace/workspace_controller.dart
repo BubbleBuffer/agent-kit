@@ -71,13 +71,11 @@ class WorkspaceController extends ChangeNotifier {
 
   void restore(String nodeId) => layout = _layout.restore(nodeId);
 
-  void toggleCollapse(String nodeId) =>
-      layout = _layout.toggleCollapse(nodeId);
+  void toggleCollapse(String nodeId) => layout = _layout.toggleCollapse(nodeId);
 
   void maximise(String leafId) => layout = _layout.maximise(leafId);
 
   void unmaximise() => layout = _layout.unmaximise();
 
-  void toggleMaximise(String leafId) =>
-      layout = _layout.toggleMaximise(leafId);
+  void toggleMaximise(String leafId) => layout = _layout.toggleMaximise(leafId);
 }

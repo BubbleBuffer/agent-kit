@@ -30,9 +30,8 @@ enum DockSide {
   bottom;
 
   /// The axis of the split a drop on this side makes.
-  SplitAxis get axis => this == left || this == right
-      ? SplitAxis.row
-      : SplitAxis.column;
+  SplitAxis get axis =>
+      this == left || this == right ? SplitAxis.row : SplitAxis.column;
 
   /// Whether the dropped pane goes before (left of, above) the target.
   bool get before => this == left || this == top;
@@ -82,7 +81,8 @@ class DockTarget {
   int get hashCode => Object.hash(leafId, zone, edge);
 
   @override
-  String toString() => isOuter ? 'DockTarget.outer($edge)' : 'DockTarget.pane($leafId, $zone)';
+  String toString() =>
+      isOuter ? 'DockTarget.outer($edge)' : 'DockTarget.pane($leafId, $zone)';
 }
 
 /// One pane content: [kind] says what it is (the host's builder keys on it)
@@ -140,8 +140,7 @@ sealed class WorkspaceNode {
     switch (type) {
       case 'leaf':
         final tabs = [
-          for (final t in _list(json, 'tabs'))
-            WorkspaceTab.fromJson(_map(t)),
+          for (final t in _list(json, 'tabs')) WorkspaceTab.fromJson(_map(t)),
         ];
         if (tabs.isEmpty) throw const FormatException('A pane has no tabs.');
         final active = json['active'] as String?;
@@ -322,9 +321,7 @@ class WorkspaceLayout {
   bool get isEmpty => root == null;
 
   /// Every leaf, in tree order.
-  List<WorkspaceLeaf> get leaves => [
-    if (root != null) ..._leavesOf(root!),
-  ];
+  List<WorkspaceLeaf> get leaves => [if (root != null) ..._leavesOf(root!)];
 
   /// Every tab, in tree order.
   List<WorkspaceTab> get tabs => [for (final l in leaves) ...l.tabs];
@@ -616,11 +613,7 @@ class WorkspaceLayout {
   /// Normalises the tree and drops references to things that are gone.
   WorkspaceLayout _tidy() {
     final r = root == null ? null : _normalize(root!);
-    final layout = WorkspaceLayout(
-      root: r,
-      maximised: maximised,
-      front: front,
-    );
+    final layout = WorkspaceLayout(root: r, maximised: maximised, front: front);
     final max = layout.maximised;
     final fr = layout.front;
     final fixedMax = max != null && layout.leaf(max) != null ? max : null;
@@ -647,16 +640,15 @@ class WorkspaceLayout {
       if (!_contains(n, leafId)) return n;
       final open = n.withCollapsed(false);
       if (open is WorkspaceSplit) {
-        return open.copyWith(children: [for (final c in open.children) go(c)], weights: open.weights);
+        return open.copyWith(
+          children: [for (final c in open.children) go(c)],
+          weights: open.weights,
+        );
       }
       return open;
     }
 
-    return WorkspaceLayout(
-      root: go(root!),
-      maximised: maximised,
-      front: front,
-    );
+    return WorkspaceLayout(root: go(root!), maximised: maximised, front: front);
   }
 
   String _freshId(String prefix) {
@@ -832,21 +824,32 @@ WorkspaceNode _insertBeside(
     final at = before ? i : i + 1;
     kids.insert(at, fresh);
     ws.insert(at, half);
-    return _replace(root, parent.id, (_) => WorkspaceSplit(
-      id: parent.id,
-      axis: parent.axis,
-      children: kids,
-      weights: ws,
-      collapsed: parent.collapsed,
-    ))!;
+    return _replace(
+      root,
+      parent.id,
+      (_) => WorkspaceSplit(
+        id: parent.id,
+        axis: parent.axis,
+        children: kids,
+        weights: ws,
+        collapsed: parent.collapsed,
+      ),
+    )!;
   }
   if (parent == null && target is WorkspaceSplit && target.axis == axis) {
     // The outer edge of a root split of the same axis.
-    final avg = target.weights.fold<double>(0, (a, b) => a + b) /
-        target.weights.length;
-    final kids = before ? [fresh, ...target.children] : [...target.children, fresh];
+    final avg =
+        target.weights.fold<double>(0, (a, b) => a + b) / target.weights.length;
+    final kids = before
+        ? [fresh, ...target.children]
+        : [...target.children, fresh];
     final ws = before ? [avg, ...target.weights] : [...target.weights, avg];
-    return WorkspaceSplit(id: target.id, axis: axis, children: kids, weights: ws);
+    return WorkspaceSplit(
+      id: target.id,
+      axis: axis,
+      children: kids,
+      weights: ws,
+    );
   }
   // Wrap the target. Around the root the old tree keeps twice the room.
   final wrapId = _wrapId(root);

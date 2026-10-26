@@ -320,40 +320,41 @@ void main() {
   });
 
   group('size class', () {
-    testWidgets('expanded is the tree, medium one tabbed column, compact a sheet', (
-      tester,
-    ) async {
-      final rig = _Rig(WorkspaceController(sampleLayout()));
-      await rig.pump(tester, const Size(1200, 700));
-      expect(_key('wp-divider-root-0'), findsOneWidget);
-      expect(_key('wp-ws-tabs'), findsNothing);
-      expect(find.text('pane browser'), findsOneWidget);
-      expect(find.text('pane terminal'), findsOneWidget);
+    testWidgets(
+      'expanded is the tree, medium one tabbed column, compact a sheet',
+      (tester) async {
+        final rig = _Rig(WorkspaceController(sampleLayout()));
+        await rig.pump(tester, const Size(1200, 700));
+        expect(_key('wp-divider-root-0'), findsOneWidget);
+        expect(_key('wp-ws-tabs'), findsNothing);
+        expect(find.text('pane browser'), findsOneWidget);
+        expect(find.text('pane terminal'), findsOneWidget);
 
-      await rig.pump(tester, const Size(800, 600));
-      expect(_key('wp-divider-root-0'), findsNothing);
-      expect(_key('wp-ws-tabs'), findsOneWidget);
-      expect(_key('wp-sheet-close'), findsNothing);
-      expect(find.text('pane browser'), findsOneWidget);
-      expect(find.text('pane terminal'), findsNothing);
+        await rig.pump(tester, const Size(800, 600));
+        expect(_key('wp-divider-root-0'), findsNothing);
+        expect(_key('wp-ws-tabs'), findsOneWidget);
+        expect(_key('wp-sheet-close'), findsNothing);
+        expect(find.text('pane browser'), findsOneWidget);
+        expect(find.text('pane terminal'), findsNothing);
 
-      await tester.tap(_key('wp-ws-tab-terminal'));
-      await tester.pump();
-      expect(rig.controller.layout.front, 'terminal');
-      expect(find.text('pane terminal'), findsOneWidget);
-      expect(find.text('pane browser'), findsNothing);
+        await tester.tap(_key('wp-ws-tab-terminal'));
+        await tester.pump();
+        expect(rig.controller.layout.front, 'terminal');
+        expect(find.text('pane terminal'), findsOneWidget);
+        expect(find.text('pane browser'), findsNothing);
 
-      await rig.pump(tester, const Size(390, 700));
-      expect(_key('wp-ws-tabs'), findsOneWidget);
-      expect(_key('wp-sheet-close'), findsOneWidget);
-      expect(find.text('pane terminal'), findsOneWidget);
-      await tester.tap(_key('wp-sheet-close'));
-      expect(rig.closed, 1);
+        await rig.pump(tester, const Size(390, 700));
+        expect(_key('wp-ws-tabs'), findsOneWidget);
+        expect(_key('wp-sheet-close'), findsOneWidget);
+        expect(find.text('pane terminal'), findsOneWidget);
+        await tester.tap(_key('wp-sheet-close'));
+        expect(rig.closed, 1);
 
-      await rig.pump(tester, const Size(1200, 700));
-      expect(_key('wp-divider-root-0'), findsOneWidget);
-      expect(_key('wp-sheet-close'), findsNothing);
-    });
+        await rig.pump(tester, const Size(1200, 700));
+        expect(_key('wp-divider-root-0'), findsOneWidget);
+        expect(_key('wp-sheet-close'), findsNothing);
+      },
+    );
 
     testWidgets('the class follows the container, not the window', (
       tester,

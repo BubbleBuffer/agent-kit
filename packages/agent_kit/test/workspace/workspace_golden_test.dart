@@ -50,7 +50,12 @@ WorkspaceLayout _layout() => WorkspaceLayout(
 );
 
 const _lines = {
-  'browser': ['http://localhost:5173/usage', '', 'This week  62%', 'Stale, last update 14s ago'],
+  'browser': [
+    'http://localhost:5173/usage',
+    '',
+    'This week  62%',
+    'Stale, last update 14s ago',
+  ],
   'terminal': [
     r'$ cargo test -p bubblepaw-host usage',
     'running 14 tests',
