@@ -1,4 +1,4 @@
-// One golden screenshot per gallery scene, at 1440, 1000 and 390 px, light and
+// Golden screenshots of the gallery scenes (A 1440 and 1000, C 390, D 1600 and 1000, the Components sheet whole), light and
 // dark, with the scripted chat played to its end on a manual clock. CI
 // compares them with the committed PNGs (goldens/) and uploads them as the
 // `gallery-shots` artifact. Re-render with
@@ -11,19 +11,31 @@ import 'package:agent_kit_gallery/gallery.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Named widths and the window height shot at each.
-const _shots = <(int, double)>[(1440, 900), (1000, 800), (390, 844)];
+/// The widths and window heights shot for each scene.
+const _shots = <GalleryScene, List<(int, double)>>{
+  GalleryScene.workbench: [(1440, 900), (1000, 800)],
+  GalleryScene.scratchPane: [(1440, 900)],
+  GalleryScene.phone: [(390, 844)],
+  GalleryScene.workspace: [(1600, 900), (1000, 800)],
+  GalleryScene.components: [(1000, 800)],
+};
 
 void main() {
-  for (final scene in GalleryScene.values) {
-    for (final (width, height) in _shots) {
+  for (final MapEntry(key: scene, value: sizes) in _shots.entries) {
+    for (final (width, height) in sizes) {
       for (final brightness in Brightness.values) {
         final name = '${scene.slug}_${width}_${brightness.name}';
         testWidgets('scene $name', (tester) async {
           final controller = GalleryController();
           addTearDown(controller.dispose);
           await tester.runAsync(controller.start);
-          tester.view.physicalSize = Size(width.toDouble(), height);
+          final tall = scene == GalleryScene.components;
+          // The Components sheet is shot whole: measure it in a tall window,
+          // then shrink the window to it.
+          tester.view.physicalSize = Size(
+            width.toDouble(),
+            tall ? 30000 : height,
+          );
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
@@ -35,15 +47,27 @@ void main() {
                 data: MediaQuery.of(context).copyWith(disableAnimations: true),
                 child: SceneFrame(
                   scene: scene,
-                  snapshot: controller.snapshot,
+                  controller: controller,
                   width: width.toDouble(),
                   brightness: brightness,
+                  tall: tall,
                 ),
               ),
             ),
           );
+          // Let the chat list and the feeds load.
+          for (var i = 0; i < 8; i++) {
+            await tester.pump(const Duration(milliseconds: 50));
+          }
           await expectLater(
-            find.byType(WidgetsApp),
+            tall
+                ? find
+                      .descendant(
+                        of: find.byType(ComponentsScene),
+                        matching: find.byType(RepaintBoundary),
+                      )
+                      .first
+                : find.byType(WidgetsApp),
             matchesGoldenFile('goldens/$name.png'),
           );
         });

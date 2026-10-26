@@ -108,6 +108,7 @@ class AgentWorkspace extends StatefulWidget {
     required this.paneBuilder,
     this.open = true,
     this.onClose,
+    this.sizeClass,
   });
 
   /// The layout and its operations.
@@ -118,6 +119,11 @@ class AgentWorkspace extends StatefulWidget {
 
   /// What each pane shows.
   final WorkspacePaneBuilder paneBuilder;
+
+  /// The size class to lay out for. By default the workspace measures its own
+  /// width; a host that sizes the workspace from the area around it (as
+  /// [AgentWorkbench] does) passes the area's class.
+  final SizeClass? sizeClass;
 
   /// Compact only: whether the full-screen sheet is up.
   final bool open;
@@ -390,53 +396,58 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    return SizeClassBuilder(
-      builder: (context, sizeClass) {
-        _expanded = sizeClass.isExpanded;
-        final layout = _c.layout;
-        final Widget body;
-        if (layout.isEmpty) {
-          body = _buildEmpty(context, t);
-        } else if (sizeClass.isExpanded) {
-          body = _buildTree(context, t, layout);
-        } else {
-          body = _buildTabbed(context, t, layout, sizeClass.isCompact);
-        }
-        Widget result = body;
-        if (sizeClass.isCompact) {
-          final dur = BbTheme.reducedMotion(context)
-              ? Duration.zero
-              : t.motion.sheet;
-          result = ExcludeSemantics(
-            excluding: !widget.open,
-            child: IgnorePointer(
-              ignoring: !widget.open,
-              child: AnimatedSlide(
-                offset: Offset(0, widget.open ? 0 : 1),
-                duration: dur,
-                curve: t.motion.ease,
-                child: result,
-              ),
-            ),
-          );
-        }
-        return Focus(
-          focusNode: _focus,
-          onKeyEvent: _key,
-          child: Semantics(
-            container: true,
-            label: 'Workspace',
-            child: Stack(
-              key: _rootKey,
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(child: result),
-                if (_menuOpen) ..._buildMenu(context, t),
-              ],
+    Widget buildFor(BuildContext context, SizeClass sizeClass) {
+      _expanded = sizeClass.isExpanded;
+      final layout = _c.layout;
+      final Widget body;
+      if (layout.isEmpty) {
+        body = _buildEmpty(context, t);
+      } else if (sizeClass.isExpanded) {
+        body = _buildTree(context, t, layout);
+      } else {
+        body = _buildTabbed(context, t, layout, sizeClass.isCompact);
+      }
+      Widget result = body;
+      if (sizeClass.isCompact) {
+        final dur = BbTheme.reducedMotion(context)
+            ? Duration.zero
+            : t.motion.sheet;
+        result = ExcludeSemantics(
+          excluding: !widget.open,
+          child: IgnorePointer(
+            ignoring: !widget.open,
+            child: AnimatedSlide(
+              offset: Offset(0, widget.open ? 0 : 1),
+              duration: dur,
+              curve: t.motion.ease,
+              child: result,
             ),
           ),
         );
-      },
+      }
+      return Focus(
+        focusNode: _focus,
+        onKeyEvent: _key,
+        child: Semantics(
+          container: true,
+          label: 'Workspace',
+          child: Stack(
+            key: _rootKey,
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(child: result),
+              if (_menuOpen) ..._buildMenu(context, t),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final forced = widget.sizeClass;
+    if (forced == null) return SizeClassBuilder(builder: buildFor);
+    return SizeClassScope(
+      sizeClass: forced,
+      child: Builder(builder: (context) => buildFor(context, forced)),
     );
   }
 
@@ -492,6 +503,19 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
             ? null
             : (layout.leaf(drag.leafId)?.tabs.length == 1 ? drag.leafId : null);
 
+        // Only the last pane that can still split shows +; a new pane goes
+        // beside it (right, or below in a column), so it needs room for two.
+        String? adder;
+        for (final leaf in layout.leaves) {
+          final r = max == null ? geo.leaves[leaf.id] : geo.bounds;
+          if (r == null || (max != null && max != leaf.id)) continue;
+          final parent = layout.parentOf(leaf.id);
+          final below = parent != null && parent.axis == SplitAxis.column;
+          final need =
+              2 * (below ? metrics.minHeight : metrics.minWidth) +
+              metrics.divider;
+          if ((below ? r.height : r.width) >= need) adder = leaf.id;
+        }
         final frames = <Widget>[];
         final contents = <Widget>[];
         for (final leaf in layout.leaves) {
@@ -518,6 +542,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                       layout,
                       leaf,
                       max == leaf.id,
+                      adder == leaf.id,
                     ),
                   ),
                 ),
@@ -587,8 +612,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                   label: _nodeLabel(node),
                   icon: _nodeIcon(node),
                   vertical: e.axis.isRow,
-                  enabled: !e.auto,
-                  onTap: () => _c.restore(e.nodeId),
+                  enabled: true,
+                  onTap: () => _c.unfold(e.nodeId, geo.nodes.keys.toSet()),
                 ),
               ),
             );
@@ -681,6 +706,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
     WorkspaceLayout layout,
     WorkspaceLeaf leaf,
     bool maximised,
+    bool showAdd,
   ) {
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -693,7 +719,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
         children: [
           SizedBox(
             height: _headerHeight,
-            child: _buildHeader(context, t, leaf, maximised),
+            child: _buildHeader(context, t, leaf, maximised, showAdd),
           ),
         ],
       ),
@@ -705,6 +731,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
     BbTheme t,
     WorkspaceLeaf leaf,
     bool maximised,
+    bool showAdd,
   ) {
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -745,14 +772,15 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                 ),
               ),
             ),
-            Builder(
-              builder: (context) => _HeadButton(
-                key: ValueKey('wp-add-${leaf.id}'),
-                icon: LucideIcons.plus,
-                label: 'Add pane',
-                onTap: () => _openMenu(leaf.id, globalRectOf(context)),
+            if (showAdd)
+              Builder(
+                builder: (context) => _HeadButton(
+                  key: ValueKey('wp-add-${leaf.id}'),
+                  icon: LucideIcons.plus,
+                  label: 'Add pane',
+                  onTap: () => _openMenu(leaf.id, globalRectOf(context)),
+                ),
               ),
-            ),
             _HeadButton(
               key: ValueKey('wp-max-${leaf.id}'),
               icon: maximised ? LucideIcons.minimize2 : LucideIcons.maximize2,

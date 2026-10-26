@@ -196,6 +196,7 @@ class SessionRow extends StatelessWidget {
     return Semantics(
       selected: selected,
       child: Stack(
+        fit: StackFit.passthrough,
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),

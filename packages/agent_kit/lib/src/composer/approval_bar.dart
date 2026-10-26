@@ -18,6 +18,7 @@
 import 'package:agent_kit_core/agent_kit_core.dart'
     show Approval, ApprovalDecision, ChatStatus, FileDiff, ToolKind;
 import 'package:bb_ui/bb_ui.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -200,8 +201,6 @@ class _ApprovalBarState extends State<ApprovalBar> {
     );
   }
 
-  static const _rowMinWidth = 640.0;
-
   Widget _body(BuildContext context, BbTheme t, SizeClass size) {
     final what = _What(
       approval: widget.approval,
@@ -212,13 +211,21 @@ class _ApprovalBarState extends State<ApprovalBar> {
       KitButton(
         label: 'Approve',
         kind: KitButtonKind.primary,
-        keyHint: '1',
+        keyHint: size.isCompact ? null : '1',
         onTap: _approve,
       ),
-      KitButton(label: 'For session', keyHint: '2', onTap: _forSession),
+      KitButton(
+        label: 'For session',
+        keyHint: size.isCompact ? null : '2',
+        onTap: _forSession,
+      ),
       Focus(
         focusNode: _denyAnchor,
-        child: KitButton(label: 'Deny', keyHint: '3', onTap: _openDeny),
+        child: KitButton(
+          label: 'Deny',
+          keyHint: size.isCompact ? null : '3',
+          onTap: _openDeny,
+        ),
       ),
     ];
     if (size.isCompact) {
@@ -248,28 +255,7 @@ class _ApprovalBarState extends State<ApprovalBar> {
         ],
       ],
     );
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= _rowMinWidth) {
-          return Row(
-            children: [
-              Expanded(child: what),
-              const SizedBox(width: 12),
-              acts,
-            ],
-          );
-        }
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            what,
-            const SizedBox(height: 8),
-            Align(alignment: Alignment.centerRight, child: acts),
-          ],
-        );
-      },
-    );
+    return _WrapActs(what: what, acts: acts);
   }
 
   Widget _denyBody(BuildContext context, BbTheme t, SizeClass size) {
@@ -476,3 +462,113 @@ class _What extends StatelessWidget {
     ];
   }
 }
+
+/// The request and its actions, laid out like the mockup's flex row with wrap
+/// (`.ap-what{flex:1 1 280px}`, `.ap-acts{flex:1 0 auto; justify-content:
+/// flex-end}`): side by side while the request keeps at least 280 px, else the
+/// actions drop under it, right-aligned. It follows the width it is given, not
+/// a fixed breakpoint.
+class _WrapActs extends MultiChildRenderObjectWidget {
+  _WrapActs({required Widget what, required Widget acts})
+    : super(children: [what, acts]);
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderWrapActs();
+}
+
+typedef _Plan = ({Size size, Offset what, Offset acts});
+
+class _RenderWrapActs extends RenderBox
+    with
+        ContainerRenderObjectMixin<
+          RenderBox,
+          ContainerBoxParentData<RenderBox>
+        >,
+        RenderBoxContainerDefaultsMixin<
+          RenderBox,
+          ContainerBoxParentData<RenderBox>
+        > {
+  static const _minWhat = 280.0;
+  static const _gapX = 12.0;
+  static const _gapY = 8.0;
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _ActsParentData) {
+      child.parentData = _ActsParentData();
+    }
+  }
+
+  RenderBox get _what => firstChild!;
+  RenderBox get _acts => childAfter(firstChild!)!;
+
+  _Plan _plan(BoxConstraints c, ChildLayouter layout) {
+    final maxW = c.hasBoundedWidth ? c.maxWidth : double.infinity;
+    final a = layout(_acts, BoxConstraints(maxWidth: maxW));
+    if (maxW.isFinite && maxW < _minWhat + _gapX + a.width) {
+      final w = layout(_what, BoxConstraints(minWidth: maxW, maxWidth: maxW));
+      return (
+        size: c.constrain(Size(maxW, w.height + _gapY + a.height)),
+        what: Offset.zero,
+        acts: Offset(maxW - a.width, w.height + _gapY),
+      );
+    }
+    final whatW = maxW.isFinite ? maxW - _gapX - a.width : null;
+    final w = layout(
+      _what,
+      whatW == null
+          ? const BoxConstraints()
+          : BoxConstraints(minWidth: whatW, maxWidth: whatW),
+    );
+    final h = w.height > a.height ? w.height : a.height;
+    final width = maxW.isFinite ? maxW : w.width + _gapX + a.width;
+    return (
+      size: c.constrain(Size(width, h)),
+      what: Offset(0, (h - w.height) / 2),
+      acts: Offset(width - a.width, (h - a.height) / 2),
+    );
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) =>
+      _plan(constraints, ChildLayoutHelper.dryLayoutChild).size;
+
+  @override
+  void performLayout() {
+    final plan = _plan(constraints, ChildLayoutHelper.layoutChild);
+    (_what.parentData! as _ActsParentData).offset = plan.what;
+    (_acts.parentData! as _ActsParentData).offset = plan.acts;
+    size = plan.size;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    final a = _acts.getMinIntrinsicWidth(height);
+    final w = _what.getMinIntrinsicWidth(height);
+    return a > w ? a : w;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      _what.getMaxIntrinsicWidth(height) +
+      _gapX +
+      _acts.getMaxIntrinsicWidth(height);
+
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      getDryLayout(BoxConstraints(maxWidth: width)).height;
+
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      getDryLayout(BoxConstraints(maxWidth: width)).height;
+
+  @override
+  void paint(PaintingContext context, Offset offset) =>
+      defaultPaint(context, offset);
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      defaultHitTestChildren(result, position: position);
+}
+
+class _ActsParentData extends ContainerBoxParentData<RenderBox> {}

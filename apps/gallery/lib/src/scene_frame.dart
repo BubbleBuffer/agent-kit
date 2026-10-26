@@ -2,10 +2,10 @@
 // golden tests both use it, so a screenshot is exactly what the gallery shows.
 
 import 'package:agent_kit/agent_kit.dart';
-import 'package:agent_kit_core/agent_kit_core.dart' show ChatSnapshot;
 import 'package:bb_ui/tokens.dart';
 import 'package:flutter/widgets.dart';
 
+import 'gallery_controller.dart';
 import 'scenes.dart';
 
 /// [scene] constrained to [width] (or less, when the space is narrower),
@@ -14,15 +14,19 @@ class SceneFrame extends StatelessWidget {
   const SceneFrame({
     super.key,
     required this.scene,
-    required this.snapshot,
+    required this.controller,
     required this.width,
     required this.brightness,
+    this.tall = false,
   });
 
   final GalleryScene scene;
-  final ChatSnapshot? snapshot;
+  final GalleryController controller;
   final double width;
   final Brightness brightness;
+
+  /// Lay the Components sheet out at full height (for a whole-sheet golden).
+  final bool tall;
 
   @override
   Widget build(BuildContext context) => BbThemeScope(
@@ -40,7 +44,10 @@ class SceneFrame extends StatelessWidget {
                   : constraints.maxWidth;
               return Align(
                 alignment: Alignment.topCenter,
-                child: SizedBox(width: w, child: buildScene(scene, snapshot)),
+                child: SizedBox(
+                  width: w,
+                  child: buildScene(scene, controller, tall: tall),
+                ),
               );
             },
           ),

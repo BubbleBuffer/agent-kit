@@ -70,6 +70,9 @@ Future<_Rig> _open(
 
 Finder _key(String k) => find.byKey(ValueKey(k));
 
+bool _isAdd(Widget w) =>
+    w.key is ValueKey && '${(w.key! as ValueKey).value}'.startsWith('wp-add-');
+
 void main() {
   group('divider', () {
     testWidgets('stops at the minimum, previews, then collapses past it', (
@@ -202,6 +205,41 @@ void main() {
       final size = tester.getSize(_key('wp-edge-f'));
       expect(size.height, 28);
       expect(size.width, closeTo(600, .5));
+    });
+
+    testWidgets('an edge tab of an auto-folded pane unfolds it', (
+      tester,
+    ) async {
+      // Five panes in a row, room for four at their minimum.
+      final layout = WorkspaceLayout(
+        root: WorkspaceSplit(
+          id: 'root',
+          axis: SplitAxis.row,
+          weights: const [1, 2, 3, 4, 5],
+          children: [
+            for (final id in ['x', 'y', 'z', 'u', 'v'])
+              WorkspaceLeaf(
+                id: id,
+                tabs: [WorkspaceTab(id: 'tab-$id', kind: 'browser')],
+              ),
+          ],
+        ),
+        front: 'tab-x',
+      );
+      final rig = await _open(
+        tester,
+        size: const Size(1000, 600),
+        layout: layout,
+      );
+      expect(_key('wp-edge-x'), findsOneWidget);
+      expect(_key('wp-leaf-x'), findsNothing);
+      await tester.tap(_key('wp-edge-x'));
+      await tester.pump();
+      expect(_key('wp-leaf-x'), findsOneWidget);
+      expect(_key('wp-edge-x'), findsNothing);
+      // Another pane took its place as the folded one.
+      expect(_key('wp-edge-y'), findsOneWidget);
+      expect(rig.controller.layout.leaf('x')!.collapsed, isFalse);
     });
 
     testWidgets('a pane folds by itself when there is no room', (tester) async {
@@ -396,7 +434,7 @@ void main() {
       tester,
     ) async {
       final rig = await _open(tester);
-      await tester.tap(_key('wp-add-b'));
+      await tester.tap(_key('wp-add-f'));
       await tester.pump();
       expect(_key('wp-menu'), findsOneWidget);
       for (final k in kinds) {
@@ -405,15 +443,29 @@ void main() {
       await tester.tap(_key('wp-menu-activity'));
       await tester.pump();
       expect(_key('wp-menu'), findsNothing);
-      final added = rig.controller.layout.leaves[1];
+      final added = rig.controller.layout.leaves.last;
       expect(added.activeTab.kind, 'activity');
       expect(rig.controller.layout.leaves.length, 4);
       expect(find.text('pane ${added.active}'), findsOneWidget);
     });
 
+    testWidgets('only the last pane that can split shows +', (tester) async {
+      await _open(tester);
+      expect(find.byWidgetPredicate(_isAdd), findsOneWidget);
+      expect(_key('wp-add-f'), findsOneWidget);
+    });
+
+    testWidgets('+ moves to the pane that still has room', (tester) async {
+      // 500 high: the file pane (about 210) cannot hold two panes below one
+      // another; the terminal above it (about 280) can.
+      await _open(tester, size: const Size(1208, 500));
+      expect(find.byWidgetPredicate(_isAdd), findsOneWidget);
+      expect(_key('wp-add-t'), findsOneWidget);
+    });
+
     testWidgets('a tap outside closes the menu', (tester) async {
       await _open(tester);
-      await tester.tap(_key('wp-add-t'));
+      await tester.tap(_key('wp-add-f'));
       await tester.pump();
       expect(_key('wp-menu'), findsOneWidget);
       await tester.tapAt(const Offset(5, 5));

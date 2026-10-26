@@ -577,6 +577,29 @@ class WorkspaceLayout {
     return _rebuild(_replace(root!, nodeId, (x) => x.withCollapsed(false)));
   }
 
+  /// Opens the node behind an edge tab. A node folded by the user is
+  /// restored. A node folded for lack of room trades places with the smallest
+  /// of the siblings that are on screen ([visible], from the geometry): it
+  /// takes that sibling's weight, so the geometry folds that sibling instead.
+  WorkspaceLayout unfold(String nodeId, Set<String> visible) {
+    final n = node(nodeId);
+    final p = parentOf(nodeId);
+    if (n == null || p == null) return this;
+    if (n.collapsed) return restore(nodeId);
+    final at = p.children.indexWhere((c) => c.id == nodeId);
+    int? small;
+    for (var i = 0; i < p.children.length; i++) {
+      if (i == at || !visible.contains(p.children[i].id)) continue;
+      if (small == null || p.weights[i] < p.weights[small]) small = i;
+    }
+    if (small == null) return this;
+    final w = [...p.weights];
+    final lower = w[at] < w[small] ? w[at] : w[small];
+    w[at] = w[small] * 1.05 + 1e-6;
+    w[small] = lower;
+    return _rebuild(_replace(root!, p.id, (_) => p.copyWith(weights: w)));
+  }
+
   WorkspaceLayout toggleCollapse(String nodeId) {
     final n = node(nodeId);
     if (n == null) return this;

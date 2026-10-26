@@ -7,7 +7,9 @@ import 'package:agent_kit_core/agent_kit_core.dart' show ChatSnapshot;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../components/workspace.dart';
 import 'components_scene.dart';
+import 'gallery_controller.dart';
 
 enum GalleryScene {
   workbench('A', 'Workbench', 'AgentWorkbench', 1440, 'a-workbench-*.png', [
@@ -77,11 +79,39 @@ enum GalleryScene {
   };
 }
 
-/// Builds [scene] for the chat state [snapshot] (null until it loads).
-Widget buildScene(GalleryScene scene, ChatSnapshot? snapshot) =>
-    scene == GalleryScene.components
-    ? const ComponentsScene()
-    : ScenePlaceholder(scene: scene, snapshot: snapshot);
+/// Builds [scene] on [controller]'s backend. [tall] lays the Components
+/// sheet out at its full height instead of scrolling it.
+Widget buildScene(
+  GalleryScene scene,
+  GalleryController controller, {
+  bool tall = false,
+}) {
+  if (scene == GalleryScene.components) return ComponentsScene(tall: tall);
+  final backend = controller.backend;
+  if (backend == null || scene == GalleryScene.scratchPane) {
+    return ScenePlaceholder(scene: scene, snapshot: controller.snapshot);
+  }
+  return AgentWorkbench(
+    key: ValueKey((backend, scene)),
+    backend: backend,
+    initialChatId: controller.chatId,
+    workspaceName: 'BubblePaw-base',
+    initials: 'BC',
+    now: controller.now,
+    detailFor: controller.detailFor,
+    onReviewApproval: (_) {},
+    workspaceController: scene == GalleryScene.workspace
+        ? controller.workspaceController
+        : null,
+    workspaceKinds: scene == GalleryScene.workspace
+        ? WorkspaceKind.standard
+        : const [],
+    workspacePaneBuilder: scene == GalleryScene.workspace
+        ? galleryPaneBuilder
+        : null,
+    initialWorkspaceShown: scene == GalleryScene.workspace,
+  );
+}
 
 /// A scene that is not built yet: names the composition and shows the live
 /// state of the fake backend's chat, so the plumbing is visible.

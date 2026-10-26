@@ -20,11 +20,42 @@ there and which mockup parts it covers.
 |---|---|---|
 | `theme/` | `BbTheme`, `BbThemeScope`, `SizeClass`, `SizeClassBuilder` | built |
 | `status/` | `StatusMark` | built |
-| `transcript/` | items, activity and evidence rows, edits, diff, plan | placeholder |
-| `composer/` | composer, approval bar, queue row, picks | placeholder |
-| `chrome/` | rail, header, crew strip, ledger | placeholder |
-| `workspace/` | split tree, panes, docking, edge tabs | placeholder |
-| `compositions/` | `AgentWorkbench`, `AgentChatPane` | placeholder |
+| `transcript/` | items, activity and evidence rows, edits, diff, plan | built |
+| `composer/` | composer, approval bar, queue row, picks | built |
+| `chrome/` | rail, header, crew strip, ledger | built |
+| `workspace/` | split tree, panes, docking, edge tabs | built |
+| `compositions/` | `AgentWorkbench`, `AgentChatPane` | built |
+
+## Compositions
+
+Two widgets put the folders together; an app shows a working agent chat by
+dropping one in, fed by an `AgentBackend`.
+
+`AgentChatPane(backend, chatId)` is one chat: header, transcript with its
+plan, approval bars, question prompt, queued inputs, error line and composer,
+with the crew strip, or a side column (the ledger) when the host gives one.
+It opens a `ChatFeed`, closes it when the chat or backend changes, and maps
+every user action to a backend command (approve, deny, answer, steer or queue,
+cancel, edit or remove a queued input, undo an edit, resume, fork, archive,
+pick model or profile). A command that fails shows the error's message in a
+dismissible line; a failed send gives the text back to the composer. Controls
+the backend's `capabilities` lack are hidden, not disabled. Resolved questions
+show their answer lines in the transcript; an interrupted run ends with the
+interrupted notice and a Resume action.
+
+`AgentWorkbench(backend)` is the app shell: the session rail (chats grouped
+by day, from `listChats`), an `AgentChatPane` in the sheet, the ledger or crew
+strip, and an optional `AgentWorkspace` beside the chat. The whole width picks
+the rail and the ledger (expanded and no workspace open) or crew strip; the
+area beside the rail picks how the workspace sits (a full-screen sheet when
+compact, a 240 to 420 px column when medium, beside a 444 to 584 px chat when
+expanded). The host passes what the kit cannot know: the workspace name, the
+per-model usage, panes, and callbacks to open files, agents and jobs.
+
+Needs outside the kit: `agent_kit_core` has no interrupted transcript item (the
+pane uses the run's outcome), no answered time or transcript position for a
+question (placed by request time), no older-history paging, and no per-model
+usage.
 
 `package:agent_kit/testing.dart` is not in the barrel: it loads the bundled
 fonts (and the Lucide icon fonts, which `flutter test` does not load) for
@@ -108,8 +139,9 @@ Only "needs you" fills a pill and only it is warm.
 ## Gallery
 
 `apps/gallery` (`flutter run -d chrome` in that folder). The toolbar switches
-scene (the mockup's A workbench, B Scratch pane, C phone and D workspace as
-placeholders, plus Components, which lists each widget in each state), light or
+scene (the mockup's A workbench, C phone and D workspace as `AgentWorkbench`
+on the fake backend, B Scratch pane still a placeholder, plus Components, which
+lists each widget in each state), light or
 dark, and the width (a 360 to 1600 px slider that constrains the content, so
 size classes follow it). The chat is the "Quota bar flickers on reconnect"
 script of `agent_kit_core/fake.dart` on a `ScriptedBackend`, followed through a
@@ -136,8 +168,9 @@ time.
 Golden tests are tagged `golden`; the normal test job excludes them and the
 `goldens` job runs them. They render `StatusMark` in `packages/agent_kit`
 (`test/goldens/status_mark_{light,dark}.png`) and every gallery scene in
-`apps/gallery` at 1440, 1000 and 390 px in light and dark
-(`test/goldens/<scene>_<width>_<theme>.png`), with the scripted chat played to
+`apps/gallery` (A at 1440 and 1000, C at 390, D at 1600 and 1000, and the
+whole Components sheet at 1000 px, light and dark;
+`test/goldens/<scene>_<width>_<theme>.png`), with the scripted chat played to
 its end. Text is real because the bundled fonts are loaded in the tests.
 Rendering happens only in CI, on `ubuntu-latest` with Flutter pinned to the
 version Scratch pins (3.47.5); goldens rendered elsewhere will not match.

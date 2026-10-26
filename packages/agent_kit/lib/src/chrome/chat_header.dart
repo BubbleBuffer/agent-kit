@@ -51,6 +51,7 @@ class ChatHeader extends StatelessWidget {
     this.workspaceShown = false,
     this.onToggleWorkspace,
     this.menuItems = const [],
+    this.hideEmptyMenu = false,
   });
 
   final ChatSummary chat;
@@ -63,6 +64,10 @@ class ChatHeader extends StatelessWidget {
   final bool workspaceShown;
   final VoidCallback? onToggleWorkspace;
   final List<ChromeMenuItem> menuItems;
+
+  /// Leaves the ⋯ button out when there are no [menuItems], instead of
+  /// drawing it disabled.
+  final bool hideEmptyMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -135,18 +140,19 @@ class ChatHeader extends StatelessWidget {
                       toggled: workspaceShown,
                       onTap: onToggleWorkspace,
                     ),
-                  Builder(
-                    builder: (buttonContext) => ChromeIconButton(
-                      glyphEllipsis,
-                      key: const ValueKey('header-menu'),
-                      label: 'Session menu',
-                      size: button,
-                      glyphSize: 20,
-                      onTap: menuItems.isEmpty
-                          ? null
-                          : () => _openMenu(buttonContext),
+                  if (!hideEmptyMenu || menuItems.isNotEmpty)
+                    Builder(
+                      builder: (buttonContext) => ChromeIconButton(
+                        glyphEllipsis,
+                        key: const ValueKey('header-menu'),
+                        label: 'Session menu',
+                        size: button,
+                        glyphSize: 20,
+                        onTap: menuItems.isEmpty
+                            ? null
+                            : () => _openMenu(buttonContext),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

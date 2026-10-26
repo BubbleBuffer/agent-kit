@@ -15,12 +15,14 @@ import 'package:agent_kit_core/agent_kit_core.dart'
         AssistantMessage,
         FileEdit,
         NoticeLine,
+        PlanItem,
         TranscriptItem,
         UserMessage;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import '../theme/theme.dart';
+import 'plan_checklist.dart';
 import 'transcript_item.dart';
 import 'transcript_support.dart';
 
@@ -44,6 +46,25 @@ class TranscriptAnchor {
 
   @override
   String toString() => 'TranscriptAnchor($itemId, $offset)';
+}
+
+/// Something other than a transcript item shown in the list, right after the
+/// item [afterItemId] (the end of the transcript when that is null or no longer
+/// there): a resolved question's answers, for one.
+@immutable
+class TranscriptInsert {
+  const TranscriptInsert({
+    required this.id,
+    required this.child,
+    this.afterItemId,
+  });
+
+  /// A stable id, unique among the items and inserts.
+  final String id;
+
+  final String? afterItemId;
+
+  final Widget child;
 }
 
 /// Reads and drives a [TranscriptList].
@@ -74,6 +95,8 @@ class TranscriptList extends StatefulWidget {
     this.actions = const TranscriptActions(),
     this.controller,
     this.initialAnchor,
+    this.plan = const [],
+    this.inserts = const [],
     this.leading,
     this.trailing,
     this.contentWidth = 720,
@@ -90,7 +113,14 @@ class TranscriptList extends StatefulWidget {
   /// Where to open instead of the tail.
   final TranscriptAnchor? initialAnchor;
 
-  /// Shown before the first item (a plan checklist, a notice).
+  /// The plan checklist (`ChatSnapshot.plan`), shown before the first item
+  /// when it has items.
+  final List<PlanItem> plan;
+
+  /// Extra entries between the items (see [TranscriptInsert]).
+  final List<TranscriptInsert> inserts;
+
+  /// Shown before the first item, after the plan (a notice).
   final Widget? leading;
 
   /// Shown after the last item (the interrupted notice, a typing mark).
@@ -321,13 +351,42 @@ class _TranscriptListState extends State<TranscriptList> {
   Widget build(BuildContext context) {
     final t = context.bb;
     final items = widget.items;
-    final hasLeading = widget.leading != null;
+    final Widget? leading = widget.plan.isEmpty
+        ? widget.leading
+        : widget.leading == null
+        ? PlanChecklist(widget.plan)
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PlanChecklist(widget.plan),
+              const SizedBox(height: 12),
+              widget.leading!,
+            ],
+          );
+    final hasLeading = leading != null;
     final hasTrailing = widget.trailing != null;
-    final count = items.length + (hasLeading ? 1 : 0) + (hasTrailing ? 1 : 0);
+    // The entries: items, each followed by its inserts.
+    final known = {for (final i in items) i.id};
+    final after = <String?, List<TranscriptInsert>>{};
+    for (final ins in widget.inserts) {
+      final key = known.contains(ins.afterItemId) ? ins.afterItemId : null;
+      (after[key] ??= []).add(ins);
+    }
+    final entries = <({TranscriptItem? item, TranscriptInsert? insert})>[
+      for (final item in items) ...[
+        (item: item, insert: null),
+        for (final ins in after[item.id] ?? const <TranscriptInsert>[])
+          (item: null, insert: ins),
+      ],
+      for (final ins in after[null] ?? const <TranscriptInsert>[])
+        (item: null, insert: ins),
+    ];
+    final count = entries.length + (hasLeading ? 1 : 0) + (hasTrailing ? 1 : 0);
     _built = true;
     _indexById = {
-      for (var i = 0; i < items.length; i++)
-        items[i].id: i + (hasLeading ? 1 : 0),
+      for (var i = 0; i < entries.length; i++)
+        (entries[i].item?.id ?? entries[i].insert!.id):
+            i + (hasLeading ? 1 : 0),
     };
     return SizeClassBuilder(
       builder: (context, sizeClass) {
@@ -362,7 +421,7 @@ class _TranscriptListState extends State<TranscriptList> {
                 },
                 itemBuilder: (context, index) {
                   if (hasLeading && index == 0) {
-                    return column('\u0000leading', index, 0, widget.leading!);
+                    return column('\u0000leading', index, 0, leading);
                   }
                   if (hasTrailing && index == count - 1) {
                     return column(
@@ -373,12 +432,20 @@ class _TranscriptListState extends State<TranscriptList> {
                     );
                   }
                   final i = index - (hasLeading ? 1 : 0);
-                  final item = items[i];
-                  final prev = i > 0 ? items[i - 1] : null;
+                  final entry = entries[i];
+                  final insert = entry.insert;
+                  if (insert != null) {
+                    return column(insert.id, index, 12, insert.child);
+                  }
+                  final item = entry.item!;
+                  final before = i > 0 ? entries[i - 1] : null;
+                  final prev = before?.item;
                   return column(
                     item.id,
                     index,
-                    _gapBefore(prev, item, compact),
+                    before != null && prev == null
+                        ? 12
+                        : _gapBefore(prev, item, compact),
                     TranscriptItemView(item, actions: widget.actions),
                   );
                 },

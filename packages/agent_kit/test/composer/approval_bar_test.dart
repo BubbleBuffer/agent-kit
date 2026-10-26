@@ -1,4 +1,5 @@
 import 'package:agent_kit/agent_kit.dart';
+import 'package:agent_kit/src/composer/composer_parts.dart' show KitButton;
 import 'package:agent_kit_core/agent_kit_core.dart'
     show Approval, ApprovalChoice, ApprovalDecision, ToolKind;
 import 'package:flutter/services.dart';
@@ -236,5 +237,38 @@ void main() {
     expect(find.text('1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
+  });
+
+  for (final width in [600.0, 640.0, 700.0, 800.0, 1000.0]) {
+    testWidgets('the bar follows its width, $width px', (tester) async {
+      await pumpComposer(tester, _bar([]), width: width);
+      expect(tester.takeException(), isNull);
+      final approve = tester.getRect(find.text('Approve'));
+      final deny = tester.getRect(find.text('Deny'));
+      final bar = tester.getRect(find.byType(ApprovalBar));
+      expect(deny.right, lessThanOrEqualTo(bar.right));
+      expect(deny.top, approve.top);
+    });
+  }
+
+  testWidgets('narrow, the actions go under the request, right-aligned', (
+    tester,
+  ) async {
+    await pumpComposer(tester, _bar([]), width: 500);
+    final bar = tester.getRect(find.byType(ApprovalBar));
+    final approve = tester.getRect(find.text('Approve'));
+    final deny = tester.getRect(find.widgetWithText(KitButton, 'Deny'));
+    final pill = tester.getRect(find.text('Needs approval'));
+    expect(approve.top, greaterThan(pill.bottom));
+    expect(deny.right, lessThan(bar.right));
+    expect(deny.right, greaterThan(bar.right - 24));
+  });
+
+  testWidgets('wide, the actions sit on the request row', (tester) async {
+    await pumpComposer(tester, _bar([]), width: 1000);
+    final approve = tester.getRect(find.text('Approve'));
+    final pill = tester.getRect(find.text('Needs approval'));
+    expect(approve.top, lessThan(pill.bottom + 40));
+    expect(approve.left, greaterThan(500));
   });
 }

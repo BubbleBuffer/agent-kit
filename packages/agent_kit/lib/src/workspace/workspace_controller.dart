@@ -71,6 +71,11 @@ class WorkspaceController extends ChangeNotifier {
 
   void restore(String nodeId) => layout = _layout.restore(nodeId);
 
+  /// Opens the node behind an edge tab; [visible] holds the ids of the nodes
+  /// on screen now (the geometry's `nodes`).
+  void unfold(String nodeId, Set<String> visible) =>
+      layout = _layout.unfold(nodeId, visible);
+
   void toggleCollapse(String nodeId) => layout = _layout.toggleCollapse(nodeId);
 
   void maximise(String leafId) => layout = _layout.maximise(leafId);

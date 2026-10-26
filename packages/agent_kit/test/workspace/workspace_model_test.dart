@@ -231,6 +231,25 @@ void main() {
     );
   });
 
+  group('unfold', () {
+    test('restores a node the user folded', () {
+      final l = sampleLayout().collapse('b');
+      expect(l.unfold('b', {'t', 'f'}).leaf('b')!.collapsed, isFalse);
+    });
+
+    test(
+      'an auto-folded node takes the weight of the smallest visible one',
+      () {
+        final l = sampleLayout();
+        final root = l.root! as WorkspaceSplit;
+        expect(root.weights, [1, 1]);
+        final next = l.unfold('b', {'right', 't', 'f'}).root! as WorkspaceSplit;
+        expect(next.weights[0], greaterThan(next.weights[1]));
+        expect(l.unfold('b', <String>{}), l);
+      },
+    );
+  });
+
   group('JSON', () {
     test('the layout survives a round trip, with collapse and maximise', () {
       final l = sampleLayout()
