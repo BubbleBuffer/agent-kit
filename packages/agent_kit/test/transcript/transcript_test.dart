@@ -148,12 +148,10 @@ void main() {
                 of: find.byType(Hover),
                 matching: find.byType(MouseRegion),
               )
-              .first,
+              .last,
         ),
       ).requestFocus();
       await tester.pump();
-      // ignore: avoid_print
-      print('DIAG ${FocusManager.instance.primaryFocus} ${FocusManager.instance.primaryFocus?.context?.widget}');
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
       expect(find.text('exec'), findsWidgets);

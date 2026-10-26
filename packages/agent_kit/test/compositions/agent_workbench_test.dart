@@ -47,10 +47,15 @@ void main() {
     expect(find.byKey(const ValueKey('rail-row-idle')), findsOneWidget);
     expect(find.text('Needs approval'), findsOneWidget);
 
-    await tester.tap(
-      find.byKey(const ValueKey('rail-row-idle')),
-      warnIfMissed: false,
+    final hit = HitTestResult();
+    tester.binding.hitTestInView(
+      hit,
+      tester.getCenter(find.byKey(const ValueKey('rail-row-idle'))),
+      tester.view.viewId,
     );
+    // ignore: avoid_print
+    print('DIAG ${hit.path.take(14).map((e) => e.target.runtimeType).join(' ')}');
+    await tester.tap(find.byKey(const ValueKey('rail-row-idle')));
     await _settle(tester);
     expect(find.text('Needs approval'), findsNothing);
     // The open chat's title is in the header as well as in the rail.
