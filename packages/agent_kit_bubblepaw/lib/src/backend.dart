@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:agent_kit_core/agent_kit_core.dart';
 
@@ -212,9 +213,9 @@ final class BubblePawBackend implements AgentBackend {
     final params = _object(notification['params']);
     for (final watch in _watches.toList()) {
       if (method == 'events.gap') {
-        watch.enqueue(() => watch.recover());
+        watch.notifyGap();
       } else if (method == 'event' && params['session_id'] == watch.chatId) {
-        watch.enqueue(() => watch.consume(params));
+        watch.notify(params);
       }
     }
   }
@@ -528,6 +529,7 @@ final class _Watch {
   final BubblePawProjection projection = BubblePawProjection();
   late ChatSnapshot view;
   Future<void> _tail = Future<void>.value();
+  final _notifications = Queue<_PendingNotification>();
   bool closed = false;
 
   // Only delivered durable host events advance this cursor. Loading a newer
@@ -543,6 +545,45 @@ final class _Watch {
         .catchError((Object error, StackTrace stack) {
           if (!closed) controller.addError(error, stack);
         });
+  }
+
+  void notify(Json event) => _queueNotification(event);
+
+  void notifyGap() => _queueNotification(null);
+
+  void _queueNotification(Json? event) {
+    final pending = _PendingNotification(event);
+    _notifications.add(pending);
+    enqueue(() async {
+      if (pending.consumed) return;
+      _notifications.removeFirst();
+      pending.consumed = true;
+      if (event == null) {
+        await recover();
+      } else {
+        await consume(event);
+      }
+    });
+  }
+
+  // A snapshot refresh can replay a later durable event while earlier live
+  // notifications wait behind it in _tail. Deliver that buffered prefix first:
+  // advancing the cursor would otherwise discard a confirming paragraph and
+  // misclassify the next model request as a retry. Original queued actions
+  // become no-ops; replay and notification copies still share durable dedupe.
+  bool _drainNotifications(int through) {
+    var refreshNeeded = false;
+    while (_notifications.isNotEmpty) {
+      final pending = _notifications.first;
+      final event = pending.event;
+      // An explicit host gap is an ordering barrier. Its queued recovery must
+      // report the discontinuity before any later notification is delivered.
+      if (event == null || (event['sequence'] as int? ?? 0) > through) break;
+      _notifications.removeFirst();
+      pending.consumed = true;
+      refreshNeeded = _consume(event) || refreshNeeded;
+    }
+    return refreshNeeded;
   }
 
   void emit(KitEvent event) {
@@ -565,7 +606,7 @@ final class _Watch {
   }
 
   Future<_ReplayResult> _replay({int? through}) async {
-    var refreshNeeded = false;
+    var refreshNeeded = _drainNotifications(cursor);
     var resyncNeeded = false;
     while (!closed) {
       final before = cursor;
@@ -582,11 +623,15 @@ final class _Watch {
       resyncNeeded = result['resync'] == true || resyncNeeded;
       final events = _objects(result['events']);
       for (final event in events) {
-        if (through != null && (event['sequence'] as int? ?? 0) > through) {
+        final sequence = event['sequence'] as int? ?? 0;
+        if (through != null && sequence > through) {
+          refreshNeeded = _drainNotifications(through) || refreshNeeded;
           return _ReplayResult(resync: resyncNeeded, refresh: refreshNeeded);
         }
+        refreshNeeded = _drainNotifications(sequence) || refreshNeeded;
         refreshNeeded = _consume(event) || refreshNeeded;
       }
+      refreshNeeded = _drainNotifications(through ?? cursor) || refreshNeeded;
       if (events.length < 1000) {
         return _ReplayResult(resync: resyncNeeded, refresh: refreshNeeded);
       }
@@ -788,6 +833,12 @@ final class _ReplayResult {
   const _ReplayResult({this.resync = false, this.refresh = false});
   final bool resync;
   final bool refresh;
+}
+
+final class _PendingNotification {
+  _PendingNotification(this.event);
+  final Json? event;
+  bool consumed = false;
 }
 
 Json _object(Object? value) => value is Map<String, Object?>
