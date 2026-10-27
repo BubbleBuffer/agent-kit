@@ -201,8 +201,9 @@ void main() {
       final delivered = Completer<void>();
       final subscription = backend.events('s1', after: 0).listen((event) {
         events.add(event);
-        if (event is MessageDelta && !delivered.isCompleted)
+        if (event is MessageDelta && !delivered.isCompleted) {
           delivered.complete();
+        }
       });
       addTearDown(subscription.cancel);
       await peer.waitFor((call) => call.method == 'events.after');
