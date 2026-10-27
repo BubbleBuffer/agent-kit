@@ -647,7 +647,10 @@ final class _Watch {
   Future<void> recover({bool retention = false}) =>
       _synchronize(gap: true, retention: retention);
 
-  Future<void> _synchronize({required bool gap, required bool retention}) async {
+  Future<void> _synchronize({
+    required bool gap,
+    required bool retention,
+  }) async {
     if (closed) return;
     if (++_recoveries > 3) {
       _recoveries--;
@@ -685,7 +688,9 @@ final class _Watch {
           _adopt(snapshot);
         } else {
           final changes = _changes(snapshot);
-          final first = view.seq >= barrier * 16 ? view.seq + 1 : barrier * 16 + 2;
+          final first = view.seq >= barrier * 16
+              ? view.seq + 1
+              : barrier * 16 + 2;
           if (changes.isNotEmpty &&
               changes.length > barrier * 16 + 14 - first + 1) {
             // The fixed 16-slot wire mapping cannot encode an arbitrarily
@@ -723,7 +728,9 @@ final class _Watch {
   List<KitEvent Function(int)> _changes(ChatSnapshot snapshot) {
     final changes = <KitEvent Function(int)>[];
     if (snapshot.title != view.title) {
-      changes.add((seq) => ChatRenamed(seq: seq, chat: chatId, title: snapshot.title));
+      changes.add(
+        (seq) => ChatRenamed(seq: seq, chat: chatId, title: snapshot.title),
+      );
     }
     for (final item in snapshot.items) {
       if (view.items.any((old) => old.id == item.id)) continue;
@@ -752,7 +759,9 @@ final class _Watch {
     }
     for (final old in view.queue) {
       if (!snapshot.queue.any((input) => input.id == old.id)) {
-        changes.add((seq) => QueueRemoved(seq: seq, chat: chatId, inputId: old.id));
+        changes.add(
+          (seq) => QueueRemoved(seq: seq, chat: chatId, inputId: old.id),
+        );
       }
     }
     for (final input in snapshot.queue) {

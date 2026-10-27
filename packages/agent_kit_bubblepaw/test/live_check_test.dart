@@ -9,7 +9,7 @@ void main() {
   test('wire capture tees real chunks in line order and redacts all content', () async {
     final lines = <String>[];
     final trace = RedactedWireTrace(lines.add);
-    final wire = utf8.encode(jsonEncode({
+    final wire = utf8.encode('${jsonEncode({
       'jsonrpc': '2.0', 'method': 'event', 'params': {
         'type': 'approval_requested', 'sequence': 13,
         'session_id': 'synthetic-private-session',
@@ -19,18 +19,18 @@ void main() {
           'path': '/synthetic/private/path',
           'unknown_SYNTHETIC_SECRET_FIELD': 'SYNTHETIC_SECRET_VALUE'},
       },
-    }) + '\n');
+    })}\n');
     final source = Stream<List<int>>.fromIterable([
       wire.sublist(0, 9), wire.sublist(9),
     ]);
     final observed = await trace.tap('stdout', source).expand((b) => b).toList();
     expect(observed, wire);
-    trace.add('stdin', utf8.encode(jsonEncode({
+    trace.add('stdin', utf8.encode('${jsonEncode({
       'jsonrpc': '2.0', 'id': 1, 'method': 'approval.decide', 'params': {
         'approval_id': 'synthetic-private-approval', 'decision': 'approve',
         'text': 'SYNTHETIC_SECRET_TEXT',
       },
-    }) + '\n'));
+    })}\n'));
     trace.add('stderr', utf8.encode('SYNTHETIC_SECRET_STDERR\n'));
     await trace.close();
     expect(lines, hasLength(3));
@@ -69,11 +69,11 @@ void main() {
   test('unknown protocol strings and numbers are redacted', () async {
     final lines = <String>[];
     final trace = RedactedWireTrace(lines.add);
-    trace.add('stdout', utf8.encode(jsonEncode({
+    trace.add('stdout', utf8.encode('${jsonEncode({
       'jsonrpc': '2.0', 'method': 'SYNTHETIC_SECRET_METHOD',
       'params': {'type': 'SYNTHETIC_SECRET_TYPE', 'exitCode': 123456789,
         'content': {'id': 'SYNTHETIC_SECRET_CONTENT', 'seq': 987654321}},
-    }) + '\n'));
+    })}\n'));
     await trace.close();
     expect(lines.single, isNot(contains('SYNTHETIC_SECRET')));
     expect(lines.single, isNot(contains('123456789')));

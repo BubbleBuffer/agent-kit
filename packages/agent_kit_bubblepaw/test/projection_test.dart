@@ -102,7 +102,7 @@ void main() {
     projection.snapshot(state(seq: 10), workspaceDirectory: '/example');
     projection.replayFrom('session-a', 5);
     final event = wire('tool_started', 9, fields: {
-      'call': {'id': 'replayed-tool', 'name': 'js', 'arguments': {}},
+      'call': {'id': 'replayed-tool', 'name': 'js', 'arguments': <String, Object?>{}},
     });
     expect(projection.event(event).single, isA<ToolStarted>());
     expect(projection.event(event), isEmpty);
