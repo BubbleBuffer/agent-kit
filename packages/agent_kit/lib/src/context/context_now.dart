@@ -48,6 +48,7 @@ class ContextRow extends StatefulWidget {
 
 class _ContextRowState extends State<ContextRow> {
   bool _hover = false;
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +117,7 @@ class _ContextRowState extends State<ContextRow> {
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Opacity(
-                  opacity: _hover || widget.selected ? 1 : 0,
+                  opacity: _hover || _focused || widget.selected ? 1 : 0,
                   child: glyphIcon(
                     glyphChevronRight,
                     size: 14,
@@ -146,17 +147,22 @@ class _ContextRowState extends State<ContextRow> {
             ].join(', '),
             excludeSemantics: true,
             onTap: widget.onTap,
-            child: Hover(
-              onTap: widget.onTap,
-              borderRadius: radius,
-              selected: widget.selected,
-              selectedColor: t.colors.bgSelectedBlock,
-              hoverBackground: t.hover,
-              pressedBackground: t.pressed,
-              border: border,
-              lift: 0,
-              onHoverChanged: (v) => setState(() => _hover = v),
-              child: box,
+            child: Focus(
+              canRequestFocus: false,
+              skipTraversal: true,
+              onFocusChange: (v) => setState(() => _focused = v),
+              child: Hover(
+                onTap: widget.onTap,
+                borderRadius: radius,
+                selected: widget.selected,
+                selectedColor: t.colors.bgSelectedBlock,
+                hoverBackground: t.hover,
+                pressedBackground: t.pressed,
+                border: border,
+                lift: 0,
+                onHoverChanged: (v) => setState(() => _hover = v),
+                child: box,
+              ),
             ),
           )
         : Semantics(
