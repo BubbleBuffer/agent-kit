@@ -1,0 +1,19 @@
+{"note":"Child questions go to the parent agent, not the user: the child waits, the chat never needs you. The parent or the user answers; a child that ends cancels what it asked."}
+{"seq":1,"chat":"c1","kind":"run.started","runId":"r1"}
+{"seq":2,"chat":"c1","kind":"child.spawned","childId":"k1","task":"Survey quota handling in Codex"}
+{"seq":3,"chat":"c1","kind":"child.spawned","childId":"k2","task":"Trace the reconnect path"}
+{"seq":4,"chat":"c1","kind":"child.spawned","childId":"k3","task":"Check the web client"}
+{"seq":5,"chat":"c1","kind":"run.finished","runId":"r1","outcome":"completed"}
+{"seq":6,"chat":"c1","kind":"child.question.asked","question":{"id":"cq1","childId":"k1","text":"Which path should I read?","options":["App server","CLI"],"askedAt":"2026-10-26T09:01:00.000Z"}}
+{"seq":7,"chat":"c1","kind":"child.question.asked","question":{"id":"cq2","childId":"k2","text":"Is the reconnect timer in scope?","askedAt":"2026-10-26T09:01:10.000Z"}}
+{"seq":8,"chat":"c1","kind":"child.question.asked","question":{"id":"cq3","childId":"k3","text":"Which build?","askedAt":"2026-10-26T09:01:20.000Z"}}
+{"expect":{"status":"done"}}
+{"note":"Progress cannot revive a waiting child; idle is a state of its own."}
+{"seq":9,"chat":"c1","kind":"child.progress","childId":"k1","activity":"read ws.ts","state":"running"}
+{"seq":10,"chat":"c1","kind":"child.question.resolved","childId":"k1","questionId":"cq1","answer":"App server only.","answeredBy":"parent","at":"2026-10-26T09:01:30.000Z"}
+{"seq":11,"chat":"c1","kind":"child.question.resolved","childId":"k2","questionId":"cq2","answer":"Yes.","answeredBy":"user","at":"2026-10-26T09:01:40.000Z"}
+{"note":"A second answer changes nothing; a child ending cancels its open question."}
+{"seq":12,"chat":"c1","kind":"child.question.resolved","childId":"k2","questionId":"cq2","answer":"No.","answeredBy":"parent"}
+{"seq":13,"chat":"c1","kind":"child.finished","childId":"k3","state":"timedOut","at":"2026-10-26T09:02:00.000Z"}
+{"seq":14,"chat":"c1","kind":"child.progress","childId":"k1","state":"idle"}
+{"expect":{"status":"running"}}

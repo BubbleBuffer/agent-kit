@@ -1,0 +1,70 @@
+{
+  "chatId": "c1",
+  "seq": 9,
+  "title": "",
+  "status": "idle",
+  "items": [
+    {
+      "type": "user",
+      "id": "u1",
+      "at": "2026-10-26T09:00:00.000Z",
+      "text": "Keep going"
+    },
+    {
+      "type": "compaction",
+      "id": "cm1",
+      "at": "2026-10-26T09:00:10.000Z",
+      "eventId": "ev1",
+      "state": "done",
+      "episodesSummarized": 3,
+      "tokensBefore": 41000,
+      "tokensAfter": 9000
+    },
+    {
+      "type": "system",
+      "id": "s1",
+      "text": "Working"
+    },
+    {
+      "type": "compaction",
+      "id": "cm2",
+      "at": "2026-10-26T09:01:00.000Z",
+      "state": "failed"
+    },
+    {
+      "type": "interrupted",
+      "id": "i1",
+      "at": "2026-10-26T09:02:00.000Z",
+      "reason": "The host restarted."
+    },
+    {
+      "type": "interrupted",
+      "id": "i2"
+    }
+  ],
+  "approvals": [],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [],
+  "jobs": [],
+  "context": {
+    "window": 128000,
+    "applyCap": 84000,
+    "responseReserve": 44000,
+    "blocks": [
+      {
+        "kind": "opening",
+        "tokens": 6100
+      },
+      {
+        "kind": "chapterSummary",
+        "tokens": 9000
+      },
+      {
+        "kind": "rawSuffix",
+        "tokens": 33500
+      }
+    ]
+  }
+}

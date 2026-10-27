@@ -20,6 +20,9 @@ sealed class TranscriptItem extends KitValue {
     'activity' => ActivityGroup.fromJson(j),
     'edit' => FileEdit.fromJson(j),
     'childResult' => ChildResult.fromJson(j),
+    'compaction' => CompactionItem.fromJson(j),
+    'childQuestion' => ChildQuestionItem.fromJson(j),
+    'interrupted' => InterruptedItem.fromJson(j),
     _ => null,
   };
 
@@ -312,6 +315,139 @@ final class ChildResult extends TranscriptItem {
     'state': state.name,
     'result': result,
   });
+}
+
+/// How far a compaction got.
+enum CompactionState {
+  /// Summaries are being written or applied.
+  running,
+
+  /// Applied: the serving view changed.
+  done,
+
+  /// It failed; the previous context is unchanged.
+  failed,
+}
+
+/// The marker of a context compaction, placed in the transcript at the
+/// point it happened: "Context compacted · 3 episodes summarized ·
+/// 41k → 9k". `View` opens the context view.
+///
+/// Every number is optional; a widget shows only what is present.
+final class CompactionItem extends TranscriptItem {
+  /// Creates a compaction marker.
+  const CompactionItem({
+    required super.id,
+    super.at,
+    this.eventId,
+    this.state = CompactionState.done,
+    this.episodesSummarized,
+    this.tokensBefore,
+    this.tokensAfter,
+    this.detail,
+  });
+
+  /// Reads a compaction marker from JSON.
+  factory CompactionItem.fromJson(Json j) => CompactionItem(
+    id: j.str('id'),
+    at: j.timeOpt('at'),
+    eventId: j.strOpt('eventId'),
+    state: j.enumOf('state', CompactionState.values, CompactionState.done),
+    episodesSummarized: j.intOpt('episodesSummarized'),
+    tokensBefore: j.intOpt('tokensBefore'),
+    tokensAfter: j.intOpt('tokensAfter'),
+    detail: j.strOpt('detail'),
+  );
+
+  /// The `ContextEvent` this marker belongs to, once there is one.
+  final String? eventId;
+
+  /// Running, done or failed.
+  final CompactionState state;
+
+  /// How many episodes were summarized.
+  final int? episodesSummarized;
+
+  /// The size of what was replaced, in tokens.
+  final int? tokensBefore;
+
+  /// The size of what replaced it, in tokens.
+  final int? tokensAfter;
+
+  /// A muted detail, such as "summarizing episode 4 · 24k".
+  final String? detail;
+
+  @override
+  String get type => 'compaction';
+
+  @override
+  Json toJson() => _base({
+    'eventId': eventId,
+    'state': state.name,
+    'episodesSummarized': episodesSummarized,
+    'tokensBefore': tokensBefore,
+    'tokensAfter': tokensAfter,
+    'detail': detail,
+  });
+}
+
+/// A child agent's question to its parent, at the place it was asked in the
+/// parent's transcript. It is not the user's [Question].
+final class ChildQuestionItem extends TranscriptItem {
+  /// Creates the item.
+  const ChildQuestionItem({
+    required super.id,
+    required this.question,
+    this.task = '',
+    super.at,
+  });
+
+  /// Reads the item from JSON.
+  factory ChildQuestionItem.fromJson(Json j) => ChildQuestionItem(
+    id: j.str('id'),
+    at: j.timeOpt('at'),
+    question: ChildQuestion.fromJson(j.obj('question')),
+    task: j.strOpt('task') ?? '',
+  );
+
+  /// The question and its state.
+  final ChildQuestion question;
+
+  /// The asking child's task, which names the row.
+  final String task;
+
+  @override
+  String get type => 'childQuestion';
+
+  @override
+  Json toJson() => _base({
+    'question': question.toJson(),
+    'task': task.isEmpty ? null : task,
+  });
+}
+
+/// A run was interrupted (a host restart); the pane shows the resume line
+/// at this point. Snapshots without the item fall back to the run's
+/// outcome.
+final class InterruptedItem extends TranscriptItem {
+  /// Creates the item.
+  const InterruptedItem({required super.id, super.at, this.reason});
+
+  /// Reads the item from JSON.
+  factory InterruptedItem.fromJson(Json j) => InterruptedItem(
+    id: j.str('id'),
+    at: j.timeOpt('at'),
+    reason: j.strOpt('reason'),
+  );
+
+  /// Why, such as "The host restarted."
+  final String? reason;
+
+  @override
+  String get type => 'interrupted';
+
+  @override
+  Json toJson() => _base({'reason': reason});
 }
 
 /// A row of an [ActivityGroup].

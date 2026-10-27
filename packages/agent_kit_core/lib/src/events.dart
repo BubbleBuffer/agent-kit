@@ -1,6 +1,8 @@
 /// Kit events: what a backend streams after a snapshot.
 library;
 
+import 'context.dart';
+import 'items.dart';
 import 'models.dart';
 import 'value.dart';
 
@@ -286,6 +288,27 @@ final Map<String, _Reader> _readers = {
     childId: j.str('childId'),
     activity: j.strOpt('activity'),
     toolCalls: j.intOpt('toolCalls'),
+    state: j.enumOpt('state', WorkState.values),
+  ),
+  'child.question.asked': (j, seq, chat, at) => ChildQuestionAsked(
+    seq: seq,
+    chat: chat,
+    at: at,
+    question: ChildQuestion.fromJson(j.obj('question')),
+  ),
+  'child.question.resolved': (j, seq, chat, at) => ChildQuestionResolved(
+    seq: seq,
+    chat: chat,
+    at: at,
+    childId: j.str('childId'),
+    questionId: j.str('questionId'),
+    state: j.enumOf(
+      'state',
+      ChildQuestionState.values,
+      ChildQuestionState.answered,
+    ),
+    answer: j.strOpt('answer'),
+    answeredBy: j.enumOpt('answeredBy', AnsweredBy.values),
   ),
   'child.finished': (j, seq, chat, at) => ChildFinished(
     seq: seq,
@@ -328,6 +351,31 @@ final Map<String, _Reader> _readers = {
     chat: chat,
     at: at,
     usage: Usage.fromJson(j.obj('usage')),
+  ),
+  'context.changed': (j, seq, chat, at) => ContextChanged(
+    seq: seq,
+    chat: chat,
+    at: at,
+    context: ContextView.fromJson(j.obj('context')),
+  ),
+  'compaction.updated': (j, seq, chat, at) => CompactionUpdated(
+    seq: seq,
+    chat: chat,
+    at: at,
+    itemId: j.str('itemId'),
+    state: j.enumOf('state', CompactionState.values, CompactionState.done),
+    eventId: j.strOpt('eventId'),
+    episodesSummarized: j.intOpt('episodesSummarized'),
+    tokensBefore: j.intOpt('tokensBefore'),
+    tokensAfter: j.intOpt('tokensAfter'),
+    detail: j.strOpt('detail'),
+  ),
+  'interrupted.added': (j, seq, chat, at) => InterruptedAdded(
+    seq: seq,
+    chat: chat,
+    at: at,
+    itemId: j.str('itemId'),
+    reason: j.strOpt('reason'),
   ),
   'gap': (j, seq, chat, at) =>
       GapEvent(seq: seq, chat: chat, at: at, skipped: j.intOpt('skipped')),
@@ -1183,6 +1231,7 @@ final class ChildProgress extends KitEvent {
     required this.childId,
     this.activity,
     this.toolCalls,
+    this.state,
     super.at,
   });
 
@@ -1195,6 +1244,11 @@ final class ChildProgress extends KitEvent {
   /// Tool calls so far.
   final int? toolCalls;
 
+  /// A new state for a child that has not ended, such as
+  /// [WorkState.idle]; null leaves it unchanged. A child's question and its
+  /// answer change the state by themselves.
+  final WorkState? state;
+
   @override
   String get kind => 'child.progress';
 
@@ -1203,6 +1257,72 @@ final class ChildProgress extends KitEvent {
     'childId': childId,
     'activity': activity,
     'toolCalls': toolCalls,
+    'state': state?.name,
+  };
+}
+
+/// A child agent asked its parent a question: adds a `ChildQuestionItem`,
+/// sets the child's `pendingQuestion` and its state to
+/// [WorkState.waitingForAnswer]. It is not a [QuestionAsked]: the user is
+/// not asked.
+final class ChildQuestionAsked extends KitEvent {
+  /// Creates the event.
+  const ChildQuestionAsked({
+    required super.seq,
+    required super.chat,
+    required this.question,
+    super.at,
+  });
+
+  /// The question; its `childId` names the child.
+  final ChildQuestion question;
+
+  @override
+  String get kind => 'child.question.asked';
+
+  @override
+  Json payload() => {'question': question.toJson()};
+}
+
+/// A child's question was answered (by the parent or the user) or withdrawn.
+final class ChildQuestionResolved extends KitEvent {
+  /// Creates the event.
+  const ChildQuestionResolved({
+    required super.seq,
+    required super.chat,
+    required this.childId,
+    required this.questionId,
+    this.state = ChildQuestionState.answered,
+    this.answer,
+    this.answeredBy,
+    super.at,
+  });
+
+  /// The child's chat id.
+  final String childId;
+
+  /// The question's id.
+  final String questionId;
+
+  /// Answered or cancelled.
+  final ChildQuestionState state;
+
+  /// The answer, as the parent sent it.
+  final String? answer;
+
+  /// Who answered; defaults to the parent.
+  final AnsweredBy? answeredBy;
+
+  @override
+  String get kind => 'child.question.resolved';
+
+  @override
+  Json payload() => {
+    'childId': childId,
+    'questionId': questionId,
+    'state': state.name,
+    'answer': answer,
+    'answeredBy': answeredBy?.name,
   };
 }
 
@@ -1351,6 +1471,105 @@ final class UsageUpdated extends KitEvent {
 
   @override
   Json payload() => {'usage': usage.toJson()};
+}
+
+/// The context view changed (a compaction was applied, or messages
+/// arrived): [context] replaces `ChatSnapshot.context`.
+final class ContextChanged extends KitEvent {
+  /// Creates the event.
+  const ContextChanged({
+    required super.seq,
+    required super.chat,
+    required this.context,
+    super.at,
+  });
+
+  /// The whole new serving view.
+  final ContextView context;
+
+  @override
+  String get kind => 'context.changed';
+
+  @override
+  Json payload() => {'context': context.toJson()};
+}
+
+/// A compaction marker was added or changed in the transcript: adds a
+/// `CompactionItem` or replaces the one with the same [itemId].
+final class CompactionUpdated extends KitEvent {
+  /// Creates the event.
+  const CompactionUpdated({
+    required super.seq,
+    required super.chat,
+    required this.itemId,
+    this.state = CompactionState.done,
+    this.eventId,
+    this.episodesSummarized,
+    this.tokensBefore,
+    this.tokensAfter,
+    this.detail,
+    super.at,
+  });
+
+  /// The marker's item id.
+  final String itemId;
+
+  /// Running, done or failed.
+  final CompactionState state;
+
+  /// The `ContextEvent` it belongs to.
+  final String? eventId;
+
+  /// How many episodes were summarized.
+  final int? episodesSummarized;
+
+  /// The size of what was replaced.
+  final int? tokensBefore;
+
+  /// The size of what replaced it.
+  final int? tokensAfter;
+
+  /// A muted detail.
+  final String? detail;
+
+  @override
+  String get kind => 'compaction.updated';
+
+  @override
+  Json payload() => {
+    'itemId': itemId,
+    'state': state.name,
+    'eventId': eventId,
+    'episodesSummarized': episodesSummarized,
+    'tokensBefore': tokensBefore,
+    'tokensAfter': tokensAfter,
+    'detail': detail,
+  };
+}
+
+/// A run was interrupted: adds an `InterruptedItem` at this point of the
+/// transcript.
+final class InterruptedAdded extends KitEvent {
+  /// Creates the event.
+  const InterruptedAdded({
+    required super.seq,
+    required super.chat,
+    required this.itemId,
+    this.reason,
+    super.at,
+  });
+
+  /// The item's id.
+  final String itemId;
+
+  /// Why, such as "The host restarted."
+  final String? reason;
+
+  @override
+  String get kind => 'interrupted.added';
+
+  @override
+  Json payload() => {'itemId': itemId, 'reason': reason};
 }
 
 /// Events were missed (a reconnect, a lagging subscriber, or a change such

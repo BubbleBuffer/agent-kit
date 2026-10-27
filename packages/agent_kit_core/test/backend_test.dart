@@ -107,7 +107,7 @@ void main() {
         expect(tools['c7']?.state, WorkState.failed);
         expect(tools['c7']?.output?.truncated, isTrue);
         expect(tools['c9']?.state, WorkState.running);
-        expect(rows.whereType<SpawnRow>(), hasLength(2));
+        expect(rows.whereType<SpawnRow>(), hasLength(3));
         final answer = s.item('a1')! as AssistantMessage;
         expect(answer.streaming, isFalse);
         expect(answer.markdown, contains('```'));

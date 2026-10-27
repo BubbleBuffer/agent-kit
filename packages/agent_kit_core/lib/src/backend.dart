@@ -1,6 +1,7 @@
 /// The backend port: what a host implements so the kit's widgets can run.
 library;
 
+import 'context.dart';
 import 'events.dart';
 import 'models.dart';
 import 'snapshot.dart';
@@ -61,6 +62,15 @@ enum KitCapability {
 
   /// `resume` of an interrupted run.
   resume,
+
+  /// The context view: `ChatSnapshot.context`, `loadContext`,
+  /// `loadHistoryRange` and `loadSummary`.
+  context,
+
+  /// `answerChildQuestion`: the user answers a child agent's question in
+  /// the parent's place. Needs engine support: a user message to a child in
+  /// `waitingForAnswer`.
+  answerChildQuestion,
 }
 
 /// The set of [KitCapability] a backend declares.
@@ -341,6 +351,18 @@ abstract interface class AgentBackend {
     Map<String, QuestionAnswer> answers,
   );
 
+  /// Answers a child agent's pending question in the parent's place ("Answer
+  /// yourself"); the parent is told the user answered. [text] is the whole
+  /// answer. Needs the `answerChildQuestion` capability; fails with
+  /// `KitNotFound` for an unknown question and `KitConflict` when it was
+  /// answered already.
+  Future<void> answerChildQuestion(
+    String chatId,
+    String childId,
+    String questionId,
+    String text,
+  );
+
   /// Renames the chat.
   Future<void> rename(String chatId, String title);
 
@@ -373,4 +395,21 @@ abstract interface class AgentBackend {
 
   /// Sets the profile for the chat's next runs.
   Future<void> setProfile(String chatId, String profileId);
+
+  /// The structure behind the chat's context view: chapters, episodes,
+  /// summaries and the compaction timeline. Needs the `context` capability.
+  /// Summary texts may be left empty; [loadSummary] has the whole text.
+  Future<ContextDetails> loadContext(String chatId);
+
+  /// A range of the chat's original messages, [firstSeq] to [lastSeq]
+  /// inclusive, for the windowed history. Needs the `context` capability.
+  Future<HistoryPage> loadHistoryRange(
+    String chatId,
+    int firstSeq,
+    int lastSeq,
+  );
+
+  /// One summary with its whole text. Needs the `context` capability; fails
+  /// with `KitNotFound` for an unknown id.
+  Future<ContextSummary> loadSummary(String chatId, String summaryId);
 }

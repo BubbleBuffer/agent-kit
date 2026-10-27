@@ -1,6 +1,7 @@
 /// The mockups' "Quota bar flickers on reconnect" chat as a script.
 library;
 
+import 'context_scenario.dart';
 import 'scripted_backend.dart';
 
 /// The chat id of [quotaReconnectScript].
@@ -16,7 +17,14 @@ const quotaChatId = 'quota-reconnect';
 /// `gap`. At the end it waits for approval of an edit, with a follow-up
 /// queued: the mockups' mid-task state, status `needsYou`.
 ///
-/// It takes about four minutes on the script clock.
+/// The LCM history of the mockups is part of it: one child asks its parent a
+/// question and gets an answer, another is left asking (40 seconds before
+/// the end), a compaction marker runs and completes, and the chat has the
+/// context view of 48.6k of 128k tokens, with `loadContext`,
+/// `loadHistoryRange` and `loadSummary` answering from [quotaContextDetails]
+/// and [quotaHistory].
+///
+/// It takes about five minutes on the script clock.
 ChatScript quotaReconnectScript() {
   Duration s(int seconds) => Duration(seconds: seconds);
   const run = 'run-quota-1';
@@ -49,6 +57,8 @@ ChatScript quotaReconnectScript() {
   return ChatScript(
     chatId: quotaChatId,
     title: 'Quota bar flickers on reconnect',
+    context: quotaContextDetails(),
+    history: quotaHistory(),
     steps: [
       const ScriptStep(Duration.zero, {
         'kind': 'chat.workspace',
@@ -183,6 +193,24 @@ ChatScript quotaReconnectScript() {
         'toolCalls': 3,
       }),
       ScriptStep(s(2), {
+        'kind': 'child.question.asked',
+        'question': {
+          'id': 'cq1',
+          'childId': 'c7e2',
+          'text':
+              'Codex has two rate-limit paths, the CLI and the app server. '
+              'Which one should I read?',
+          'options': ['App server', 'CLI', 'Both'],
+        },
+      }),
+      ScriptStep(s(4), {
+        'kind': 'child.question.resolved',
+        'childId': 'c7e2',
+        'questionId': 'cq1',
+        'answer': 'App server only. The CLI path is a thin wrapper around it.',
+        'answeredBy': 'parent',
+      }),
+      ScriptStep(s(2), {
         'kind': 'usage.updated',
         'usage': {
           'contextTokens': 31200,
@@ -227,6 +255,25 @@ ChatScript quotaReconnectScript() {
         'itemId': 'n1',
         'text': 'Reconnected. Showing what happened while offline.',
         'tone': 'info',
+      }),
+      ScriptStep(s(1), {
+        'kind': 'compaction.updated',
+        'itemId': 'cm1',
+        'state': 'running',
+        'detail': 'summarizing episode 4 · 24k',
+      }),
+      ScriptStep(s(3), {
+        'kind': 'compaction.updated',
+        'itemId': 'cm1',
+        'state': 'done',
+        'eventId': 'ev-applied-1',
+        'episodesSummarized': 3,
+        'tokensBefore': 41000,
+        'tokensAfter': 9000,
+      }),
+      ScriptStep(Duration.zero, {
+        'kind': 'context.changed',
+        'context': quotaContextView().toJson(),
       }),
       ScriptStep(s(2), {
         'kind': 'edit.applied',
@@ -325,6 +372,31 @@ ChatScript quotaReconnectScript() {
         'kind': 'message.system',
         'itemId': 's1',
         'text': 'Background job exited 101.',
+      }),
+      ScriptStep(s(1), {
+        'kind': 'child.spawned',
+        'childId': 'c7e4',
+        'task': 'Trace socket reconnect in the web client',
+        'callId': 'c10',
+        'runId': run,
+      }),
+      ScriptStep(s(2), {
+        'kind': 'child.question.asked',
+        'question': {
+          'id': 'cq2',
+          'childId': 'c7e4',
+          'text':
+              'Is the reconnect handled in web/src/ws.ts, or in the shared '
+              'client?',
+          'options': ['ws.ts', 'Shared client'],
+        },
+      }),
+      // The question stays pending to the end of the script.
+      ScriptStep(s(35), {
+        'kind': 'child.progress',
+        'childId': 'c7e4',
+        'activity': 'read web/src/ws.ts',
+        'toolCalls': 4,
       }),
       ScriptStep(s(1), {
         'kind': 'edit.applied',

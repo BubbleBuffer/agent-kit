@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 
 import '../backend.dart';
+import '../context.dart';
 import '../events.dart';
 import '../items.dart';
 import '../models.dart';
@@ -37,7 +38,10 @@ final class ChatScript {
     required this.chatId,
     required this.title,
     List<ScriptStep> steps = const [],
-  }) : steps = List.unmodifiable(steps);
+    this.context,
+    List<HistoryMessage> history = const [],
+  }) : steps = List.unmodifiable(steps),
+       history = List.unmodifiable(history);
 
   /// The chat's id.
   final String chatId;
@@ -47,6 +51,13 @@ final class ChatScript {
 
   /// The steps, in order.
   final List<ScriptStep> steps;
+
+  /// What `loadContext` and `loadSummary` return; null for a chat without
+  /// context data.
+  final ContextDetails? context;
+
+  /// The original messages `loadHistoryRange` pages through.
+  final List<HistoryMessage> history;
 }
 
 /// A command the fake received, for test assertions.
@@ -80,7 +91,9 @@ final class ScriptedBackend implements AgentBackend {
        _models = List.unmodifiable(models),
        _profiles = List.unmodifiable(profiles) {
     for (final s in scripts) {
-      _addChat(s.chatId, s.title);
+      _addChat(s.chatId, s.title)
+        ..details = s.context
+        ..history = s.history;
     }
   }
 
@@ -175,6 +188,7 @@ final class ScriptedBackend implements AgentBackend {
     final filled = switch (e['kind']) {
       'approval.requested' => fill('approval', 'requestedAt'),
       'question.asked' => fill('question', 'requestedAt'),
+      'child.question.asked' => fill('question', 'askedAt'),
       'queue.added' => fill('input', 'queuedAt'),
       _ => e,
     };
@@ -451,6 +465,39 @@ final class ScriptedBackend implements AgentBackend {
   }
 
   @override
+  Future<void> answerChildQuestion(
+    String chatId,
+    String childId,
+    String questionId,
+    String text,
+  ) async {
+    final chat = _command(
+      'answerChildQuestion',
+      [chatId, childId, questionId, text],
+      chatId: chatId,
+      needs: KitCapability.answerChildQuestion,
+    );
+    final child = chat.state.children.where((c) => c.id == childId).firstOrNull;
+    final q = child?.pendingQuestion;
+    if (child == null || q == null || q.id != questionId) {
+      final known = chat.state.items.whereType<ChildQuestionItem>().any(
+        (i) => i.question.id == questionId && i.question.childId == childId,
+      );
+      if (known) throw const KitConflict('That was already answered.');
+      throw const KitNotFound('No such question.');
+    }
+    if (text.trim().isEmpty) throw const KitInvalid('Type an answer first.');
+    emit(chatId, {
+      'kind': 'child.question.resolved',
+      'childId': childId,
+      'questionId': questionId,
+      'state': ChildQuestionState.answered.name,
+      'answer': text,
+      'answeredBy': AnsweredBy.user.name,
+    });
+  }
+
+  @override
   Future<void> rename(String chatId, String title) async {
     _command(
       'rename',
@@ -614,12 +661,61 @@ final class ScriptedBackend implements AgentBackend {
     );
     emit(chatId, {'kind': 'chat.settings', 'profile': profileId});
   }
+
+  @override
+  Future<ContextDetails> loadContext(String chatId) async {
+    final chat = _command(
+      'loadContext',
+      [chatId],
+      chatId: chatId,
+      needs: KitCapability.context,
+    );
+    return chat.details ?? ContextDetails();
+  }
+
+  @override
+  Future<HistoryPage> loadHistoryRange(
+    String chatId,
+    int firstSeq,
+    int lastSeq,
+  ) async {
+    final chat = _command(
+      'loadHistoryRange',
+      [chatId, firstSeq, lastSeq],
+      chatId: chatId,
+      needs: KitCapability.context,
+    );
+    if (lastSeq < firstSeq) throw const KitInvalid('Empty range.');
+    return HistoryPage(
+      firstSeq: firstSeq,
+      lastSeq: lastSeq,
+      messages: [
+        for (final m in chat.history)
+          if (m.seq >= firstSeq && m.seq <= lastSeq) m,
+      ],
+    );
+  }
+
+  @override
+  Future<ContextSummary> loadSummary(String chatId, String summaryId) async {
+    final chat = _command(
+      'loadSummary',
+      [chatId, summaryId],
+      chatId: chatId,
+      needs: KitCapability.context,
+    );
+    final summary = chat.details?.summary(summaryId);
+    if (summary == null) throw const KitNotFound('No such summary.');
+    return summary;
+  }
 }
 
 final class _FakeChat {
   _FakeChat(this.state, this.updatedAt);
 
   ChatSnapshot state;
+  ContextDetails? details;
+  List<HistoryMessage> history = const [];
   DateTime updatedAt;
   final log = <KitEvent>[];
   final subscribers = <StreamController<KitEvent>>[];

@@ -28,6 +28,9 @@ class ReturnLine extends StatelessWidget {
       WorkState.done => 'returned',
       WorkState.failed => 'failed',
       WorkState.cancelled => 'was cancelled',
+      WorkState.waitingForAnswer => 'is waiting for an answer',
+      WorkState.idle => 'is idle',
+      WorkState.timedOut => 'timed out',
     };
     final pill = switch (result.state) {
       WorkState.running => StatusMark.pill(ChatStatus.running),
@@ -36,6 +39,12 @@ class ReturnLine extends StatelessWidget {
       WorkState.cancelled => StatusMark.pill(
         ChatStatus.idle,
         label: 'Cancelled',
+      ),
+      WorkState.waitingForAnswer ||
+      WorkState.idle => StatusMark.pill(ChatStatus.idle),
+      WorkState.timedOut => StatusMark.pill(
+        ChatStatus.failed,
+        label: 'Timed out',
       ),
     };
     final compact = sizeClassOf(context).isCompact;

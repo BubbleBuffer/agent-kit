@@ -1,6 +1,7 @@
 /// The chat snapshot, chat summaries and the derived status.
 library;
 
+import 'context.dart';
 import 'items.dart';
 import 'models.dart';
 import 'value.dart';
@@ -30,6 +31,7 @@ final class ChatSnapshot extends KitValue {
     List<ChildAgent> children = const [],
     List<BackgroundJob> jobs = const [],
     this.usage,
+    this.context,
     this.stale = false,
   }) : items = List.unmodifiable(items),
        approvals = List.unmodifiable(approvals),
@@ -68,6 +70,10 @@ final class ChatSnapshot extends KitValue {
     jobs: j.listOf('jobs', BackgroundJob.fromJson),
     usage: switch (j.objOpt('usage')) {
       final u? => Usage.fromJson(u),
+      null => null,
+    },
+    context: switch (j.objOpt('context')) {
+      final c? => ContextView.fromJson(c),
       null => null,
     },
     stale: j.boolean('stale'),
@@ -125,6 +131,11 @@ final class ChatSnapshot extends KitValue {
   /// Token usage and the context meter.
   final Usage? usage;
 
+  /// What the agent currently remembers (the context view's serving view);
+  /// null for a chat without context data, such as a short chat or a
+  /// backend without the `context` capability.
+  final ContextView? context;
+
   /// Set by a `gap` event: events were missed, so the snapshot may be out
   /// of date until it is reloaded. Widgets dim what may be stale.
   final bool stale;
@@ -139,6 +150,14 @@ final class ChatSnapshot extends KitValue {
   /// Pending questions, oldest first.
   Iterable<Question> get pendingQuestions =>
       questions.where((q) => q.isPending);
+
+  /// Child questions still waiting for an answer, oldest first. They are
+  /// addressed to the parent agent, so they are not in [pendingQuestions]
+  /// and never make the chat [ChatStatus.needsYou].
+  Iterable<ChildQuestion> get pendingChildQuestions => [
+    for (final c in children)
+      if (c.pendingQuestion case final q? when q.isPending) q,
+  ];
 
   /// Plan items done, for "2 of 5".
   int get planDone => plan.where((p) => p.state == PlanItemState.done).length;
@@ -169,6 +188,7 @@ final class ChatSnapshot extends KitValue {
     List<ChildAgent>? children,
     List<BackgroundJob>? jobs,
     Usage? usage,
+    ContextView? context,
     bool? stale,
   }) => ChatSnapshot(
     chatId: chatId,
@@ -188,6 +208,7 @@ final class ChatSnapshot extends KitValue {
     children: children ?? this.children,
     jobs: jobs ?? this.jobs,
     usage: usage ?? this.usage,
+    context: context ?? this.context,
     stale: stale ?? this.stale,
   );
 
@@ -211,13 +232,15 @@ final class ChatSnapshot extends KitValue {
     'children': jsonList(children),
     'jobs': jsonList(jobs),
     'usage': usage?.toJson(),
+    'context': context?.toJson(),
     'stale': stale ? true : null,
   });
 }
 
 /// Derives a chat's status, in this order:
 ///
-/// 1. [ChatStatus.needsYou] when an approval or a question is pending;
+/// 1. [ChatStatus.needsYou] when an approval or a question is pending (a
+///    child agent's question to its parent is neither);
 /// 2. [ChatStatus.running] when the run is active (a quota wait counts) or
 ///    a child agent is running;
 /// 3. from the last run's outcome: failed → [ChatStatus.failed],

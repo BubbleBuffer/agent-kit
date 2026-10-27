@@ -4,6 +4,7 @@
 library;
 
 export 'src/fake/clock.dart';
+export 'src/fake/context_scenario.dart';
 export 'src/fake/question_scenario.dart';
 export 'src/fake/quota_scenario.dart';
 export 'src/fake/scripted_backend.dart';

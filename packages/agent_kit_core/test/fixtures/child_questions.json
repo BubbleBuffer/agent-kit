@@ -1,0 +1,122 @@
+{
+  "chatId": "c1",
+  "seq": 14,
+  "title": "",
+  "status": "running",
+  "run": {
+    "id": "r1",
+    "outcome": "completed"
+  },
+  "items": [
+    {
+      "type": "activity",
+      "id": "activity:k1",
+      "runId": "r1",
+      "rows": [
+        {
+          "type": "spawn",
+          "id": "k1",
+          "childId": "k1",
+          "task": "Survey quota handling in Codex"
+        },
+        {
+          "type": "spawn",
+          "id": "k2",
+          "childId": "k2",
+          "task": "Trace the reconnect path"
+        },
+        {
+          "type": "spawn",
+          "id": "k3",
+          "childId": "k3",
+          "task": "Check the web client"
+        }
+      ]
+    },
+    {
+      "type": "childQuestion",
+      "id": "childq:cq1",
+      "at": "2026-10-26T09:01:00.000Z",
+      "question": {
+        "id": "cq1",
+        "childId": "k1",
+        "text": "Which path should I read?",
+        "options": [
+          "App server",
+          "CLI"
+        ],
+        "askedAt": "2026-10-26T09:01:00.000Z",
+        "state": "answered",
+        "answer": "App server only.",
+        "answeredAt": "2026-10-26T09:01:30.000Z",
+        "answeredBy": "parent"
+      },
+      "task": "Survey quota handling in Codex"
+    },
+    {
+      "type": "childQuestion",
+      "id": "childq:cq2",
+      "at": "2026-10-26T09:01:10.000Z",
+      "question": {
+        "id": "cq2",
+        "childId": "k2",
+        "text": "Is the reconnect timer in scope?",
+        "askedAt": "2026-10-26T09:01:10.000Z",
+        "state": "answered",
+        "answer": "Yes.",
+        "answeredAt": "2026-10-26T09:01:40.000Z",
+        "answeredBy": "user"
+      },
+      "task": "Trace the reconnect path"
+    },
+    {
+      "type": "childQuestion",
+      "id": "childq:cq3",
+      "at": "2026-10-26T09:01:20.000Z",
+      "question": {
+        "id": "cq3",
+        "childId": "k3",
+        "text": "Which build?",
+        "askedAt": "2026-10-26T09:01:20.000Z",
+        "state": "cancelled",
+        "answeredAt": "2026-10-26T09:02:00.000Z"
+      },
+      "task": "Check the web client"
+    },
+    {
+      "type": "childResult",
+      "id": "return:k3",
+      "at": "2026-10-26T09:02:00.000Z",
+      "childId": "k3",
+      "task": "Check the web client",
+      "state": "timedOut"
+    }
+  ],
+  "approvals": [],
+  "questions": [],
+  "queue": [],
+  "plan": [],
+  "children": [
+    {
+      "id": "k1",
+      "task": "Survey quota handling in Codex",
+      "state": "idle",
+      "activity": "read ws.ts",
+      "toolCalls": 0
+    },
+    {
+      "id": "k2",
+      "task": "Trace the reconnect path",
+      "state": "running",
+      "toolCalls": 0
+    },
+    {
+      "id": "k3",
+      "task": "Check the web client",
+      "state": "timedOut",
+      "toolCalls": 0,
+      "endedAt": "2026-10-26T09:02:00.000Z"
+    }
+  ],
+  "jobs": []
+}

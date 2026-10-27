@@ -6,8 +6,11 @@ import 'package:agent_kit_core/agent_kit_core.dart'
     show
         ActivityGroup,
         AssistantMessage,
+        ChildQuestionItem,
         ChildResult,
+        CompactionItem,
         FileEdit,
+        InterruptedItem,
         KitRef,
         NoticeLine,
         SystemLine,
@@ -97,5 +100,9 @@ class TranscriptItemView extends StatelessWidget {
       onOpen: actions.onOpenFile == null ? null : () => actions.onOpenFile!(e),
     ),
     final ChildResult r => ReturnLine(r, onOpen: actions.onOpenChild),
+    // Drawn by the context and child-question widgets.
+    CompactionItem() ||
+    ChildQuestionItem() ||
+    InterruptedItem() => const SizedBox.shrink(),
   };
 }

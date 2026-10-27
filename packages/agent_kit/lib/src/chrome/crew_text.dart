@@ -33,6 +33,9 @@ String agentTag(ChildAgent agent, DateTime now) => switch (agent.state) {
   WorkState.done => 'ready',
   WorkState.failed => 'failed',
   WorkState.cancelled => 'cancelled',
+  WorkState.waitingForAnswer => 'asking parent',
+  WorkState.idle => 'idle',
+  WorkState.timedOut => 'timed out',
 };
 
 /// The chip tag of a job: the elapsed time while it runs, then its summary
@@ -56,6 +59,9 @@ String agentLabel(ChildAgent agent, DateTime now) => switch (agent.state) {
   WorkState.done => 'Result ready',
   WorkState.failed => 'Failed',
   WorkState.cancelled => 'Cancelled',
+  WorkState.waitingForAnswer => 'Asking parent',
+  WorkState.idle => 'Idle',
+  WorkState.timedOut => 'Timed out',
 };
 
 /// The ledger's status label of a job.

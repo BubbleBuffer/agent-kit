@@ -182,10 +182,18 @@ ChatSnapshot _apply(ChatSnapshot s, KitEvent e) => switch (e) {
   ChildProgress() => _updateChild(
     s,
     e.childId,
-    (c) => c.state == WorkState.running
-        ? c.copyWith(activity: e.activity, toolCalls: e.toolCalls)
-        : c,
+    (c) => c.state.isEnded
+        ? c
+        : c.copyWith(
+            activity: e.activity,
+            toolCalls: e.toolCalls,
+            // A waiting child changes state by its question and answer,
+            // not by progress.
+            state: c.state == WorkState.waitingForAnswer ? null : e.state,
+          ),
   ),
+  ChildQuestionAsked() => _childQuestionAsked(s, e),
+  ChildQuestionResolved() => _childQuestionResolved(s, e),
   ChildFinished() => _childFinished(s, e),
   JobStarted() => s.copyWith(
     jobs: _upsertById(
@@ -212,6 +220,24 @@ ChatSnapshot _apply(ChatSnapshot s, KitEvent e) => switch (e) {
     ),
   ),
   UsageUpdated(:final usage) => s.copyWith(usage: usage),
+  ContextChanged(:final context) => s.copyWith(context: context),
+  CompactionUpdated() => _upsertItem(
+    s,
+    CompactionItem(
+      id: e.itemId,
+      at: _itemAt(s, e.itemId) ?? e.at,
+      eventId: e.eventId,
+      state: e.state,
+      episodesSummarized: e.episodesSummarized,
+      tokensBefore: e.tokensBefore,
+      tokensAfter: e.tokensAfter,
+      detail: e.detail,
+    ),
+  ),
+  InterruptedAdded() => _upsertItem(
+    s,
+    InterruptedItem(id: e.itemId, at: e.at, reason: e.reason),
+  ),
   GapEvent() || UnknownEvent() => s,
 };
 
@@ -436,6 +462,7 @@ ChatSnapshot _resolveQuestion(ChatSnapshot s, QuestionResolved e) {
                 state: e.state,
                 answers: e.answers,
                 reason: e.reason,
+                answeredAt: e.state == QuestionState.answered ? e.at : null,
               )
             : q,
     ],
@@ -483,15 +510,30 @@ ChatSnapshot _childFinished(ChatSnapshot s, ChildFinished e) {
   for (final c in s.children) {
     if (c.id == e.childId) child = c;
   }
-  if (child == null || child.state != WorkState.running) return s;
+  if (child == null || child.state.isEnded) return s;
   final next = _updateChild(
     s,
     e.childId,
-    (c) => c.copyWith(state: e.state, endedAt: e.at, result: e.result),
+    (c) => c.copyWith(
+      state: e.state,
+      endedAt: e.at,
+      result: e.result,
+      clearQuestion: true,
+    ),
   );
-  if (e.result == null && e.state != WorkState.failed) return next;
-  return _upsertItem(
+  final withQuestion = _closeChildQuestion(
     next,
+    child.pendingQuestion,
+    ChildQuestionState.cancelled,
+    at: e.at,
+  );
+  if (e.result == null &&
+      e.state != WorkState.failed &&
+      e.state != WorkState.timedOut) {
+    return withQuestion;
+  }
+  return _upsertItem(
+    withQuestion,
     ChildResult(
       id: 'return:${e.childId}',
       at: e.at,
@@ -527,4 +569,89 @@ ChatSnapshot _updateJob(
   final next = update(job);
   if (identical(next, job)) return s;
   return s.copyWith(jobs: [for (final j in s.jobs) j.id == id ? next : j]);
+}
+
+String _childQuestionItemId(String questionId) => 'childq:$questionId';
+
+ChatSnapshot _childQuestionAsked(ChatSnapshot s, ChildQuestionAsked e) {
+  final q = e.question;
+  ChildAgent? child;
+  for (final c in s.children) {
+    if (c.id == q.childId) child = c;
+  }
+  // A question of an unknown or ended child has no one to wait.
+  if (child == null || child.state.isEnded) return s;
+  final withChild = _updateChild(
+    s,
+    q.childId,
+    (c) => c.copyWith(state: WorkState.waitingForAnswer, pendingQuestion: q),
+  );
+  return _upsertItem(
+    withChild,
+    ChildQuestionItem(
+      id: _childQuestionItemId(q.id),
+      at: q.askedAt,
+      question: q,
+      task: child.task,
+    ),
+  );
+}
+
+ChatSnapshot _childQuestionResolved(ChatSnapshot s, ChildQuestionResolved e) {
+  ChildAgent? child;
+  for (final c in s.children) {
+    if (c.id == e.childId) child = c;
+  }
+  final pending = child?.pendingQuestion;
+  if (child == null ||
+      pending == null ||
+      pending.id != e.questionId ||
+      !pending.isPending) {
+    return s;
+  }
+  final answered = e.state == ChildQuestionState.answered;
+  final next = _updateChild(
+    s,
+    e.childId,
+    (c) => c.copyWith(
+      state: answered && c.state == WorkState.waitingForAnswer
+          ? WorkState.running
+          : null,
+      clearQuestion: true,
+    ),
+  );
+  return _closeChildQuestion(
+    next,
+    pending,
+    e.state,
+    answer: e.answer,
+    at: e.at,
+    by: answered ? e.answeredBy ?? AnsweredBy.parent : null,
+  );
+}
+
+/// Marks [question]'s transcript item as resolved as [state]; does nothing
+/// without a pending question or its item.
+ChatSnapshot _closeChildQuestion(
+  ChatSnapshot s,
+  ChildQuestion? question,
+  ChildQuestionState state, {
+  String? answer,
+  DateTime? at,
+  AnsweredBy? by,
+}) {
+  if (question == null || !question.isPending) return s;
+  final resolved = question.resolve(state, answer: answer, at: at, by: by);
+  return _updateItem(
+    s,
+    _childQuestionItemId(question.id),
+    (item) => item is ChildQuestionItem
+        ? ChildQuestionItem(
+            id: item.id,
+            at: item.at,
+            question: resolved,
+            task: item.task,
+          )
+        : item,
+  );
 }

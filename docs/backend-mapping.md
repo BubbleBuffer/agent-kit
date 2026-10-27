@@ -70,6 +70,10 @@ Checked against the SDK branch with the facade crate and Scratch's
 | `queue.edited` / `.removed` | Layer 1 lacks queue edit and remove. | Scratch lacks them. |
 | `child.spawned` / `.progress` / `.finished` | Layer 2 needs child events, from layer 1 child sessions (`parent_session_id`) and their events, which share the store sequence. | Scratch lacks children. |
 | `job.started` / `.output` / `.exited` | Layer 2 needs job events, from layer 1 `ProcessTools::jobs(owner)` (untyped JSON: `handle`, `command`, `status`, `exitCode`). Layer 1 lacks job output streaming. | Scratch lacks jobs. |
+| `context.changed` | Layer 2 needs a context view, from the LCM store (`BubblePaw-base/docs/lcm-contract.md`): the serving view's blocks, chapters, episodes and summaries. Fields the store does not record yet stay null: the compaction trigger, `inputBefore` / `inputAfter`, per-block and per-message tokens. | Scratch lacks context data. |
+| `compaction.updated` | Layer 2 needs a marker per compaction, from the LCM compaction events (gather, then apply). | none. |
+| `interrupted.added` | Layer 2 needs it after `recover()`, from the interrupted run's record (reason optional). | none. |
+| `child.question.asked` / `.resolved` | Layer 2 needs it, from a child session's `waiting_for_answer` state and its `tools.question` call, which goes to the parent session. | Scratch lacks children. |
 | `usage.updated` | Layer 2 needs a context meter, from layer 1 `RunFinished.usage` and host state `usage.last_request`. Layer 1 lacks the context limit per chat. | Token counts per run. Scratch lacks a context meter. |
 | `gap` | Layer 1 `can_resume_from` false, or a lagged broadcast receiver. | `gap{skipped}`, or `eventsAfter` with `resync`. |
 | (ignored) | `HostStateChanged` (other keys), `SessionSettled` (a read trigger), `ModelRequestStarted`. | `host_state_changed`, `session_settled`, `ui_action` (Scratch's page actions). |
@@ -88,6 +92,7 @@ Checked against the SDK branch with the facade crate and Scratch's
 | `resume` | Layer 1 `Harness::resume(id, RunOptions)`. | Scratch lacks resume. |
 | `decideApproval` | Layer 1 `Harness::decide(approval_id, Decision::Approve / ApproveForSession / Deny{reason})`; deciding twice errors → `KitConflict`. | `decideApproval(approvalId, approve / approve_session / deny, reason?)`. |
 | `answerQuestion` | Layer 1 lacks it. | Scratch lacks it. |
+| `answerChildQuestion` | Needs engine support: the parent answers through its own tool call today; the user answering in its place has no entry point. Capability off until then. | Scratch lacks children. |
 | `rename` | Layer 1 `Store::rename_session(id, title)`. | `renameSession(id, title)`. |
 | `archive` | Layer 1 `Store::archive_chat(id)`; layer 1 lacks unarchive. | Scratch lacks archive. |
 | `fork` | Layer 2 needs fork as a command, from layer 1 `Store::fork_at(id, message_id, title)`. | Scratch lacks fork. |
@@ -95,6 +100,7 @@ Checked against the SDK branch with the facade crate and Scratch's
 | `cancelChild` | Layer 2 needs it, from layer 1 `Harness::cancel(child_session_id)`. | Scratch lacks children. |
 | `cancelJob` | Layer 1 lacks cancelling one job (`ProcessTools::cancel_owner` cancels all of an owner's). | Scratch lacks jobs. |
 | `undoEdit` | Layer 1 lacks edit undo. | `editUndo`. |
+| `loadContext` / `loadHistoryRange` / `loadSummary` | Layer 2 needs them, from the LCM store (`lcm-contract.md`): chapters, episodes, summaries and events; a message range of the original history; one summary's full text. | Scratch lacks them. |
 | `listModels` / `setModel` | Layer 2 needs a stored chat model, from layer 1 `RunOptions.model` and the provider resolver. | `models()`; the choice is passed to `send`. |
 | `listProfiles` / `setProfile` | Layer 1 lacks profiles. | Scratch lacks profiles. |
 
@@ -132,6 +138,27 @@ above stay "lacks it".
 Hosts must split anything over 5 questions into several requests (the kit
 holds at most `maxQuestionItems`, so a card stays one screen). Each request is
 answered, or its items skipped, before the next is shown.
+
+## Context and child questions
+
+Both come with their own capability (`context`, `answerChildQuestion`);
+widgets hide what the backend lacks.
+
+- **BubblePaw** maps a child's `waiting_for_answer` state and its
+  `tools.question` call onto `ChildQuestion`; the question goes to the parent
+  agent. Its context data comes from the LCM store
+  (`BubblePaw-base/docs/lcm-contract.md`). It does not record yet: the
+  compaction trigger (`ContextEvent.trigger`, `triggerText`), the input size
+  before and after a compaction (`inputBefore`, `inputAfter`) and per-block
+  and per-message tokens, so those fields are null and the widgets hide them.
+  `answerChildQuestion` needs engine support and stays off until it exists.
+- **Claude Code and Codex** lack all of this: no serving view, no episodes or
+  chapters, no child questions. Their chats have `context == null`, and the
+  Context pane and the child-question controls do not appear.
+- The `applied` event names one `summaryId`; the mockup's text "became
+  Chapter 1 and Episode 3" cannot be derived from it exactly, so the widgets
+  show "Replaced 3 episodes (E1-E3), messages 1-96" built from the event's
+  range.
 
 ## Settled decisions under strain
 

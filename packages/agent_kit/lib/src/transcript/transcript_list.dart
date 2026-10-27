@@ -19,6 +19,7 @@ import 'package:agent_kit_core/agent_kit_core.dart'
         TranscriptItem,
         UserMessage;
 import 'package:bb_ui/bb_ui.dart';
+import 'package:flutter/scheduler.dart' show SchedulerPhase;
 import 'package:flutter/widgets.dart';
 
 import '../theme/theme.dart';
@@ -181,6 +182,15 @@ class _TranscriptListState extends State<TranscriptList> {
 
   void _setFollowing(bool value) {
     if (_following == value) return;
+    // Scroll notifications can arrive while a frame is being laid out (the
+    // content grew); a rebuild may not be scheduled then.
+    if (WidgetsBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      _nextFrame(() {
+        if (mounted) _setFollowing(value);
+      });
+      return;
+    }
     setState(() => _following = value);
     widget.controller?._changed();
   }
