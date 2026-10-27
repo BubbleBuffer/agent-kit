@@ -46,7 +46,7 @@ enum GalleryScene {
     'F',
     'Context',
     'AgentWorkbench + Context pane',
-    1440,
+    1600,
     'f-context-*.png',
     [
       'What the agent remembers: the meter, Now, History and Compactions.',

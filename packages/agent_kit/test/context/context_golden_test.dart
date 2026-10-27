@@ -63,13 +63,17 @@ Future<void> _settle(WidgetTester tester) async {
 void main() {
   for (final brightness in Brightness.values) {
     final name = brightness.name;
-    for (final width in [680, 420]) {
+    for (final width in [680, 420, 390]) {
       final size = Size(width.toDouble(), 900);
+      // 390 is the phone sheet: the list, and an episode summary open as in
+      // the mockup's compact detail shot.
       final cases = <String, Widget>{
         'now': _pane(),
-        'summary': _pane(summary: 'sum-ch1'),
-        'history': _pane(tab: ContextTab.history),
-        'compactions': _pane(tab: ContextTab.compactions),
+        'summary': _pane(summary: width == 390 ? 'sum-e3' : 'sum-ch1'),
+        if (width != 390) ...{
+          'history': _pane(tab: ContextTab.history),
+          'compactions': _pane(tab: ContextTab.compactions),
+        },
       };
       for (final entry in cases.entries) {
         testWidgets('${entry.key}, $width, $name', (tester) async {
