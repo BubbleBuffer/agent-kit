@@ -5,6 +5,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../shared/kit_icon.dart';
 import '../shared/path_segments.dart';
 import '../theme/theme.dart';
 
@@ -72,7 +73,7 @@ const glyphCircleX = (
 
 /// A Lucide glyph at the kit's 1.5 px visual stroke.
 Widget glyphIcon(LucideGlyph g, {required double size, required Color color}) =>
-    LucideIcon(lucideWeight(g, size, 1.5), size: size, color: color);
+    kitIcon(g, size: size, color: color);
 
 /// Mono text style without ligatures (NOTES.md, departure 9).
 TextStyle monoStyle(TypeSpec spec, Color color, {int? weight}) =>

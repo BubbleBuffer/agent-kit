@@ -35,6 +35,7 @@ there and which mockup parts it covers.
 | `context/` | Context pane, meter bar, compaction marker | built |
 | `workspace/` | split tree, panes, docking, edge tabs | built |
 | `compositions/` | `AgentWorkbench`, `AgentChatPane` | built |
+| `shared/` | internal helpers: path segments, the one icon drawing (`kit_icon.dart`) | built |
 
 ## Compositions
 

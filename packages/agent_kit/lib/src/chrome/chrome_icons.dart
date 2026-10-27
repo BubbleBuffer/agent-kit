@@ -6,6 +6,8 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../shared/kit_icon.dart';
+
 const LucideGlyph glyphPanelLeftClose = (
   LucideIcons.panelLeftClose300,
   LucideIcons.panelLeftClose,
@@ -92,5 +94,5 @@ class ChromeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      LucideIcon(lucideWeight(glyph, size, 1.5), size: size, color: color);
+      kitIcon(glyph, size: size, color: color);
 }
