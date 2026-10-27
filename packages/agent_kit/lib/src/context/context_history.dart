@@ -91,8 +91,8 @@ class _ContextHistoryState extends State<ContextHistory> {
       if (key.currentContext == null && widget.controller.hasClients) {
         // Not built yet: land near it, then let it settle.
         final p = widget.controller.position;
-        final guess = (index / math.max(1, _entries.length - 1)) *
-            p.maxScrollExtent;
+        final guess =
+            (index / math.max(1, _entries.length - 1)) * p.maxScrollExtent;
         widget.controller.jumpTo(guess.clamp(0.0, p.maxScrollExtent));
       }
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -282,12 +282,23 @@ class _EpisodeBlock extends StatelessWidget {
         padding: const EdgeInsets.only(top: 6, left: 4),
         child: CustomPaint(
           foregroundPainter: state == ContextState.ready
-              ? DashedPainter(color: gutter, width: 3, dash: 5, gap: 3, leftOnly: true)
+              ? DashedPainter(
+                  color: gutter,
+                  width: 3,
+                  dash: 5,
+                  gap: 3,
+                  leftOnly: true,
+                )
               : null,
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: state == ContextState.ready
-                  ? Border(left: BorderSide(width: 3, color: t.surface.withValues(alpha: 0)))
+                  ? Border(
+                      left: BorderSide(
+                        width: 3,
+                        color: t.surface.withValues(alpha: 0),
+                      ),
+                    )
                   : Border(left: BorderSide(width: 3, color: gutter)),
             ),
             child: Padding(
@@ -327,10 +338,7 @@ class _EpisodeBlock extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                [
-                                  seqRange(first, last),
-                                  ?tokens,
-                                ].join(' · '),
+                                [seqRange(first, last), ?tokens].join(' · '),
                                 style: tabular(
                                   ts(t.typeScale.uiSmall, t.faint, weight: 400),
                                 ),
@@ -426,8 +434,7 @@ class _MessagesState extends State<_Messages> {
           );
         }
         final rows = <Widget>[
-          for (final m in pages.first.messages)
-            _MessageRow(m, dim: widget.dim),
+          for (final m in pages.first.messages) _MessageRow(m, dim: widget.dim),
         ];
         if (!_short) {
           final hidden = widget.last - widget.first + 1 - _headCount - 1;

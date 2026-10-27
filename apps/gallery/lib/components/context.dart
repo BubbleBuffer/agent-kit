@@ -239,7 +239,8 @@ class ContextSpecimens extends StatelessWidget {
                     'server. Which one should I read?',
                 options: const ['App server', 'CLI', 'Both'],
                 state: ChildQuestionState.answered,
-                answer: 'App server only. The CLI path is a thin wrapper '
+                answer:
+                    'App server only. The CLI path is a thin wrapper '
                     'around it.',
                 by: AnsweredBy.parent,
               ),
@@ -304,7 +305,11 @@ class _Sub extends StatelessWidget {
 }
 
 class _Frame extends StatelessWidget {
-  const _Frame({required this.child, required this.height, required this.width});
+  const _Frame({
+    required this.child,
+    required this.height,
+    required this.width,
+  });
 
   final Widget child;
   final double height, width;

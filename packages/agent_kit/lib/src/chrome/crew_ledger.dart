@@ -174,7 +174,11 @@ class _LedgerRow extends StatelessWidget {
                       const SizedBox(height: 2),
                       detailTip == null
                           ? _detailText(theme)
-                          : chromeTooltip(context, detailTip!, _detailText(theme)),
+                          : chromeTooltip(
+                              context,
+                              detailTip!,
+                              _detailText(theme),
+                            ),
                     ],
                     const SizedBox(height: 2),
                     status,

@@ -93,10 +93,9 @@ class _EventRow extends StatelessWidget {
     final range = 'Messages ${seqRange(event.firstSeq, event.lastSeq)}';
     switch (event.kind) {
       case ContextEventKind.applied:
-        final eps = [
-          for (final id in event.episodeIds) ?details.episode(id),
-        ];
-        if (eps.isEmpty) return 'Replaced messages ${seqRange(event.firstSeq, event.lastSeq)}';
+        final eps = [for (final id in event.episodeIds) ?details.episode(id)];
+        if (eps.isEmpty)
+          return 'Replaced messages ${seqRange(event.firstSeq, event.lastSeq)}';
         final tags = eps.length == 1
             ? episodeTag(eps.first)
             : '${episodeTag(eps.first)}–${episodeTag(eps.last)}';
@@ -106,9 +105,7 @@ class _EventRow extends StatelessWidget {
         final pending = event.episodeIds.any(view.pendingEpisodeIds.contains);
         return pending ? '$range. Not in view yet.' : range;
       case ContextEventKind.chapterClosed:
-        final eps = [
-          for (final id in event.episodeIds) ?details.episode(id),
-        ];
+        final eps = [for (final id in event.episodeIds) ?details.episode(id)];
         if (eps.isEmpty) return range;
         final tags = eps.length == 1
             ? episodeTag(eps.first)
@@ -234,10 +231,7 @@ class _EventRow extends StatelessWidget {
                                   text: '$label ',
                                   style: TextStyle(color: t.faint),
                                 ),
-                                TextSpan(
-                                  text:
-                                      '${ctxTokens(before)} → ',
-                                ),
+                                TextSpan(text: '${ctxTokens(before)} → '),
                                 TextSpan(
                                   text: ctxTokens(after),
                                   style: TextStyle(

@@ -29,11 +29,7 @@ import '../status/status.dart';
 import '../theme/theme.dart';
 import 'transcript_support.dart';
 
-const _glyphBot = (
-  LucideIcons.bot300,
-  LucideIcons.bot,
-  LucideIcons.bot500,
-);
+const _glyphBot = (LucideIcons.bot300, LucideIcons.bot, LucideIcons.bot500);
 const _glyphArrowRight = (
   LucideIcons.arrowRight300,
   LucideIcons.arrowRight,
@@ -66,8 +62,7 @@ class ChildQuestionRow extends StatefulWidget {
 
   /// Send the user's answer: `(childId, questionId, text)`. Null leaves
   /// "Answer yourself" out.
-  final void Function(String childId, String questionId, String text)?
-  onAnswer;
+  final void Function(String childId, String questionId, String text)? onAnswer;
 
   /// Starts with the answer field open.
   final bool initialComposing;
@@ -250,7 +245,10 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                               horizontal: 9,
                               vertical: 1,
                             ),
-                            child: Text(o, style: small.copyWith(fontWeight: fw(400))),
+                            child: Text(
+                              o,
+                              style: small.copyWith(fontWeight: fw(400)),
+                            ),
                           ),
                         ),
                     ],

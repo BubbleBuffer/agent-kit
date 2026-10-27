@@ -251,9 +251,7 @@ class _ContextPaneState extends State<ContextPane> {
     }
     return view.pendingEpisodeIds.isEmpty
         ? null
-        : widget.details
-              ?.episode(view.pendingEpisodeIds.first)
-              ?.summaryId;
+        : widget.details?.episode(view.pendingEpisodeIds.first)?.summaryId;
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -439,10 +437,7 @@ class _Loading extends StatelessWidget {
     final t = context.bb;
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Text(
-        'Loading…',
-        style: ts(t.typeScale.ui, t.faint, weight: 400),
-      ),
+      child: Text('Loading…', style: ts(t.typeScale.ui, t.faint, weight: 400)),
     );
   }
 }
@@ -465,7 +460,9 @@ class _Tabs extends StatefulWidget {
 }
 
 class _TabsState extends State<_Tabs> {
-  final _nodes = [for (final _ in ContextTab.values) FocusNode(skipTraversal: false)];
+  final _nodes = [
+    for (final _ in ContextTab.values) FocusNode(skipTraversal: false),
+  ];
 
   @override
   void dispose() {
@@ -514,37 +511,37 @@ class _TabsState extends State<_Tabs> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-            children: [
-              for (final tab in ContextTab.values)
-                Padding(
-                  padding: const EdgeInsets.only(right: 2),
-                  child: _TabButton(
-                    node: _nodes[tab.index],
-                    label: switch (tab) {
-                      ContextTab.now => 'Now',
-                      ContextTab.history => 'History',
-                      ContextTab.compactions => 'Compactions',
-                    },
-                    glyph: switch (tab) {
-                      ContextTab.now => glyphLayers,
-                      ContextTab.history => glyphHistory,
-                      ContextTab.compactions => glyphFoldVertical,
-                    },
-                    count: tab == ContextTab.compactions
-                        ? widget.compactionCount
-                        : null,
-                    selected: widget.tab == tab,
-                    height: touch ? 40 : 34,
-                    onTap: () {
-                      widget.onSelect(tab);
-                      final node = _nodes[tab.index];
-                      SchedulerBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) node.requestFocus();
-                      });
-                    },
+              children: [
+                for (final tab in ContextTab.values)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 2),
+                    child: _TabButton(
+                      node: _nodes[tab.index],
+                      label: switch (tab) {
+                        ContextTab.now => 'Now',
+                        ContextTab.history => 'History',
+                        ContextTab.compactions => 'Compactions',
+                      },
+                      glyph: switch (tab) {
+                        ContextTab.now => glyphLayers,
+                        ContextTab.history => glyphHistory,
+                        ContextTab.compactions => glyphFoldVertical,
+                      },
+                      count: tab == ContextTab.compactions
+                          ? widget.compactionCount
+                          : null,
+                      selected: widget.tab == tab,
+                      height: touch ? 40 : 34,
+                      onTap: () {
+                        widget.onSelect(tab);
+                        final node = _nodes[tab.index];
+                        SchedulerBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) node.requestFocus();
+                        });
+                      },
+                    ),
                   ),
-                ),
-            ],
+              ],
             ),
           ),
         ),

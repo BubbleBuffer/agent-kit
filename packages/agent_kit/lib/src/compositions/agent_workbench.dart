@@ -199,7 +199,8 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
     });
   }
 
-  bool get _canContext => widget.backend.capabilities.has(KitCapability.context);
+  bool get _canContext =>
+      widget.backend.capabilities.has(KitCapability.context);
 
   /// The header's context meter and the compaction marker's View: add the
   /// Context pane when the chat has none, show the workspace and bring the

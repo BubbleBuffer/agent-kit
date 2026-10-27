@@ -348,7 +348,10 @@ class ContextMeter extends StatelessWidget {
           hoverBackground: theme.hover,
           pressedBackground: theme.pressed,
           lift: 0,
-          child: SizedBox(height: touch ? 40 : 32, child: Center(child: readout)),
+          child: SizedBox(
+            height: touch ? 40 : 32,
+            child: Center(child: readout),
+          ),
         ),
       ),
     );

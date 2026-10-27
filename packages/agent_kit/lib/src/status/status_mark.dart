@@ -189,23 +189,23 @@ class StatusMark extends StatelessWidget {
             style.ink,
           )
         : switch (status) {
-      ChatStatus.done => _icon(
-        LucideIcons.circleCheck300,
-        LucideIcons.circleCheck,
-        LucideIcons.circleCheck500,
-        style.ink,
-      ),
-      ChatStatus.failed => _icon(
-        LucideIcons.circleX300,
-        LucideIcons.circleX,
-        LucideIcons.circleX500,
-        style.ink,
-      ),
-      _ => Padding(
-        padding: const EdgeInsets.all(2),
-        child: _Glyph(status: status, style: style, animate: animate),
-      ),
-    };
+            ChatStatus.done => _icon(
+              LucideIcons.circleCheck300,
+              LucideIcons.circleCheck,
+              LucideIcons.circleCheck500,
+              style.ink,
+            ),
+            ChatStatus.failed => _icon(
+              LucideIcons.circleX300,
+              LucideIcons.circleX,
+              LucideIcons.circleX500,
+              style.ink,
+            ),
+            _ => Padding(
+              padding: const EdgeInsets.all(2),
+              child: _Glyph(status: status, style: style, animate: animate),
+            ),
+          };
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

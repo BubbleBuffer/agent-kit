@@ -238,9 +238,7 @@ class ContextNow extends StatelessWidget {
         if (opening.isNotEmpty) ...[
           CxGroup(
             'Fixed',
-            view.openingTokens == null
-                ? null
-                : ctxTokens(view.openingTokens!),
+            view.openingTokens == null ? null : ctxTokens(view.openingTokens!),
           ),
           for (final b in opening) _plain(b, 'Sent every time'),
         ],
@@ -268,7 +266,10 @@ class ContextNow extends StatelessWidget {
           for (final b in live) _plain(b, _blockLine(b)),
         ],
         if (pending.isNotEmpty) ...[
-          CxGroup('Ready, not in view yet', 'applies near ${ctxLimit(view.applyCap)}'),
+          CxGroup(
+            'Ready, not in view yet',
+            'applies near ${ctxLimit(view.applyCap)}',
+          ),
           for (final s in pending)
             _summaryRow(s, d!, null, episode: pendingEpisodes[s.id]),
           if (after != null)
@@ -312,7 +313,10 @@ class ContextNow extends StatelessWidget {
             '$n closed chapter${n == 1 ? '' : 's'}, newest first',
       ],
       ContextBlockKind.anchors => ['The first and the latest', ?range],
-      ContextBlockKind.rawSuffix => [?(range == null ? null : _cap(range)), ?count],
+      ContextBlockKind.rawSuffix => [
+        ?(range == null ? null : _cap(range)),
+        ?count,
+      ],
       _ => [?range],
     };
     return parts.isEmpty ? null : parts.join(' · ');
@@ -405,15 +409,12 @@ class ContextDetail extends StatelessWidget {
     final t = context.bb;
     final s = summary;
     final chapter = s.kind == ContextSummaryKind.chapter;
-    final episodes = [
-      for (final id in s.episodeIds) ?details.episode(id),
-    ];
+    final episodes = [for (final id in s.episodeIds) ?details.episode(id)];
     final ordinals = episodes.map(episodeTag).join(', ');
     final done = t.statusStyle(ChatStatus.done).ink;
     final fact = ts(t.typeScale.ui, t.ink, weight: 400);
     final label = ts(t.typeScale.uiSmall, t.faint, weight: 400);
-    final kindText =
-        s.closed
+    final kindText = s.closed
         ? 'Closed chapter, written once and frozen'
         : s.applied
         ? 'Part of the open chapter'
@@ -425,13 +426,7 @@ class ContextDetail extends StatelessWidget {
             '${messagesText(s.messageCount)}',
       ),
       if (ordinals.isNotEmpty) ('Episodes', ordinals),
-      (
-        'Written',
-        [
-          whenText(s.createdAt, now),
-          ?s.model,
-        ].join(' · '),
-      ),
+      ('Written', [whenText(s.createdAt, now), ?s.model].join(' · ')),
       ('Kind', kindText),
     ];
     final pct = s.sourceTokens <= 0
@@ -456,10 +451,12 @@ class ContextDetail extends StatelessWidget {
               glyphIcon(glyphLayers, size: 14, color: t.colors.iconSecondary),
               const SizedBox(width: 6),
               Text(
-                (chapter ? 'Chapter summary' : 'Episode summary')
-                    .toUpperCase(),
-                style: ts(t.typeScale.uiSmall, t.muted, weight: 700)
-                    .copyWith(letterSpacing: .5),
+                (chapter ? 'Chapter summary' : 'Episode summary').toUpperCase(),
+                style: ts(
+                  t.typeScale.uiSmall,
+                  t.muted,
+                  weight: 700,
+                ).copyWith(letterSpacing: .5),
               ),
             ],
           ),
@@ -524,9 +521,7 @@ class ContextDetail extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     'Saves ${ctxTokens(s.savedTokens)} · $pct%',
-                    style: tabular(
-                      ts(t.typeScale.uiSmall, done, weight: 600),
-                    ),
+                    style: tabular(ts(t.typeScale.uiSmall, done, weight: 600)),
                   ),
                 ],
               ),
@@ -550,7 +545,8 @@ class ContextDetail extends StatelessWidget {
           ],
           if (episodes.isNotEmpty) ...[
             const _H('Replaces'),
-            for (final e in episodes) _Covered(e, onTap: () => onGoEpisode(e.id)),
+            for (final e in episodes)
+              _Covered(e, onTap: () => onGoEpisode(e.id)),
             Padding(
               padding: const EdgeInsets.only(top: 14),
               child: Align(

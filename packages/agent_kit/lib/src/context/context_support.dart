@@ -148,11 +148,7 @@ enum ContextState {
 }
 
 /// How [details] and [view] place episode [id].
-ContextState episodeState(
-  String id,
-  ContextDetails details,
-  ContextView view,
-) {
+ContextState episodeState(String id, ContextDetails details, ContextView view) {
   if (details.summaries.any((s) => s.applied && s.episodeIds.contains(id))) {
     return ContextState.replaced;
   }

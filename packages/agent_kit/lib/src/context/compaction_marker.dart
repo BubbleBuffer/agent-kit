@@ -53,11 +53,7 @@ class CompactionMarker extends StatelessWidget {
             size: 14,
             color: t.statusStyle(ChatStatus.failed).ink,
           )
-        : glyphIcon(
-            glyphFoldVertical,
-            size: 14,
-            color: t.colors.iconSecondary,
-          );
+        : glyphIcon(glyphFoldVertical, size: 14, color: t.colors.iconSecondary);
     return Semantics(
       container: true,
       liveRegion: running,
@@ -79,24 +75,24 @@ class CompactionMarker extends StatelessWidget {
                         detail: item.detail,
                       )
                     : Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: title,
-                        style: TextStyle(
-                          color: failed
-                              ? t.statusStyle(ChatStatus.failed).ink
-                              : t.ink,
-                          fontWeight: fw(700),
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: title,
+                              style: TextStyle(
+                                color: failed
+                                    ? t.statusStyle(ChatStatus.failed).ink
+                                    : t.ink,
+                                fontWeight: fw(700),
+                              ),
+                            ),
+                            for (final p in parts) TextSpan(text: ' · $p'),
+                          ],
                         ),
+                        style: style,
+                        maxLines: compact ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      for (final p in parts) TextSpan(text: ' · $p'),
-                    ],
-                  ),
-                  style: style,
-                  maxLines: compact ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ),
               if (!compact)
                 Expanded(

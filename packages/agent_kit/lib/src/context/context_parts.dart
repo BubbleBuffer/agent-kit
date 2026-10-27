@@ -34,9 +34,7 @@ class DashedPainter extends CustomPainter {
         ..moveTo(width / 2, 0)
         ..lineTo(width / 2, size.height);
     } else {
-      path.addRRect(
-        radius.toRRect(Offset.zero & size).deflate(width / 2),
-      );
+      path.addRRect(radius.toRRect(Offset.zero & size).deflate(width / 2));
     }
     final paint = Paint()
       ..color = color
@@ -185,16 +183,10 @@ class CxGroup extends StatelessWidget {
         textBaseline: TextBaseline.alphabetic,
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: ts(const TypeSpec(12, 16, 700), t.muted),
-            ),
+            child: Text(label, style: ts(const TypeSpec(12, 16, 700), t.muted)),
           ),
           if (trailing != null)
-            Text(
-              trailing!,
-              style: ts(const TypeSpec(12, 16, 500), t.faint),
-            ),
+            Text(trailing!, style: ts(const TypeSpec(12, 16, 500), t.faint)),
         ],
       ),
     );
