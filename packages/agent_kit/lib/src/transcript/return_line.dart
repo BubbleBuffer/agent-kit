@@ -40,9 +40,8 @@ class ReturnLine extends StatelessWidget {
         ChatStatus.idle,
         label: 'Cancelled',
       ),
-      WorkState.waitingForAnswer || WorkState.idle => StatusMark.pill(
-        ChatStatus.idle,
-      ),
+      WorkState.waitingForAnswer ||
+      WorkState.idle => StatusMark.pill(ChatStatus.idle),
       WorkState.timedOut => StatusMark.pill(
         ChatStatus.failed,
         label: 'Timed out',

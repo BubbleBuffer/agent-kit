@@ -50,17 +50,18 @@ void main() {
     });
 
     test('an answered question keeps who answered', () {
-      final q = ChildQuestion(
-        id: 'cq1',
-        childId: 'k1',
-        text: 'Which?',
-        askedAt: DateTime.utc(2026),
-      ).resolve(
-        ChildQuestionState.answered,
-        answer: 'Both',
-        at: DateTime.utc(2026, 1, 1, 0, 1),
-        by: AnsweredBy.user,
-      );
+      final q =
+          ChildQuestion(
+            id: 'cq1',
+            childId: 'k1',
+            text: 'Which?',
+            askedAt: DateTime.utc(2026),
+          ).resolve(
+            ChildQuestionState.answered,
+            answer: 'Both',
+            at: DateTime.utc(2026, 1, 1, 0, 1),
+            by: AnsweredBy.user,
+          );
       final back = ChildQuestion.fromJson(q.toJson());
       expect(back.state, ChildQuestionState.answered);
       expect(back.answeredBy, AnsweredBy.user);
@@ -285,10 +286,7 @@ void main() {
         'childId': 'k2',
         'state': 'idle',
       });
-      expect(
-        s.children.firstWhere((c) => c.id == 'k2').state,
-        WorkState.idle,
-      );
+      expect(s.children.firstWhere((c) => c.id == 'k2').state, WorkState.idle);
       s = _apply(s, {
         'kind': 'child.finished',
         'childId': 'k2',
@@ -341,28 +339,36 @@ void main() {
       expect(q.answeredAt, isNotNull);
       expect(state().children.single.state, WorkState.running);
       expect(backend.commands.last.name, 'answerChildQuestion');
-      expect(backend.commands.last.args, [chat, 'k1', 'cq1', 'The app server.']);
+      expect(backend.commands.last.args, [
+        chat,
+        'k1',
+        'cq1',
+        'The app server.',
+      ]);
     });
 
     test('asking stamps the time when the script gives none', () {
       expect(state().pendingChildQuestions.single.askedAt, isNotNull);
     });
 
-    test('a second answer conflicts; unknown ids and empty text fail', () async {
-      await expectLater(
-        backend.answerChildQuestion(chat, 'k1', 'nope', 'x'),
-        throwsA(isA<KitNotFound>()),
-      );
-      await expectLater(
-        backend.answerChildQuestion(chat, 'k1', 'cq1', '  '),
-        throwsA(isA<KitInvalid>()),
-      );
-      await backend.answerChildQuestion(chat, 'k1', 'cq1', 'once');
-      await expectLater(
-        backend.answerChildQuestion(chat, 'k1', 'cq1', 'twice'),
-        throwsA(isA<KitConflict>()),
-      );
-    });
+    test(
+      'a second answer conflicts; unknown ids and empty text fail',
+      () async {
+        await expectLater(
+          backend.answerChildQuestion(chat, 'k1', 'nope', 'x'),
+          throwsA(isA<KitNotFound>()),
+        );
+        await expectLater(
+          backend.answerChildQuestion(chat, 'k1', 'cq1', '  '),
+          throwsA(isA<KitInvalid>()),
+        );
+        await backend.answerChildQuestion(chat, 'k1', 'cq1', 'once');
+        await expectLater(
+          backend.answerChildQuestion(chat, 'k1', 'cq1', 'twice'),
+          throwsA(isA<KitConflict>()),
+        );
+      },
+    );
 
     test('without the capability it is unsupported', () async {
       final limited = ScriptedBackend(
@@ -395,9 +401,9 @@ void main() {
       await done;
       final s = backend.stateOf(quotaChatId)!;
 
-      final answered = s.items
-          .whereType<ChildQuestionItem>()
-          .firstWhere((i) => i.question.id == 'cq1');
+      final answered = s.items.whereType<ChildQuestionItem>().firstWhere(
+        (i) => i.question.id == 'cq1',
+      );
       expect(answered.task, 'Survey quota handling in Codex');
       expect(answered.question.state, ChildQuestionState.answered);
       expect(answered.question.answeredBy, AnsweredBy.parent);

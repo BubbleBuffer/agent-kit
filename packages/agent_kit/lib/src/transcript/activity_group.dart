@@ -328,9 +328,7 @@ class EvidenceRow extends StatelessWidget {
             ChatStatus.idle,
             label: r.meta ?? 'cancelled',
           ),
-          WorkState.done ||
-          WorkState.waitingForAnswer ||
-          WorkState.idle =>
+          WorkState.done || WorkState.waitingForAnswer || WorkState.idle =>
             r.meta == null ? null : Text(r.meta!, maxLines: 1, style: style),
         };
       },

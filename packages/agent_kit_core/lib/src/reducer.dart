@@ -597,10 +597,7 @@ ChatSnapshot _childQuestionAsked(ChatSnapshot s, ChildQuestionAsked e) {
   );
 }
 
-ChatSnapshot _childQuestionResolved(
-  ChatSnapshot s,
-  ChildQuestionResolved e,
-) {
+ChatSnapshot _childQuestionResolved(ChatSnapshot s, ChildQuestionResolved e) {
   ChildAgent? child;
   for (final c in s.children) {
     if (c.id == e.childId) child = c;

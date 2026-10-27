@@ -351,11 +351,7 @@ List<HistoryMessage> quotaHistory() {
       'Writing a test that drops the socket and checks the figure.',
       35,
     ),
-    88: (
-      HistoryRole.user,
-      'Dim the bar while stale, but never hide it.',
-      22,
-    ),
+    88: (HistoryRole.user, 'Dim the bar while stale, but never hide it.', 22),
     96: (
       HistoryRole.tool,
       'cargo test -p bubblepaw-host usage · 12 passed, 2 failed',

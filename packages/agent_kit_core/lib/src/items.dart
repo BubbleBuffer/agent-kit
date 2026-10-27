@@ -420,8 +420,10 @@ final class ChildQuestionItem extends TranscriptItem {
   String get type => 'childQuestion';
 
   @override
-  Json toJson() =>
-      _base({'question': question.toJson(), 'task': task.isEmpty ? null : task});
+  Json toJson() => _base({
+    'question': question.toJson(),
+    'task': task.isEmpty ? null : task,
+  });
 }
 
 /// A run was interrupted (a host restart); the pane shows the resume line

@@ -142,7 +142,8 @@ void main() {
     ChatSnapshot fold(Iterable<Json> events) {
       var seq = 0;
       return reduceAll(ChatSnapshot.empty('c1'), [
-        for (final e in events) KitEvent.fromJson({...e, 'seq': ++seq, 'chat': 'c1'}),
+        for (final e in events)
+          KitEvent.fromJson({...e, 'seq': ++seq, 'chat': 'c1'}),
       ]);
     }
 
