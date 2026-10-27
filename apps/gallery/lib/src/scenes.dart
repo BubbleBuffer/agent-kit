@@ -42,6 +42,17 @@ enum GalleryScene {
       'Dividers, docking by drag, collapse to 28 px edge tabs.',
     ],
   ),
+  context(
+    'F',
+    'Context',
+    'AgentWorkbench + Context pane',
+    1440,
+    'f-context-*.png',
+    [
+      'What the agent remembers: the meter, Now, History and Compactions.',
+      'Beside the chat; a tab of the workspace sheet when compact.',
+    ],
+  ),
   components('+', 'Components', 'Every widget, every state', 1000, '', []);
 
   const GalleryScene(
@@ -75,6 +86,7 @@ enum GalleryScene {
     scratchPane => 'b_scratch_pane',
     phone => 'c_phone',
     workspace => 'd_workspace',
+    context => 'f_context',
     components => 'components',
   };
 }
@@ -100,16 +112,20 @@ Widget buildScene(
     now: controller.now,
     detailFor: controller.detailFor,
     onReviewApproval: (_) {},
-    workspaceController: scene == GalleryScene.workspace
-        ? controller.workspaceController
-        : null,
+    workspaceController: switch (scene) {
+      GalleryScene.workspace => controller.workspaceController,
+      GalleryScene.context => controller.contextWorkspaceController,
+      _ => null,
+    },
     workspaceKinds: scene == GalleryScene.workspace
         ? WorkspaceKind.standard
         : const [],
-    workspacePaneBuilder: scene == GalleryScene.workspace
+    workspacePaneBuilder:
+        scene == GalleryScene.workspace || scene == GalleryScene.context
         ? galleryPaneBuilder
         : null,
-    initialWorkspaceShown: scene == GalleryScene.workspace,
+    initialWorkspaceShown:
+        scene == GalleryScene.workspace || scene == GalleryScene.context,
   );
 }
 

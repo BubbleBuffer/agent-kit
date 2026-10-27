@@ -88,10 +88,21 @@ class _CxFlashState extends State<CxFlash> with SingleTickerProviderStateMixin {
     duration: const Duration(milliseconds: 1400),
   );
 
+  bool _startPending = false;
+
   @override
   void initState() {
     super.initState();
-    if (widget.active) _start();
+    _startPending = widget.active;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_startPending) {
+      _startPending = false;
+      _start();
+    }
   }
 
   @override

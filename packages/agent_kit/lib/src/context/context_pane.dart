@@ -110,6 +110,7 @@ class _ContextPaneState extends State<ContextPane> {
   late ContextTab _tab = widget.initialTab;
   String? _selected;
   bool _detailOpen = false;
+  final _paneFocus = FocusNode(debugLabel: 'context-pane', skipTraversal: true);
   String? _flashId;
   int _flashToken = 0;
   String? _historyTarget;
@@ -151,6 +152,7 @@ class _ContextPaneState extends State<ContextPane> {
     _detailScroll.dispose();
     _historyScroll.dispose();
     _eventsScroll.dispose();
+    _paneFocus.dispose();
     super.dispose();
   }
 
@@ -200,6 +202,10 @@ class _ContextPaneState extends State<ContextPane> {
     setState(() {
       _selected = id;
       _detailOpen = true;
+    });
+    // A click does not focus anything; keep Esc working from the pane.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_paneFocus.hasFocus) _paneFocus.requestFocus();
     });
   }
 
@@ -270,8 +276,7 @@ class _ContextPaneState extends State<ContextPane> {
         .where((e) => e.kind == ContextEventKind.applied)
         .length;
     return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
+      focusNode: _paneFocus,
       onKeyEvent: _onKey,
       child: ColoredBox(
         color: t.surface,
@@ -506,7 +511,9 @@ class _TabsState extends State<_Tabs> {
         label: 'Context views',
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0),
-          child: Row(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
             children: [
               for (final tab in ContextTab.values)
                 Padding(
@@ -530,10 +537,15 @@ class _TabsState extends State<_Tabs> {
                     height: touch ? 40 : 34,
                     onTap: () {
                       widget.onSelect(tab);
+                      final node = _nodes[tab.index];
+                      SchedulerBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) node.requestFocus();
+                      });
                     },
                   ),
                 ),
             ],
+            ),
           ),
         ),
       ),

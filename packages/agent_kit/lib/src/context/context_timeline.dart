@@ -316,33 +316,35 @@ class _EventBars extends StatelessWidget {
       ),
     );
     return ExcludeSemantics(
-      child: LayoutBuilder(
-        builder: (context, box) => Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                bar(a, t.ctxOpening),
-                const SizedBox(height: 3),
-                bar(b, t.ctxSummary),
-              ],
-            ),
-            if (cap != null)
-              Positioned(
-                left: (cap! * box.maxWidth) - 1,
-                top: -2,
-                bottom: -2,
-                width: 2,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: t.ink,
-                    borderRadius: BorderRadius.circular(1),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              bar(a, t.ctxOpening),
+              const SizedBox(height: 3),
+              bar(b, t.ctxSummary),
+            ],
+          ),
+          if (cap != null)
+            Positioned.fill(
+              top: -2,
+              bottom: -2,
+              child: Align(
+                alignment: Alignment(cap!.clamp(0.0, 1.0) * 2 - 1, 0),
+                child: SizedBox(
+                  width: 2,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: t.ink,
+                      borderRadius: BorderRadius.circular(1),
+                    ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }

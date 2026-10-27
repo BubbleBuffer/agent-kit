@@ -15,8 +15,8 @@ Status always goes through `StatusMark`. The rail follows the theme (see
 | `session_rail.dart` | `SessionRail` (project switcher with new chat and hide, search with the Ctrl K hint, grouped rows, settings footer with the avatar), `SessionRow` |
 | `rail_layout.dart` | `RailLayout` (the rail beside the content, or sliding over it when compact; Ctrl+B), `RailShowButton` (the header's way back) |
 | `rail_model.dart` | `RailController` (`hidden` above compact, `open` when compact), `RailScope`, `SessionGroup` |
-| `chat_header.dart` | `ChatHeader` (tile, title, `StatusMark` pill, branch, workspace toggle, session menu), `ContextMeter`, `ChromeMenuItem` |
-| `crew_strip.dart` | `CrewStrip`: chips for agents and jobs, scrolling sideways |
+| `chat_header.dart` | `ChatHeader` (tile, title, `StatusMark` pill, branch, workspace toggle, session menu), `ContextMeter` (a button when `onOpenContext` is set), `ChromeMenuItem` |
+| `crew_strip.dart` | `CrewStrip`: chips for agents and jobs, scrolling sideways; a child waiting for its parent reads `asking parent` |
 | `crew_ledger.dart` | `CrewLedger`: the "Still running" column |
 | `usage_view.dart` | `UsageByModel` and `ModelUsage`: tokens by model |
 | `chrome_format.dart` | `groupSessions`, `railDetail`, `chatAge`, `formatElapsed`, `formatTokens` |

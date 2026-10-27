@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 
 import '../components/chrome.dart';
 import '../components/composer.dart';
+import '../components/context.dart';
 import '../components/transcript.dart';
 import '../components/workspace.dart';
 
@@ -27,6 +28,7 @@ class ComponentsScene extends StatelessWidget {
         const _Heading('StatusMark'),
         const _StatusSpecimens(),
         const TranscriptSpecimens(),
+        const ContextSpecimens(),
         SizedBox(height: t.spacing.xl),
         const ComposerSpecimens(),
         SizedBox(height: t.spacing.xl),

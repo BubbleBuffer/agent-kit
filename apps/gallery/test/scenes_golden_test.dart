@@ -17,6 +17,7 @@ const _shots = <GalleryScene, List<(int, double)>>{
   GalleryScene.scratchPane: [(1440, 900)],
   GalleryScene.phone: [(390, 844)],
   GalleryScene.workspace: [(1600, 900), (1000, 800)],
+  GalleryScene.context: [(1440, 900), (390, 844)],
   GalleryScene.components: [(1000, 800)],
 };
 

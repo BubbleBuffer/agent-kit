@@ -34,6 +34,11 @@ const _glyphBot = (
   LucideIcons.bot,
   LucideIcons.bot500,
 );
+const _glyphArrowRight = (
+  LucideIcons.arrowRight300,
+  LucideIcons.arrowRight,
+  LucideIcons.arrowRight500,
+);
 const _glyphReply = (
   LucideIcons.reply300,
   LucideIcons.reply,
@@ -164,6 +169,7 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
       if (widget.onOpenChild != null)
         KitTextButton(
           'Open child',
+          glyph: _glyphArrowRight,
           onTap: () => widget.onOpenChild!(q.childId),
         ),
       if (canAnswer)
@@ -333,7 +339,7 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                     _AnswerField(
                       controller: _text,
                       focusNode: _focus,
-                      onSubmit: _send,
+                      hint: 'Answer ${task.split(' ').first} yourself…',
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -386,12 +392,12 @@ class _AnswerField extends StatelessWidget {
   const _AnswerField({
     required this.controller,
     required this.focusNode,
-    required this.onSubmit,
+    required this.hint,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
-  final VoidCallback onSubmit;
+  final String hint;
 
   @override
   Widget build(BuildContext context) {
@@ -418,7 +424,7 @@ class _AnswerField extends StatelessWidget {
                   right: 0,
                   child: IgnorePointer(
                     child: Text(
-                      'Type an answer…',
+                      hint,
                       maxLines: 1,
                       overflow: TextOverflow.clip,
                       style: style.copyWith(color: t.faint),

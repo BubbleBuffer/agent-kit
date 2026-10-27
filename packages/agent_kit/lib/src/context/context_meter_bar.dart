@@ -76,8 +76,14 @@ class ContextMeterBar extends StatelessWidget {
               ),
               const SizedBox(width: 6),
             ],
-            Text('${total != null ? 'of ' : ''}${ctxLimit(window)} tokens',
-                style: head),
+            Flexible(
+              child: Text(
+                '${total != null ? 'of ' : ''}${ctxLimit(window)} tokens',
+                style: head,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             const Spacer(),
             if (percent != null)
               Text(

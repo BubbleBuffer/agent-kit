@@ -23,6 +23,7 @@ there and which mockup parts it covers.
 | `transcript/` | items, activity and evidence rows, edits, diff, plan | built |
 | `composer/` | composer, approval bar, queue row, picks | built |
 | `chrome/` | rail, header, crew strip, ledger | built |
+| `context/` | Context pane, meter bar, compaction marker | built |
 | `workspace/` | split tree, panes, docking, edge tabs | built |
 | `compositions/` | `AgentWorkbench`, `AgentChatPane` | built |
 
@@ -164,8 +165,8 @@ Only "needs you" fills a pill and only it is warm.
 ## Gallery
 
 `apps/gallery` (`flutter run -d chrome` in that folder). The toolbar switches
-scene (the mockup's A workbench, C phone and D workspace as `AgentWorkbench`
-on the fake backend, B Scratch pane still a placeholder, plus Components, which
+scene (the mockup's A workbench, C phone, D workspace and F context as
+`AgentWorkbench` on the fake backend, B Scratch pane still a placeholder, plus Components, which
 lists each widget in each state), light or
 dark, and the width (a 360 to 1600 px slider that constrains the content, so
 size classes follow it). The chat is the "Quota bar flickers on reconnect"
