@@ -24,6 +24,26 @@ Future<void> main(List<String> arguments) async {
   StdioBubblePawTransport? transport;
   BubblePawBackend? backend;
   StreamSubscription<KitEvent>? subscription;
+  LiveAcceptance? observedAcceptance;
+  String? expectedRunId;
+  var canonicalReached = false;
+  ChatSnapshot? canonicalSnapshot;
+  void reportDiagnostics(IOSink sink) {
+    final acceptance = observedAcceptance;
+    if (acceptance == null) return;
+    for (final check in acceptance.diagnostics(expectedRunId: expectedRunId)) {
+      sink.writeln(check);
+    }
+    if (canonicalReached) {
+      for (final check in canonicalDiagnostics(
+        canonicalSnapshot,
+        steeringText: _steering,
+      )) {
+        sink.writeln(check);
+      }
+    }
+  }
+
   try {
     final options = LiveCheckOptions.parse(arguments);
     temporary = await Directory.systemTemp.createTemp('bubblepaw-live-');
@@ -84,6 +104,7 @@ Future<void> main(List<String> arguments) async {
           connected.decideApproval(chat.id, id, ApprovalDecision.approve),
       steer: () => connected.steer(chat.id, _steering),
     );
+    observedAcceptance = acceptance;
     subscription = connected
         .events(chat.id, after: initial.seq)
         .listen(
@@ -118,14 +139,16 @@ Future<void> main(List<String> arguments) async {
         'both finish, briefly confirm both markers and any steering instruction.',
       ),
     );
+    expectedRunId = sent.runId;
     if (sent.delivery != SendDelivery.started || sent.runId == null) {
       throw const LiveCheckFailure('run was not started');
     }
     final finished = await within(acceptance.finished);
-    await within(acceptance.settled);
-    acceptance.verify(finished, sent.runId!);
+    await within(acceptance.verifyAfterUsage(finished, sent.runId!));
     stage = 'canonical completion';
+    canonicalReached = true;
     final snapshot = await within(connected.loadChat(chat.id));
+    canonicalSnapshot = snapshot;
     if (!snapshot.items.whereType<UserMessage>().any(
       (m) => m.text == _steering,
     )) {
@@ -138,6 +161,7 @@ Future<void> main(List<String> arguments) async {
         'final assistant did not acknowledge steering',
       );
     }
+    reportDiagnostics(stdout);
     stdout.writeln(
       'PASS: ${acceptance.approvals} approvals answered, '
       '${acceptance.completedExecs} exec calls completed, steering delivered, '
@@ -145,6 +169,7 @@ Future<void> main(List<String> arguments) async {
       'KIT run.finished completed and canonical reply verified.',
     );
   } on Object catch (error) {
+    reportDiagnostics(stderr);
     final reason = error is LiveCheckFailure ? ': ${error.message}' : '';
     // Exceptions may embed config, credentials, provider text or local paths.
     stderr.writeln('FAIL during $stage$reason. Details withheld for privacy.');

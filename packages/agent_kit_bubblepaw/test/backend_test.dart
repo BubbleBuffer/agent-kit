@@ -7,7 +7,126 @@ import 'package:agent_kit_bubblepaw/src/transport.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:test/test.dart';
 
+import '../tool/live_check_support.dart';
+
 void main() {
+  test('attempt 3 durable replay waits for terminal session usage', () async {
+    final captured = (await File(
+      'test/fixtures/transport/attempt-3-trace.jsonl',
+    ).readAsLines()).map((line) => jsonDecode(line) as Json).toList();
+    final source = <Json>[];
+    final approvals = <Json>[];
+    // Replay the recorded durable notifications through real stdio framing.
+    // The capture removed payloads, so only ordering/IDs/statuses are evidence.
+    // Text is omitted; tool details and usage below are explicitly synthetic.
+    for (final entry in captured) {
+      if (entry['direction'] != 'stdout') continue;
+      final record = entry['record'];
+      if (record is! Json || record['method'] != 'event') continue;
+      final event = Map<String, Object?>.of(record['params']! as Json);
+      if (event['durable'] != true) continue;
+      event.remove('text');
+      event.remove('error');
+      event.remove('usage');
+      event.remove('model');
+      if (event['type'] == 'approval_requested') {
+        final approval = Map<String, Object?>.of(event['approval']! as Json)
+          ..remove('arguments');
+        event['approval'] = approval;
+        approvals.add(approval);
+      }
+      if (event['type'] == 'tool_started') {
+        event['call'] = {
+          'id': approvals.last['call_id'],
+          'name': approvals.last['tool'],
+        };
+      }
+      if (event['type'] == 'tool_finished') {
+        event['result'] = {
+          'content': '{"exitCode":0}',
+          'is_error': false,
+          'pending': false,
+        };
+      }
+      source.add(event);
+    }
+    expect(
+      source.map((event) => event['sequence']),
+      List.generate(15, (index) => index + 1),
+    );
+    final releaseUsage = Completer<void>();
+    final usageRequested = Completer<void>();
+    addTearDown(() {
+      if (!releaseUsage.isCompleted) releaseUsage.complete();
+    });
+    final peer = _BackendPeer();
+    peer.handler = (method, params) async {
+      if (method == 'events.after') {
+        return {
+          'events': params['after'] == 0 ? source : <Json>[],
+          'last_seq': 15,
+          'resync': false,
+        };
+      }
+      if (method == 'session.state') {
+        if (!usageRequested.isCompleted) usageRequested.complete();
+        await releaseUsage.future;
+        return {
+          ...peer.state(seq: 15),
+          'session': {'id': 'id_1', 'title': 'Synthetic replay'},
+          'usage': _sessionUsage(150, 30),
+        };
+      }
+      if (method == 'approval.list') return approvals;
+      if (method == 'approval.decide') return <String, Object?>{};
+      if (method == 'run.steer') return {'id': 'id_5'};
+      return peer.defaultResponse(method, params);
+    };
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    final acceptance = LiveAcceptance(
+      approve: (id) =>
+          backend.decideApproval('id_1', id, ApprovalDecision.approve),
+      steer: () => backend.steer('id_1', 'Synthetic steering'),
+    );
+    final events = <KitEvent>[];
+    final subscription = backend.events('id_1', after: 0).listen((event) {
+      events.add(event);
+      acceptance.onEvent(event);
+    }, onError: (Object _, StackTrace _) => acceptance.fail());
+    addTearDown(subscription.cancel);
+    final terminal = await acceptance.finished;
+    await acceptance.settled;
+    await usageRequested.future;
+    // This is the pre-fix script's exact verification point: everything except
+    // usage has passed, while the terminal refresh is still in flight.
+    expect(acceptance.approvals, 2);
+    expect(events.whereType<ToolStarted>(), hasLength(2));
+    expect(events.whereType<ToolFinished>(), hasLength(2));
+    expect(acceptance.completedExecs, 2);
+    expect(acceptance.gaps, 0);
+    expect(acceptance.usageUpdates, 0);
+    expect(terminal.outcome, RunOutcome.completed);
+    expect(
+      () => acceptance.verify(terminal, 'id_2'),
+      throwsA(isA<LiveCheckFailure>()),
+    );
+    final verified = expectLater(
+      acceptance.verifyAfterUsage(terminal, 'id_2'),
+      completes,
+    );
+    releaseUsage.complete();
+    await verified;
+    expect(events.whereType<UsageUpdated>(), hasLength(1));
+    expect(acceptance.gaps, 0);
+    expect(
+      acceptance
+          .diagnostics(expectedRunId: 'id_2')
+          .every((check) => check.passed),
+      isTrue,
+    );
+  });
+
   test(
     'initializes the pinned protocol and negotiates honest capabilities',
     () async {

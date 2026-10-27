@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:agent_kit_core/agent_kit_core.dart';
@@ -6,6 +7,38 @@ import 'package:test/test.dart';
 import '../tool/live_check_support.dart';
 
 void main() {
+  test(
+    'missing terminal usage remains bounded and fails on stream closure',
+    () async {
+      final acceptance = await _diagnosticFixture(usage: false);
+      const terminal = RunFinished(
+        seq: 100,
+        chat: 'SYNTHETIC_PRIVATE_CHAT',
+        runId: 'SYNTHETIC_PRIVATE_RUN',
+      );
+      await expectLater(
+        acceptance
+            .verifyAfterUsage(terminal, terminal.runId)
+            .timeout(Duration.zero),
+        throwsA(isA<TimeoutException>()),
+      );
+      final pending = expectLater(
+        acceptance.verifyAfterUsage(terminal, terminal.runId),
+        throwsA(isA<LiveCheckFailure>()),
+      );
+      acceptance.closed();
+      await pending;
+      expect(acceptance.usageUpdates, 0);
+      expect(
+        acceptance
+            .diagnostics(expectedRunId: terminal.runId)
+            .singleWhere((check) => check.name == 'usage')
+            .passed,
+        isFalse,
+      );
+    },
+  );
+
   test('wire capture tees real chunks in line order and redacts all content', () async {
     final lines = <String>[];
     final trace = RedactedWireTrace(lines.add);
@@ -245,4 +278,206 @@ void main() {
     expect(options.timeout, const Duration(seconds: 180));
     expect(options.hostArguments, ['--model', 'model']);
   });
+
+  test(
+    'diagnostics identify independent failures and retain strict thresholds',
+    () async {
+      Future<void> check(
+        Future<LiveAcceptance> fixture,
+        Set<String> failed, {
+        String expectedRunId = 'SYNTHETIC_PRIVATE_RUN',
+      }) async {
+        final acceptance = await fixture;
+        final checks = acceptance.diagnostics(expectedRunId: expectedRunId);
+        expect(checks, hasLength(8));
+        expect(
+          checks
+              .where((check) => !check.passed)
+              .map((check) => check.name)
+              .toSet(),
+          failed,
+        );
+        final report = checks.join('\n');
+        expect(report, isNot(contains('SYNTHETIC_PRIVATE')));
+        expect(report, isNot(contains('STEERING_ACCEPTED')));
+        expect(report.split('\n'), everyElement(matches(r'^(PASS|FAIL): ')));
+        const terminal = RunFinished(
+          seq: 100,
+          chat: 'SYNTHETIC_PRIVATE_CHAT',
+          runId: 'SYNTHETIC_PRIVATE_RUN',
+        );
+        if (failed.isEmpty) {
+          acceptance.verify(terminal, expectedRunId);
+        } else {
+          expect(
+            () => acceptance.verify(terminal, expectedRunId),
+            throwsA(isA<LiveCheckFailure>()),
+          );
+        }
+      }
+
+      await check(_diagnosticFixture(), {});
+      await check(_diagnosticFixture(approvals: 1), {'approvals'});
+      await check(_diagnosticFixture(successfulExecs: 1), {'exec finishes'});
+      await check(_diagnosticFixture(usage: false), {'usage'});
+      await check(_diagnosticFixture(gap: true), {'gaps'});
+      await check(_diagnosticFixture(health: false), {'command/event health'});
+      await check(_diagnosticFixture(), {
+        'completion',
+      }, expectedRunId: 'other-private-run');
+      await check(_diagnosticFixture(failSteering: true), {
+        'steering',
+        'command/event health',
+      });
+      await check(_diagnosticFixture(execStarts: 1), {
+        'exec starts',
+        'exec finishes',
+      });
+    },
+  );
+
+  test(
+    'diagnostics distinguish missing completion from failed completion',
+    () async {
+      final missing = await _diagnosticFixture(completion: false);
+      final missingLine = missing
+          .diagnostics(expectedRunId: 'SYNTHETIC_PRIVATE_RUN')
+          .singleWhere((check) => check.name == 'completion');
+      expect(missingLine.passed, isFalse);
+      expect(
+        missingLine.toString(),
+        contains('events=0; matched=0; completed=0'),
+      );
+      final failed = await _diagnosticFixture(outcome: RunOutcome.failed);
+      final failedLine = failed
+          .diagnostics(expectedRunId: 'SYNTHETIC_PRIVATE_RUN')
+          .singleWhere((check) => check.name == 'completion');
+      expect(failedLine.passed, isFalse);
+      expect(
+        failedLine.toString(),
+        contains('events=1; matched=1; completed=0'),
+      );
+    },
+  );
+
+  test(
+    'canonical diagnostics report both history checks without content or IDs',
+    () {
+      const steering = 'SYNTHETIC_PRIVATE_STEERING';
+      final missing = canonicalDiagnostics(null, steeringText: steering);
+      expect(missing.every((check) => !check.passed), isTrue);
+      final snapshot = ChatSnapshot(
+        chatId: 'SYNTHETIC_PRIVATE_CHAT',
+        items: [
+          UserMessage(id: 'SYNTHETIC_PRIVATE_USER', text: steering),
+          const AssistantMessage(
+            id: 'SYNTHETIC_PRIVATE_ASSISTANT',
+            markdown: 'SYNTHETIC_PRIVATE_CONTENT STEERING_ACCEPTED',
+            streaming: true,
+          ),
+        ],
+      );
+      final checks = canonicalDiagnostics(snapshot, steeringText: steering);
+      expect(checks.map((check) => check.passed), [true, true, false]);
+      expect(checks.join('\n'), isNot(contains('SYNTHETIC_PRIVATE')));
+      expect(checks.join('\n'), isNot(contains('STEERING_ACCEPTED')));
+      final complete = ChatSnapshot(
+        chatId: 'SYNTHETIC_PRIVATE_CHAT',
+        items: [
+          snapshot.items.first,
+          const AssistantMessage(
+            id: 'SYNTHETIC_PRIVATE_FINAL',
+            markdown: 'SYNTHETIC_PRIVATE_CONTENT STEERING_ACCEPTED',
+          ),
+        ],
+      );
+      expect(
+        canonicalDiagnostics(
+          complete,
+          steeringText: steering,
+        ).every((check) => check.passed),
+        isTrue,
+      );
+    },
+  );
+}
+
+Future<LiveAcceptance> _diagnosticFixture({
+  int approvals = 2,
+  int execStarts = 2,
+  int successfulExecs = 2,
+  bool failSteering = false,
+  bool usage = true,
+  bool gap = false,
+  bool health = true,
+  bool completion = true,
+  RunOutcome outcome = RunOutcome.completed,
+}) async {
+  final acceptance = LiveAcceptance(
+    approve: (_) async {},
+    steer: () async {
+      if (failSteering) throw StateError('SYNTHETIC_PRIVATE_ERROR');
+      return 'SYNTHETIC_PRIVATE_STEERING_ID';
+    },
+  );
+  var seq = 0;
+  for (var i = 0; i < approvals; i++) {
+    acceptance.onEvent(
+      ApprovalRequested(
+        seq: ++seq,
+        chat: 'SYNTHETIC_PRIVATE_CHAT',
+        approval: Approval(
+          id: 'SYNTHETIC_PRIVATE_APPROVAL_$i',
+          tool: 'exec',
+          requestedAt: DateTime.utc(2026),
+        ),
+      ),
+    );
+  }
+  for (var i = 0; i < execStarts; i++) {
+    acceptance.onEvent(
+      ToolStarted(
+        seq: ++seq,
+        chat: 'SYNTHETIC_PRIVATE_CHAT',
+        callId: 'SYNTHETIC_PRIVATE_CALL_$i',
+        name: 'exec',
+        arguments: '{"command":"SYNTHETIC_PRIVATE_COMMAND"}',
+      ),
+    );
+    acceptance.onEvent(
+      ToolFinished(
+        seq: ++seq,
+        chat: 'SYNTHETIC_PRIVATE_CHAT',
+        callId: 'SYNTHETIC_PRIVATE_CALL_$i',
+        state: WorkState.done,
+        exitCode: i < successfulExecs ? 0 : 1,
+        output: const ToolOutput(text: 'SYNTHETIC_PRIVATE_OUTPUT'),
+      ),
+    );
+  }
+  if (usage) {
+    acceptance.onEvent(
+      UsageUpdated(
+        seq: ++seq,
+        chat: 'SYNTHETIC_PRIVATE_CHAT',
+        usage: const Usage(inputTokens: 20, outputTokens: 10),
+      ),
+    );
+  }
+  if (gap) {
+    acceptance.onEvent(GapEvent(seq: ++seq, chat: 'SYNTHETIC_PRIVATE_CHAT'));
+  }
+  if (completion) {
+    acceptance.onEvent(
+      RunFinished(
+        seq: ++seq,
+        chat: 'SYNTHETIC_PRIVATE_CHAT',
+        runId: 'SYNTHETIC_PRIVATE_RUN',
+        outcome: outcome,
+      ),
+    );
+  }
+  if (!health) acceptance.fail();
+  await acceptance.settled;
+  return acceptance;
 }
