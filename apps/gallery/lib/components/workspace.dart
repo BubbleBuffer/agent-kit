@@ -623,7 +623,7 @@ class _FileLine extends StatelessWidget {
           ? t.constructive
           : del
           ? t.danger
-          : const Color(0x00000000),
+          : kTransparent,
       child: SizedBox(
         height: 20,
         child: Row(

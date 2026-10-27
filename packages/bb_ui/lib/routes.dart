@@ -75,7 +75,7 @@ class AppScrollBehavior extends ScrollBehavior {
     final c = context.colors;
     return RawScrollbar(
       controller: details.controller,
-      thumbColor: c.dark ? const Color(0x33FFFFFF) : const Color(0x26000000),
+      thumbColor: c.palette.thumb,
       thickness: 6,
       radius: const Radius.circular(3),
       crossAxisMargin: 2,

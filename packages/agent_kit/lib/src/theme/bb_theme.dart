@@ -136,7 +136,7 @@ class BbTheme extends ThemeExtension<BbTheme> {
       railInk = colors.dark ? colors.railInk : colors.textPrimary,
       railMuted = colors.dark ? colors.railMuted : colors.textSecondary,
       railLine = colors.dark ? colors.railLine : colors.border,
-      status = _statuses(colors, inks);
+      status = _statuses(colors);
 
   /// Scratch's palette this theme was derived from; `bb_ui` reads it.
   final AppColors colors;
@@ -242,33 +242,39 @@ class BbTheme extends ThemeExtension<BbTheme> {
   BbTheme lerp(covariant ThemeExtension<BbTheme>? other, double t) =>
       other is! BbTheme || t < .5 ? this : other;
 
-  static Map<ChatStatus, BbStatusStyle> _statuses(
-    AppColors c,
-    KitInks inks,
-  ) => {
-    // Only "needs you" fills a pill, and only it may be warm.
-    ChatStatus.needsYou: BbStatusStyle(
-      mark: c.accent,
-      ink: inks.attention,
-      fill: c.attnBg,
-      line: inks.attention.withValues(alpha: .35),
-    ),
-    ChatStatus.running: BbStatusStyle(
-      mark: c.textPrimary,
-      ink: c.textSecondary,
-    ),
-    ChatStatus.failed: BbStatusStyle(mark: inks.danger, ink: inks.danger),
-    ChatStatus.done: BbStatusStyle(
-      mark: inks.constructive,
-      ink: inks.constructive,
-    ),
-    ChatStatus.idle: BbStatusStyle(mark: c.threadStrong, ink: c.textSecondary),
-    // Not in the mockup: the idle ring with a dot inside.
-    ChatStatus.interrupted: BbStatusStyle(
-      mark: c.threadStrong,
-      ink: c.textSecondary,
-    ),
-  };
+  static Map<ChatStatus, BbStatusStyle> _statuses(AppColors c) {
+    final p = c.palette;
+    return {
+      // Only "needs you" fills a pill, and only it may be warm.
+      ChatStatus.needsYou: BbStatusStyle(
+        mark: p.statusNeedsYouMark,
+        ink: p.statusNeedsYouInk,
+        fill: p.statusNeedsYouBg,
+        line: p.statusNeedsYouLine,
+      ),
+      ChatStatus.running: BbStatusStyle(
+        mark: p.statusRunningMark,
+        ink: p.statusRunningInk,
+      ),
+      ChatStatus.failed: BbStatusStyle(
+        mark: p.statusFailedMark,
+        ink: p.statusFailedInk,
+      ),
+      ChatStatus.done: BbStatusStyle(
+        mark: p.statusDoneMark,
+        ink: p.statusDoneInk,
+      ),
+      ChatStatus.idle: BbStatusStyle(
+        mark: p.statusIdleMark,
+        ink: p.statusIdleInk,
+      ),
+      // Not in the mockup: the idle ring with a dot inside.
+      ChatStatus.interrupted: BbStatusStyle(
+        mark: p.statusInterruptedMark,
+        ink: p.statusInterruptedInk,
+      ),
+    };
+  }
 }
 
 class _BbThemeInherited extends InheritedWidget {

@@ -11,6 +11,26 @@ void main() {
     expect(AppColors.light.bgPrimary, isNot(AppColors.darkTheme.bgPrimary));
   });
 
+  test('the generated palette backs the Scratch names', () {
+    expect(AppColors.light.palette, same(ProfileColors.light));
+    expect(AppColors.darkTheme.palette, same(ProfileColors.dark));
+    expect(AppColors.light.bgPrimary, ProfileColors.light.surface);
+    expect(AppColors.light.bgTertiary, ProfileColors.light.desk);
+    expect(AppColors.darkTheme.okBg, ProfileColors.dark.constructive);
+    expect(AppColors.light.seam, same(ProfileColors.light.shadow));
+    // Translucent values stay translucent.
+    expect(AppColors.darkTheme.okBg.a, lessThan(1));
+    expect(ProfileColors.dark.statusNeedsYouLine.a, lessThan(1));
+    expect(ProfileColors.light.paper, kTransparent);
+  });
+
+  test('space colours come from the palette', () {
+    expect(spaceColor('moss', Brightness.light), const Color(0xFF697A6B));
+    expect(spaceColor('moss', Brightness.dark), const Color(0xFF5F7062));
+    expect(spaceColor('duvet', Brightness.dark), const Color(0xFF999DA6));
+    expect(spaceColor('nope', Brightness.dark), isNull);
+  });
+
   test('the form factor follows the window width', () {
     expect(FormFactor.forWidth(FormFactor.breakpoint - 1), FormFactor.mobile);
     expect(FormFactor.forWidth(FormFactor.breakpoint), FormFactor.desktop);

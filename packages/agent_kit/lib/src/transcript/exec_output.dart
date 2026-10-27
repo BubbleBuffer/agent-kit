@@ -95,11 +95,7 @@ class _ExecOutputState extends State<ExecOutput> {
           return LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: const [
-              Color(0xFF000000),
-              Color(0xFF000000),
-              Color(0x00000000),
-            ],
+            colors: const [kMaskOpaque, kMaskOpaque, kTransparent],
             stops: [0, stop, 1],
           ).createShader(rect);
         },
