@@ -56,6 +56,19 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
 
+  # Raw colours in the kit's own source; the script is vendored from bb-ui
+  # (see its header). The second step proves the check fails on a raw colour.
+  raw-colours:
+    name: no raw colours
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: scripts/test-check-raw-colours.sh
+      - run: scripts/check-raw-colours.sh
+
   test:
     name: flutter test (${{ matrix.package }})
     runs-on: ubuntu-latest

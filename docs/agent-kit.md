@@ -127,7 +127,11 @@ that palette; roles without an `AppColors` field are on `AppColors.palette`.
 The mockup's `theme.css` is generated from the same profile. Widgets use
 `kTransparent` for transparent paint and theme or palette roles for colours.
 
-Colour generation, drift checking and neutral raw-colour checks run in bb-ui.
+Colour generation, drift checking and the raw-colour check of bb-ui's own code run
+in bb-ui. Raw colours in this repository's `packages/agent_kit*` and `apps/` are
+caught by `scripts/check-raw-colours.sh` (vendored from bb-ui `v0.4.0`; re-sync it
+when the pin moves) in the `raw-colours` CI job, which first runs
+`scripts/test-check-raw-colours.sh`, a failing-case test of the script.
 To change the palette, follow its
 [bb_tokens workflow](https://github.com/BubbleBuffer/bb-ui/blob/v0.4.0/packages/bb_tokens/README.md),
 release that dependency and update both `bb_ui` Git pins here together. Agent
