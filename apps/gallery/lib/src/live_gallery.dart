@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_bubblepaw/agent_kit_bubblepaw.dart';
 import 'package:bb_ui/bb_ui.dart' show AppColors;
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/services.dart' show AppExitResponse;
 import 'package:flutter/widgets.dart';
 
 import 'gallery_app.dart';
@@ -192,9 +192,8 @@ class _ConnectionStatus extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: DefaultTextStyle.of(context).style.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: DefaultTextStyle.of(context).style
+                          .copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 12),
                     Text(message, style: TextStyle(color: theme.muted)),

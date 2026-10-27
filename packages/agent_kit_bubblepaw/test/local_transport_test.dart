@@ -19,7 +19,8 @@ void main() {
       addTearDown(() => root.delete(recursive: true));
       final workspace = await Directory('${root.path}/workspace').create();
       final data = await Directory('${root.path}/data').create();
-      await File('${workspace.path}/fixture.txt').writeAsString('Offline fixture');
+      await File('${workspace.path}/fixture.txt')
+          .writeAsString('Offline fixture');
       final transport = _GapTransport(
         await StdioBubblePawTransport.start(
           binaryPath: binary!,
@@ -44,7 +45,10 @@ void main() {
       );
       addTearDown(backend.dispose);
       final chat = await backend.createChat(title: 'Offline stdio acceptance');
-      expect((await backend.listChats()).chats.any((c) => c.id == chat.id), isTrue);
+      expect(
+        (await backend.listChats()).chats.any((c) => c.id == chat.id),
+        isTrue,
+      );
 
       final feed = ChatFeed(backend, chat.id);
       addTearDown(feed.close);
@@ -61,7 +65,8 @@ void main() {
       final first = await backend.send(chat.id, 'Run the offline demo');
       expect(first.delivery, SendDelivery.started);
       await _until(
-        () => feed.snapshot?.run?.id == first.runId &&
+        () =>
+            feed.snapshot?.run?.id == first.runId &&
             feed.snapshot?.run?.outcome == RunOutcome.completed,
       );
       await _until(
@@ -72,7 +77,8 @@ void main() {
       expect(events.whereType<RunStarted>(), isNotEmpty);
       expect(
         events.any(
-          (event) => event is MessageDelta || event is AssistantMessageCompleted,
+          (event) =>
+              event is MessageDelta || event is AssistantMessageCompleted,
         ),
         isTrue,
       );
@@ -89,7 +95,8 @@ void main() {
       transport.dropNextDurableEvent(chat.id);
       final second = await backend.send(chat.id, 'Recover a dropped event');
       await _until(
-        () => transport.injectedGaps == 1 &&
+        () =>
+            transport.injectedGaps == 1 &&
             transport.stateReads > stateReads &&
             transport.replayReads > replayReads &&
             feed.snapshot?.run?.id == second.runId &&
@@ -105,15 +112,19 @@ void main() {
         isTrue,
       );
       expect(
-        feed.snapshot!.items.whereType<AssistantMessage>().where(
-          (item) => item.markdown.contains(_demoReply) && !item.streaming,
-        ).length,
+        feed.snapshot!.items
+            .whereType<AssistantMessage>()
+            .where(
+              (item) => item.markdown.contains(_demoReply) && !item.streaming,
+            )
+            .length,
         2,
       );
 
       final third = await backend.send(chat.id, 'Continue after recovery');
       await _until(
-        () => feed.snapshot?.run?.id == third.runId &&
+        () =>
+            feed.snapshot?.run?.id == third.runId &&
             feed.snapshot?.run?.outcome == RunOutcome.completed,
       );
       expect(errors, isEmpty);

@@ -42,7 +42,9 @@ final class BubblePawProjection {
     final rawSeq = _integer(state, 'seq');
     final seq = _base(rawSeq) + 15;
     final runs = _maps(state['runs']).toList()
-      ..sort((a, b) => _string(a, 'started_at').compareTo(_string(b, 'started_at')));
+      ..sort(
+        (a, b) => _string(a, 'started_at').compareTo(_string(b, 'started_at')),
+      );
     final lastRun = runs.isEmpty ? null : runs.last;
     final run = lastRun == null ? null : _run(lastRun);
     final items = <TranscriptItem>[];
@@ -64,16 +66,22 @@ final class BubblePawProjection {
             for (final call in calls) {
               final callId = _string(call, 'id');
               toolLocations[callId] = items.length;
-              rows.add(ToolRow(
-                id: callId,
-                name: _string(call, 'name'),
-                arguments: _arguments(call['arguments']),
-                startedAt: at,
-                // A missing tool result is not evidence of success.
-                state: run?.isActive == true ? WorkState.running : WorkState.cancelled,
-              ));
+              rows.add(
+                ToolRow(
+                  id: callId,
+                  name: _string(call, 'name'),
+                  arguments: _arguments(call['arguments']),
+                  startedAt: at,
+                  // A missing tool result is not evidence of success.
+                  state: run?.isActive == true
+                      ? WorkState.running
+                      : WorkState.cancelled,
+                ),
+              );
             }
-            items.add(ActivityGroup(id: 'bubblepaw:tools:$id', at: at, rows: rows));
+            items.add(
+              ActivityGroup(id: 'bubblepaw:tools:$id', at: at, rows: rows),
+            );
           }
         case 'tool':
           final callId = message['tool_call_id'];
@@ -84,7 +92,9 @@ final class BubblePawProjection {
               for (final row in group.rows)
                 if (row is ToolRow && row.id == callId)
                   row.copyWith(
-                    state: message['is_error'] == true ? WorkState.failed : WorkState.done,
+                    state: message['is_error'] == true
+                        ? WorkState.failed
+                        : WorkState.done,
                     output: ToolOutput(text: content),
                     endedAt: at,
                   )
@@ -99,23 +109,35 @@ final class BubblePawProjection {
           items.add(SystemLine(id: id, text: content, at: at));
       }
     }
-    final stream = _Session(rawSeq, snapshotSequence: rawSeq, model: run?.model);
+    final stream = _Session(
+      rawSeq,
+      snapshotSequence: rawSeq,
+      model: run?.model,
+    );
     final streamingText = state['streaming_text'];
-    if (run != null && run.isActive && streamingText is String && streamingText.isNotEmpty) {
+    if (run != null &&
+        run.isActive &&
+        streamingText is String &&
+        streamingText.isNotEmpty) {
       final reply = stream.reply(run.id);
       reply.confirmed = streamingText;
       reply.visible = streamingText;
       reply.requestPrefix = streamingText;
-      items.add(AssistantMessage(
-        id: _replyId(run.id),
-        markdown: streamingText,
-        streaming: true,
-        runId: run.id,
-      ));
+      items.add(
+        AssistantMessage(
+          id: _replyId(run.id),
+          markdown: streamingText,
+          streaming: true,
+          runId: run.id,
+        ),
+      );
     }
     _sessions[chat] = stream;
     final questionWire = state['question'];
-    final directoryParts = workspaceDirectory.replaceAll('\\', '/').split('/').where((p) => p.isNotEmpty);
+    final directoryParts = workspaceDirectory
+        .replaceAll('\\', '/')
+        .split('/')
+        .where((p) => p.isNotEmpty);
     return ChatSnapshot(
       chatId: chat,
       seq: seq,
@@ -130,7 +152,9 @@ final class BubblePawProjection {
       items: items,
       approvals: [for (final a in _maps(state['approvals'])) approval(a)],
       // Root answer endpoints cannot answer child questions.
-      questions: questionWire is Map<String, Object?> && session['parent_session_id'] == null
+      questions:
+          questionWire is Map<String, Object?> &&
+              session['parent_session_id'] == null
           ? [question(_map(questionWire))]
           : const [],
       queue: [
@@ -140,7 +164,9 @@ final class BubblePawProjection {
               id: _string(input, 'id'),
               text: _string(input, 'text'),
               queuedAt: _unknownTime,
-              mode: input['kind'] == 'steer' ? QueueMode.steer : QueueMode.followup,
+              mode: input['kind'] == 'steer'
+                  ? QueueMode.steer
+                  : QueueMode.followup,
             ),
       ],
       plan: _plan(state['todo']),
@@ -172,24 +198,31 @@ final class BubblePawProjection {
   /// One free text question, with optional suggestions and an Other input.
   /// Its answer key is always `answer`; selected suggestions remain labels.
   Question question(Map<String, Object?> wire, {DateTime? requestedAt}) {
-    final options = (wire['options'] as List<Object?>? ?? const []).whereType<String>().toList();
+    final options = (wire['options'] as List<Object?>? ?? const [])
+        .whereType<String>()
+        .toList();
     final status = wire['status'];
     return Question(
       id: _string(wire, 'id'),
       requestedAt: requestedAt ?? _unknownTime,
       state: status == 'answered'
           ? QuestionState.answered
-          : status == 'cancelled' ? QuestionState.cancelled : QuestionState.pending,
-      items: [QuestionItem(
-        id: 'answer',
-        header: 'Question',
-        text: _string(wire, 'text'),
-        kind: options.isEmpty ? QuestionKind.text : QuestionKind.pickOne,
-        options: [for (final label in options) QuestionOption(label: label)],
-        allowOther: options.isNotEmpty,
-      )],
+          : status == 'cancelled'
+          ? QuestionState.cancelled
+          : QuestionState.pending,
+      items: [
+        QuestionItem(
+          id: 'answer',
+          header: 'Question',
+          text: _string(wire, 'text'),
+          kind: options.isEmpty ? QuestionKind.text : QuestionKind.pickOne,
+          options: [for (final label in options) QuestionOption(label: label)],
+          allowOther: options.isNotEmpty,
+        ),
+      ],
       answers: status == 'answered'
-          ? {'answer': QuestionAnswer(text: wire['answer'] as String?)} : null,
+          ? {'answer': QuestionAnswer(text: wire['answer'] as String?)}
+          : null,
     );
   }
 
@@ -201,9 +234,15 @@ final class BubblePawProjection {
   List<KitEvent> event(Map<String, Object?> wire) {
     if (wire['method'] == 'events.gap') {
       final params = _map(wire['params']);
-      return [for (final entry in _sessions.entries)
-        GapEvent(seq: _base(entry.value.sequence < 0 ? 0 : entry.value.sequence) + 15,
-          chat: entry.key, skipped: params['skipped'] as int?)];
+      return [
+        for (final entry in _sessions.entries)
+          GapEvent(
+            seq:
+                _base(entry.value.sequence < 0 ? 0 : entry.value.sequence) + 15,
+            chat: entry.key,
+            skipped: params['skipped'] as int?,
+          ),
+      ];
     }
     if (wire['method'] == 'event') wire = _map(wire['params']);
     final chat = _string(wire, 'session_id');
@@ -218,7 +257,8 @@ final class BubblePawProjection {
       state.sequence = rawSeq;
       state.live.clear();
     } else {
-      if (rawSeq < state.sequence || rawSeq <= state.snapshotSequence) return const [];
+      if (rawSeq < state.sequence || rawSeq <= state.snapshotSequence)
+        return const [];
       // A repeated notification must keep the same offset, even when it follows
       // other fragments. Source timestamps retain their original precision.
       final fingerprint = jsonEncode(wire);
@@ -229,14 +269,38 @@ final class BubblePawProjection {
       case 'run_started':
         state.model = wire['model'] as String?;
         state.replies.clear();
-        return [RunStarted(seq: seq, chat: chat, at: at, runId: run, model: state.model)];
+        return [
+          RunStarted(
+            seq: seq,
+            chat: chat,
+            at: at,
+            runId: run,
+            model: state.model,
+          ),
+        ];
       case 'run_waiting_for_quota':
         final wait = _map(wire['wait']);
-        return [RunWaiting(seq: seq, chat: chat, at: at, runId: run,
-          until: _time(wait['resume_at']), reason: wait['reason'] as String?)];
+        return [
+          RunWaiting(
+            seq: seq,
+            chat: chat,
+            at: at,
+            runId: run,
+            until: _time(wait['resume_at']),
+            reason: wait['reason'] as String?,
+          ),
+        ];
       case 'run_quota_resumed':
         // Core clears quota wait on RunStarted; the host retains the run ID.
-        return [RunStarted(seq: seq, chat: chat, at: at, runId: run, model: state.model)];
+        return [
+          RunStarted(
+            seq: seq,
+            chat: chat,
+            at: at,
+            runId: run,
+            model: state.model,
+          ),
+        ];
       case 'text_delta':
       case 'paragraph':
         final reply = state.reply(run);
@@ -257,8 +321,17 @@ final class BubblePawProjection {
         }
         final offset = reply.visible.length;
         reply.visible = next;
-        return [MessageDelta(seq: seq + 15, chat: chat, at: at,
-          itemId: _replyId(run), runId: run, offset: offset, text: next.substring(offset))];
+        return [
+          MessageDelta(
+            seq: seq + 15,
+            chat: chat,
+            at: at,
+            itemId: _replyId(run),
+            runId: run,
+            offset: offset,
+            text: next.substring(offset),
+          ),
+        ];
       case 'model_request_started':
         final reply = state.reply(run);
         if (reply.visible != reply.confirmed) {
@@ -273,26 +346,64 @@ final class BubblePawProjection {
         // so they cannot represent those without consuming future sequences.
         if (!durable) return [gap()];
         final call = _map(wire['call']);
-        return [ToolStarted(seq: seq, chat: chat, at: at, runId: run,
-          callId: _string(call, 'id'), name: _string(call, 'name'),
-          arguments: _arguments(call['arguments']))];
+        return [
+          ToolStarted(
+            seq: seq,
+            chat: chat,
+            at: at,
+            runId: run,
+            callId: _string(call, 'id'),
+            name: _string(call, 'name'),
+            arguments: _arguments(call['arguments']),
+          ),
+        ];
       case 'tool_finished':
         if (!durable) return [gap()];
         final result = _map(wire['result']);
-        return [ToolFinished(seq: seq, chat: chat, at: at,
-          callId: _string(wire, 'call_id'),
-          state: result['pending'] == true ? WorkState.running
-              : result['is_error'] == true ? WorkState.failed : WorkState.done,
-          output: ToolOutput(text: _string(result, 'content')))];
+        return [
+          ToolFinished(
+            seq: seq,
+            chat: chat,
+            at: at,
+            callId: _string(wire, 'call_id'),
+            state: result['pending'] == true
+                ? WorkState.running
+                : result['is_error'] == true
+                ? WorkState.failed
+                : WorkState.done,
+            output: ToolOutput(text: _string(result, 'content')),
+          ),
+        ];
       case 'approval_requested':
-        return [ApprovalRequested(seq: seq, chat: chat, at: at, approval: approval(_map(wire['approval'])))];
+        return [
+          ApprovalRequested(
+            seq: seq,
+            chat: chat,
+            at: at,
+            approval: approval(_map(wire['approval'])),
+          ),
+        ];
       case 'approval_resolved':
-        return [ApprovalResolved(seq: seq, chat: chat, at: at,
-          approvalId: _string(wire, 'approval_id'), state: _approvalState(wire['state']),
-          reason: wire['reason'] as String?)];
+        return [
+          ApprovalResolved(
+            seq: seq,
+            chat: chat,
+            at: at,
+            approvalId: _string(wire, 'approval_id'),
+            state: _approvalState(wire['state']),
+            reason: wire['reason'] as String?,
+          ),
+        ];
       case 'host_state_changed':
         if (wire['key'] == 'todo') {
-          return [PlanUpdated(seq: seq, chat: chat, at: at, items: _plan(wire['value']))];
+          return [
+            PlanUpdated(
+              seq: seq,
+              chat: chat,
+              at: at,
+              items: _plan(wire['value']),
+            ),
+          ];
         }
         if (wire['key'] == 'question') {
           final value = wire['value'];
@@ -300,13 +411,29 @@ final class BubblePawProjection {
           final q = _map(value);
           if (q['parent_session_id'] != null) return [gap()];
           if (q['status'] == 'pending') {
-            return [QuestionAsked(seq: seq, chat: chat, at: at, question: question(q, requestedAt: at))];
+            return [
+              QuestionAsked(
+                seq: seq,
+                chat: chat,
+                at: at,
+                question: question(q, requestedAt: at),
+              ),
+            ];
           }
-          return [QuestionResolved(seq: seq, chat: chat, at: at,
-            questionId: _string(q, 'id'),
-            state: q['status'] == 'answered' ? QuestionState.answered : QuestionState.cancelled,
-            answers: q['status'] == 'answered'
-                ? {'answer': QuestionAnswer(text: q['answer'] as String?)} : null)];
+          return [
+            QuestionResolved(
+              seq: seq,
+              chat: chat,
+              at: at,
+              questionId: _string(q, 'id'),
+              state: q['status'] == 'answered'
+                  ? QuestionState.answered
+                  : QuestionState.cancelled,
+              answers: q['status'] == 'answered'
+                  ? {'answer': QuestionAnswer(text: q['answer'] as String?)}
+                  : null,
+            ),
+          ];
         }
         return [gap()];
       case 'run_finished':
@@ -314,11 +441,22 @@ final class BubblePawProjection {
         final text = wire['text'];
         return [
           if (text is String && text.isNotEmpty)
-            AssistantMessageCompleted(seq: seq, chat: chat, at: at,
-              itemId: _replyId(run), markdown: text, runId: run),
-          RunFinished(seq: seq + 1, chat: chat, at: at, runId: run,
+            AssistantMessageCompleted(
+              seq: seq,
+              chat: chat,
+              at: at,
+              itemId: _replyId(run),
+              markdown: text,
+              runId: run,
+            ),
+          RunFinished(
+            seq: seq + 1,
+            chat: chat,
+            at: at,
+            runId: run,
             outcome: _outcome(wire['status']) ?? RunOutcome.failed,
-            error: wire['error'] as String?),
+            error: _safeRunError(wire['error']),
+          ),
           // Run usage is an aggregate for this run, not session totals. The
           // following snapshot reload obtains the authoritative session usage.
           gap(),
@@ -339,22 +477,31 @@ final _unknownTime = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
 int _base(int seq) {
   if (seq < 0 || seq > 576460752303423487) {
-    throw const FormatException('BubblePaw sequence cannot fit the native kit cursor');
+    throw const FormatException(
+      'BubblePaw sequence cannot fit the native kit cursor',
+    );
   }
   return seq * 16;
 }
 
 Map<String, Object?> _map(Object? value) => value is Map<String, Object?>
-    ? Map<String, Object?>.of(value) : <String, Object?>{};
+    ? Map<String, Object?>.of(value)
+    : <String, Object?>{};
 Iterable<Map<String, Object?>> _maps(Object? value) => value is List<Object?>
-    ? value.whereType<Map<String, Object?>>().map(_map) : const [];
-String _string(Map<String, Object?> value, String key) => value[key] as String? ?? '';
+    ? value.whereType<Map<String, Object?>>().map(_map)
+    : const [];
+String _string(Map<String, Object?> value, String key) =>
+    value[key] as String? ?? '';
 int _integer(Map<String, Object?> value, String key) => value[key] as int? ?? 0;
-DateTime? _time(Object? value) => value is String ? DateTime.tryParse(value) : null;
+DateTime? _time(Object? value) =>
+    value is String ? DateTime.tryParse(value) : null;
 String _arguments(Object? value) => jsonEncode(value);
 String _replyId(String run) => 'bubblepaw:reply:$run';
-String _join(String first, String second) => first.isEmpty ? second
-    : second.isEmpty ? first : '$first\n\n$second';
+String _join(String first, String second) => first.isEmpty
+    ? second
+    : second.isEmpty
+    ? first
+    : '$first\n\n$second';
 
 RunOutcome? _outcome(Object? status) => switch (status) {
   'completed' => RunOutcome.completed,
@@ -365,11 +512,22 @@ RunOutcome? _outcome(Object? status) => switch (status) {
 };
 
 RunInfo _run(Map<String, Object?> run) => RunInfo(
-  id: _string(run, 'id'), model: run['model'] as String?,
-  startedAt: _time(run['started_at']), endedAt: _time(run['ended_at']),
-  outcome: _outcome(run['status']), error: run['error'] as String?,
-  waitReason: run['status'] == 'waiting_for_quota' ? 'Waiting for provider quota' : null,
+  id: _string(run, 'id'),
+  model: run['model'] as String?,
+  startedAt: _time(run['started_at']),
+  endedAt: _time(run['ended_at']),
+  outcome: _outcome(run['status']),
+  error: _safeRunError(run['error']),
+  waitReason: run['status'] == 'waiting_for_quota'
+      ? 'Waiting for provider quota'
+      : null,
 );
+
+// Host errors contain unrestricted anyhow cause chains and may include raw
+// provider responses. Keep diagnostics out of the presentation model.
+String? _safeRunError(Object? value) => value == null
+    ? null
+    : 'The BubblePaw run ended before completing.';
 
 ApprovalState _approvalState(Object? value) => switch (value) {
   'approved' => ApprovalState.approved,
@@ -382,9 +540,15 @@ ApprovalState _approvalState(Object? value) => switch (value) {
 
 List<PlanItem> _plan(Object? value) => [
   for (final (index, item) in _maps(value).indexed)
-    PlanItem(id: 'bubblepaw:todo:$index', text: _string(item, 'text'),
-      state: item['status'] == 'done' ? PlanItemState.done
-          : item['status'] == 'in_progress' ? PlanItemState.now : PlanItemState.todo),
+    PlanItem(
+      id: 'bubblepaw:todo:$index',
+      text: _string(item, 'text'),
+      state: item['status'] == 'done'
+          ? PlanItemState.done
+          : item['status'] == 'in_progress'
+          ? PlanItemState.now
+          : PlanItemState.todo,
+    ),
 ];
 
 Usage? _usage(Object? value) {

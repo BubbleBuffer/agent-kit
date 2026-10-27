@@ -20,10 +20,8 @@ class BubblePawProtocolMismatch extends BubblePawException {
 }
 
 class BubblePawHostExited extends BubblePawException {
-  const BubblePawHostExited({
-    required this.exitCode,
-    required this.stderrTail,
-  }) : super('hostExited', 'The BubblePaw host exited.');
+  const BubblePawHostExited({required this.exitCode, required this.stderrTail})
+    : super('hostExited', 'The BubblePaw host exited.');
 
   final int exitCode;
 

@@ -119,8 +119,9 @@ final class BubblePawBackend implements AgentBackend {
         'conflict' => const KitConflict(),
         'invalid' => const KitInvalid(),
         'denied' => const KitDenied(),
-        'requestTimeout' || 'transportClosed' || 'writeFailed' =>
-          const KitUnavailable(),
+        'requestTimeout' ||
+        'transportClosed' ||
+        'writeFailed' => const KitUnavailable(),
         _ => const KitFailed('The BubblePaw command failed.'),
       };
     }
@@ -133,16 +134,24 @@ final class BubblePawBackend implements AgentBackend {
     }
     final result = await _request('session.list');
     final sessions = _objects(result);
-    sessions.sort((a, b) =>
-        '${b['updated_at'] ?? ''}'.compareTo('${a['updated_at'] ?? ''}'));
+    sessions.sort(
+      (a, b) =>
+          '${b['updated_at'] ?? ''}'.compareTo('${a['updated_at'] ?? ''}'),
+    );
     final needle = query?.toLowerCase();
-    return ChatPage(chats: [
-      for (final session in sessions
-          .where((s) => needle == null ||
-              '${s['title'] ?? ''}'.toLowerCase().contains(needle))
-          .take(64))
-        _projection('${session['id']}').summary(session),
-    ]);
+    return ChatPage(
+      chats: [
+        for (final session
+            in sessions
+                .where(
+                  (s) =>
+                      needle == null ||
+                      '${s['title'] ?? ''}'.toLowerCase().contains(needle),
+                )
+                .take(64))
+          _projection('${session['id']}').summary(session),
+      ],
+    );
   }
 
   @override
@@ -151,11 +160,16 @@ final class BubblePawBackend implements AgentBackend {
     if (current != null) return current;
     final future = _load(chatId);
     _loading[chatId] = future;
-    unawaited(future.then<void>((_) {
-      _loading.remove(chatId);
-    }, onError: (Object _, StackTrace __) {
-      _loading.remove(chatId);
-    }));
+    unawaited(
+      future.then<void>(
+        (_) {
+          _loading.remove(chatId);
+        },
+        onError: (Object _, StackTrace _) {
+          _loading.remove(chatId);
+        },
+      ),
+    );
     return future;
   }
 
@@ -165,8 +179,8 @@ final class BubblePawBackend implements AgentBackend {
       state['approvals'] = await _request('approval.list', {'session_id': id});
     }
     _states[id] = state;
-    return _projection(id).snapshot(state,
-        workspaceDirectory: workspaceDirectory);
+    return _projection(id)
+        .snapshot(state, workspaceDirectory: workspaceDirectory);
   }
 
   @override
@@ -180,7 +194,9 @@ final class BubblePawBackend implements AgentBackend {
           return;
         }
         _watches.add(watch);
-        watch.enqueue(() => watch.replay(BubblePawProjection.hostSequence(after)));
+        watch.enqueue(
+          () => watch.replay(BubblePawProjection.hostSequence(after)),
+        );
       },
       onCancel: () {
         watch.closed = true;
@@ -222,37 +238,48 @@ final class BubblePawBackend implements AgentBackend {
     if (workspace != null && workspace != workspaceDirectory) {
       throw const KitInvalid('This host is bound to one workspace.');
     }
-    final session = _object(await _request('session.open', {
-      if (title != null) 'title': title,
-    }));
+    final session = _object(
+      await _request('session.open', {'title': ?title}),
+    );
     return _projection('${session['id']}').summary(session);
   }
 
   void _text(String text, List<KitRef> refs) {
     if (text.trim().isEmpty) throw const KitInvalid('Enter a message.');
-    if (RegExp(r'^/(rename|rewind|compact|reload)(\s|$)').hasMatch(text.trim())) {
+    if (RegExp(r'^/(rename|rewind|compact|reload)(\s|$)')
+        .hasMatch(text.trim())) {
       throw const KitInvalid('Use a chat action for BubblePaw host commands.');
     }
     if (refs.isNotEmpty) {
-      throw const KitInvalid('BubblePaw stdio accepts text without attachments.');
+      throw const KitInvalid(
+        'BubblePaw stdio accepts text without attachments.',
+      );
     }
   }
 
   @override
-  Future<SendResult> send(String chatId, String text,
-      {List<KitRef> refs = const []}) async {
+  Future<SendResult> send(
+    String chatId,
+    String text, {
+    List<KitRef> refs = const [],
+  }) async {
     _text(text, refs);
     try {
-      final result = _object(await _request('run.start', {
-        'session_id': chatId, 'text': text,
-      }));
+      final result = _object(
+        await _request('run.start', {'session_id': chatId, 'text': text}),
+      );
       if (result['id'] is! String) {
         // Slash commands can return rename/rewind/compact results instead of
         // runs. Force a snapshot, never claim that these started a model turn.
         await _refreshWatches(chatId);
-        throw const KitInvalid('Use the corresponding chat action for host commands.');
+        throw const KitInvalid(
+          'Use the corresponding chat action for host commands.',
+        );
       }
-      return SendResult(delivery: SendDelivery.started, runId: result['id'] as String);
+      return SendResult(
+        delivery: SendDelivery.started,
+        runId: result['id'] as String,
+      );
     } on KitBusy {
       final id = await followup(chatId, text, refs: refs);
       return SendResult(delivery: SendDelivery.queued, inputId: id);
@@ -260,28 +287,39 @@ final class BubblePawBackend implements AgentBackend {
   }
 
   @override
-  Future<String> steer(String chatId, String text,
-      {List<KitRef> refs = const []}) async {
+  Future<String> steer(
+    String chatId,
+    String text, {
+    List<KitRef> refs = const [],
+  }) async {
     _require(KitCapability.steer);
     return _input('run.steer', chatId, text, refs);
   }
 
   @override
-  Future<String> followup(String chatId, String text,
-      {List<KitRef> refs = const []}) async {
+  Future<String> followup(
+    String chatId,
+    String text, {
+    List<KitRef> refs = const [],
+  }) async {
     if (!features.contains('follow_up')) {
       throw const KitInvalid('This host does not accept follow-up input.');
     }
     return _input('run.follow_up', chatId, text, refs);
   }
 
-  Future<String> _input(String method, String chatId, String text,
-      List<KitRef> refs) async {
+  Future<String> _input(
+    String method,
+    String chatId,
+    String text,
+    List<KitRef> refs,
+  ) async {
     _text(text, refs);
-    final result = _object(await _request(method, {
-      'session_id': chatId, 'text': text,
-    }));
-    if (result['id'] is! String) throw const KitInvalid('A queued input was not created.');
+    final result = _object(
+      await _request(method, {'session_id': chatId, 'text': text}),
+    );
+    if (result['id'] is! String)
+      throw const KitInvalid('A queued input was not created.');
     await _refreshWatches(chatId);
     return result['id'] as String;
   }
@@ -298,12 +336,17 @@ final class BubblePawBackend implements AgentBackend {
   }
 
   @override
-  Future<void> decideApproval(String chatId, String approvalId,
-      ApprovalDecision decision) async {
+  Future<void> decideApproval(
+    String chatId,
+    String approvalId,
+    ApprovalDecision decision,
+  ) async {
     if (!features.contains('approvals')) {
       throw const KitInvalid('This host does not provide approval requests.');
     }
-    final approvals = _objects(await _request('approval.list', {'session_id': chatId}));
+    final approvals = _objects(
+      await _request('approval.list', {'session_id': chatId}),
+    );
     if (!approvals.any((a) => a['id'] == approvalId)) throw const KitNotFound();
     await _request('approval.decide', {
       'approval_id': approvalId,
@@ -317,31 +360,41 @@ final class BubblePawBackend implements AgentBackend {
   }
 
   @override
-  Future<void> answerQuestion(String chatId, String questionId,
-      Map<String, QuestionAnswer> answers) async {
+  Future<void> answerQuestion(
+    String chatId,
+    String questionId,
+    Map<String, QuestionAnswer> answers,
+  ) async {
     _require(KitCapability.questions);
     final snap = await loadChat(chatId);
     final matching = snap.questions.where((q) => q.id == questionId);
     if (matching.isEmpty) throw const KitNotFound();
     final question = matching.first;
     if (!question.isPending) throw const KitConflict();
-    if (question.items.length != 1 || answers.length != 1 ||
+    if (question.items.length != 1 ||
+        answers.length != 1 ||
         !answers.containsKey(question.items.single.id)) {
       throw const KitInvalid('BubblePaw accepts one answer per question.');
     }
     final answer = answers.values.single;
-    if (answer.skipped || answer.choices.length > 1 ||
+    if (answer.skipped ||
+        answer.choices.length > 1 ||
         (answer.choices.isNotEmpty && answer.text != null)) {
       throw const KitInvalid('Choose one suggestion or enter one text answer.');
     }
-    final text = answer.text ?? (answer.choices.isEmpty ? '' : answer.choices.single);
+    final text =
+        answer.text ?? (answer.choices.isEmpty ? '' : answer.choices.single);
     if (text.trim().isEmpty) throw const KitInvalid('Enter an answer.');
-    if (answer.choices.isNotEmpty && !question.items.single.options
-        .any((o) => o.label == answer.choices.single)) {
+    if (answer.choices.isNotEmpty &&
+        !question.items.single.options.any(
+          (o) => o.label == answer.choices.single,
+        )) {
       throw const KitInvalid('Choose one of the suggested answers.');
     }
     await _request('question.answer', {
-      'session_id': chatId, 'question_id': questionId, 'text': text,
+      'session_id': chatId,
+      'question_id': questionId,
+      'text': text,
     });
   }
 
@@ -356,11 +409,15 @@ final class BubblePawBackend implements AgentBackend {
   /// BubblePaw includes the selected canonical message in the fork.
   Future<ChatSummary> rewindToNewChat(String chatId, String messageId) async {
     _require(KitCapability.rewind);
-    final result = _object(await _request('session.rewind', {
-      'session_id': chatId, 'message_id': messageId,
-    }));
+    final result = _object(
+      await _request('session.rewind', {
+        'session_id': chatId,
+        'message_id': messageId,
+      }),
+    );
     final id = result['session_id'];
-    if (id is! String) throw const KitFailed('The host returned no rewound chat.');
+    if (id is! String)
+      throw const KitFailed('The host returned no rewound chat.');
     final snap = await loadChat(id);
     final summary = ChatSummary.of(snap);
     if (!_created.isClosed) _created.add(summary);
@@ -386,37 +443,58 @@ final class BubblePawBackend implements AgentBackend {
       Future<T>.error(KitUnsupported(capability));
 
   @override
-  Future<void> sendQueuedNow(String chatId, String inputId) => _missing(KitCapability.sendQueuedNow);
+  Future<void> sendQueuedNow(String chatId, String inputId) =>
+      _missing(KitCapability.sendQueuedNow);
   @override
-  Future<void> editQueued(String chatId, String inputId, String text) => _missing(KitCapability.queueEdit);
+  Future<void> editQueued(String chatId, String inputId, String text) =>
+      _missing(KitCapability.queueEdit);
   @override
-  Future<void> removeQueued(String chatId, String inputId) => _missing(KitCapability.queueEdit);
+  Future<void> removeQueued(String chatId, String inputId) =>
+      _missing(KitCapability.queueEdit);
   @override
-  Future<void> answerChildQuestion(String chatId, String childId, String questionId, String text) => _missing(KitCapability.answerChildQuestion);
+  Future<void> answerChildQuestion(
+    String chatId,
+    String childId,
+    String questionId,
+    String text,
+  ) => _missing(KitCapability.answerChildQuestion);
   @override
-  Future<void> archive(String chatId, {bool archived = true}) => _missing(KitCapability.archive);
+  Future<void> archive(String chatId, {bool archived = true}) =>
+      _missing(KitCapability.archive);
   @override
-  Future<ChatSummary> fork(String chatId, {String? atItemId}) => _missing(KitCapability.fork);
+  Future<ChatSummary> fork(String chatId, {String? atItemId}) =>
+      _missing(KitCapability.fork);
   @override
-  Future<void> cancelChild(String chatId, String childId) => _missing(KitCapability.children);
+  Future<void> cancelChild(String chatId, String childId) =>
+      _missing(KitCapability.children);
   @override
-  Future<void> cancelJob(String chatId, String jobId) => _missing(KitCapability.jobs);
+  Future<void> cancelJob(String chatId, String jobId) =>
+      _missing(KitCapability.jobs);
   @override
-  Future<void> undoEdit(String chatId, String editId) => _missing(KitCapability.editUndo);
+  Future<void> undoEdit(String chatId, String editId) =>
+      _missing(KitCapability.editUndo);
   @override
   Future<List<KitChoice>> listModels() => _missing(KitCapability.models);
   @override
   Future<List<KitChoice>> listProfiles() => _missing(KitCapability.profiles);
   @override
-  Future<void> setModel(String chatId, String modelId) => _missing(KitCapability.models);
+  Future<void> setModel(String chatId, String modelId) =>
+      _missing(KitCapability.models);
   @override
-  Future<void> setProfile(String chatId, String profileId) => _missing(KitCapability.profiles);
+  Future<void> setProfile(String chatId, String profileId) =>
+      _missing(KitCapability.profiles);
   @override
-  Future<ContextDetails> loadContext(String chatId) => _missing(KitCapability.context);
+  Future<ContextDetails> loadContext(String chatId) =>
+      _missing(KitCapability.context);
   @override
-  Future<HistoryPage> loadHistoryRange(String chatId, int firstSeq, int lastSeq) => _missing(KitCapability.context);
+  Future<HistoryPage> loadHistoryRange(
+    String chatId,
+    int firstSeq,
+    int lastSeq,
+  ) => _missing(KitCapability.context);
   @override
-  Future<ContextSummary> loadSummary(String chatId, String summaryId) => _missing(KitCapability.context);
+  Future<ContextSummary> loadSummary(String chatId, String summaryId) =>
+      _missing(KitCapability.context);
 
   /// Gracefully stops only the host owned by this backend; idempotent.
   Future<void> dispose() => _disposing ??= _dispose();
@@ -438,7 +516,10 @@ final class _Watch {
   _Watch(this.backend, this.chatId, this.controller) {
     final state = backend._states[chatId];
     if (state != null) {
-      projection.snapshot(state, workspaceDirectory: backend.workspaceDirectory);
+      projection.snapshot(
+        state,
+        workspaceDirectory: backend.workspaceDirectory,
+      );
     }
   }
   final BubblePawBackend backend;
@@ -451,19 +532,25 @@ final class _Watch {
   int _recoveries = 0;
 
   void enqueue(Future<void> Function() action) {
-    _tail = _tail.then((_) async {
-      if (!closed) await action();
-    }).catchError((Object error, StackTrace stack) {
-      if (!closed) controller.addError(error, stack);
-    });
+    _tail = _tail
+        .then((_) async {
+          if (!closed) await action();
+        })
+        .catchError((Object error, StackTrace stack) {
+          if (!closed) controller.addError(error, stack);
+        });
   }
 
   Future<void> replay(int after) async {
     cursor = after;
     while (!closed) {
-      final result = _object(await backend._request('events.after', {
-        'session_id': chatId, 'after': cursor, 'limit': 1000,
-      }));
+      final result = _object(
+        await backend._request('events.after', {
+          'session_id': chatId,
+          'after': cursor,
+          'limit': 1000,
+        }),
+      );
       if (result['resync'] == true) {
         await recover();
         return;
@@ -474,7 +561,9 @@ final class _Watch {
       }
       if (events.length < 1000) return;
       final next = events.last['sequence'] as int? ?? cursor;
-      if (next <= cursor && events.every((e) => (e['sequence'] as int? ?? 0) < cursor)) return;
+      if (next <= cursor &&
+          events.every((e) => (e['sequence'] as int? ?? 0) < cursor))
+        return;
       if (next <= after) return;
       after = next;
       cursor = next;
@@ -501,14 +590,19 @@ final class _Watch {
     if (closed) return;
     if (++_recoveries > 3) {
       _recoveries--;
-      throw const KitUnavailable('BubblePaw could not recover its event cursor.');
+      throw const KitUnavailable(
+        'BubblePaw could not recover its event cursor.',
+      );
     }
     try {
       controller.add(GapEvent(seq: cursor * 16 + 15, chat: chatId));
       final snapshot = await backend.loadChat(chatId);
       final state = backend._states[chatId];
       if (state != null) {
-        projection.snapshot(state, workspaceDirectory: backend.workspaceDirectory);
+        projection.snapshot(
+          state,
+          workspaceDirectory: backend.workspaceDirectory,
+        );
       }
       if (!closed) await replay(BubblePawProjection.hostSequence(snapshot.seq));
     } finally {
@@ -518,7 +612,11 @@ final class _Watch {
 }
 
 Json _object(Object? value) => value is Map<String, Object?>
-    ? Map<String, Object?>.of(value) : <String, Object?>{};
+    ? Map<String, Object?>.of(value)
+    : <String, Object?>{};
 List<Json> _objects(Object? value) => value is List<Object?>
-    ? value.whereType<Map<String, Object?>>().map(Map<String, Object?>.of).toList()
+    ? value
+          .whereType<Map<String, Object?>>()
+          .map(Map<String, Object?>.of)
+          .toList()
     : <Json>[];

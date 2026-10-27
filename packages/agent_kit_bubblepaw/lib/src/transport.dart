@@ -17,17 +17,15 @@ abstract interface class BubblePawTransport {
 
 /// Newline-delimited JSON-RPC 2.0 over a single owned child's standard IO.
 class StdioBubblePawTransport implements BubblePawTransport {
-  StdioBubblePawTransport._({
+  StdioBubblePawTransport._(
+    this._exitCode,
+    this._terminate, {
     required Stream<List<int>> stdout,
     required StreamSink<List<int>> stdin,
     required Stream<List<int>> stderr,
-    required Future<int> exitCode,
-    required void Function() terminate,
     required this.requestTimeout,
     required this.shutdownTimeout,
-  }) : _input = stdin,
-       _exitCode = exitCode,
-       _terminate = terminate {
+  }) : _input = stdin {
     _stdoutSubscription = stdout.listen(
       _receive,
       onError: (Object error, StackTrace stack) => _fail(
@@ -35,10 +33,12 @@ class StdioBubblePawTransport implements BubblePawTransport {
       ),
       onDone: () {
         if (_line.isNotEmpty && _failure == null) {
-          _fail(const BubblePawException(
-            'protocolError',
-            'The host returned an incomplete JSON record.',
-          ));
+          _fail(
+            const BubblePawException(
+              'protocolError',
+              'The host returned an incomplete JSON record.',
+            ),
+          );
         }
         if (!_stdoutDone.isCompleted) _stdoutDone.complete();
       },
@@ -54,17 +54,21 @@ class StdioBubblePawTransport implements BubblePawTransport {
       },
     );
     // Sink errors can arrive asynchronously after add() has returned.
-    unawaited(_input.done.then<void>(
-      (_) {},
-      onError: (Object error, StackTrace stack) {
-        if (!_closing) {
-          _fail(const BubblePawException(
-            'writeFailed',
-            'The host input pipe failed.',
-          ));
-        }
-      },
-    ));
+    unawaited(
+      _input.done.then<void>(
+        (_) {},
+        onError: (Object error, StackTrace stack) {
+          if (!_closing) {
+            _fail(
+              const BubblePawException(
+                'writeFailed',
+                'The host input pipe failed.',
+              ),
+            );
+          }
+        },
+      ),
+    );
     unawaited(_watchExit());
   }
 
@@ -97,11 +101,13 @@ class StdioBubblePawTransport implements BubblePawTransport {
       );
     }
     return StdioBubblePawTransport._(
+      process.exitCode,
+      () {
+        process.kill(ProcessSignal.sigkill);
+      },
       stdout: process.stdout,
       stdin: process.stdin,
       stderr: process.stderr,
-      exitCode: process.exitCode,
-      terminate: () { process.kill(ProcessSignal.sigkill); },
       requestTimeout: requestTimeout,
       shutdownTimeout: shutdownTimeout,
     );
@@ -119,11 +125,11 @@ class StdioBubblePawTransport implements BubblePawTransport {
   }) {
     _validateTimeouts(requestTimeout, shutdownTimeout);
     return StdioBubblePawTransport._(
+      exitCode,
+      terminate ?? () {},
       stdout: stdout,
       stdin: stdin,
       stderr: stderr ?? const Stream<List<int>>.empty(),
-      exitCode: exitCode,
-      terminate: terminate ?? () {},
       requestTimeout: requestTimeout,
       shutdownTimeout: shutdownTimeout,
     );
@@ -176,38 +182,46 @@ class StdioBubblePawTransport implements BubblePawTransport {
     final failure = _failure;
     if (failure != null) return Future<Object?>.error(failure);
     if (_closing && !duringShutdown) {
-      return Future<Object?>.error(const BubblePawException(
-        'transportClosed',
-        'The BubblePaw transport is closed.',
-      ));
+      return Future<Object?>.error(
+        const BubblePawException(
+          'transportClosed',
+          'The BubblePaw transport is closed.',
+        ),
+      );
     }
     final id = _nextId++;
     final List<int> record;
     try {
-      record = utf8.encode('${jsonEncode({
-        'jsonrpc': '2.0', 'id': id, 'method': method, 'params': params,
-      })}\n');
+      record = utf8.encode(
+        '${jsonEncode({'jsonrpc': '2.0', 'id': id, 'method': method, 'params': params})}\n',
+      );
     } on Object {
-      return Future<Object?>.error(const BubblePawException(
-        'protocolError',
-        'Request parameters must be JSON encodable.',
-      ));
+      return Future<Object?>.error(
+        const BubblePawException(
+          'protocolError',
+          'Request parameters must be JSON encodable.',
+        ),
+      );
     }
     final completer = Completer<Object?>();
     final timer = Timer(timeout, () {
-      _pending.remove(id)?.completer.completeError(const BubblePawException(
-        'requestTimeout',
-        'The BubblePaw request deadline elapsed.',
-      ));
+      _pending
+          .remove(id)
+          ?.completer
+          .completeError(
+            const BubblePawException(
+              'requestTimeout',
+              'The BubblePaw request deadline elapsed.',
+            ),
+          );
     });
     _pending[id] = _PendingRequest(completer, timer);
     try {
       _input.add(record);
     } on Object {
-      _fail(const BubblePawException(
-        'writeFailed',
-        'The host input pipe failed.',
-      ));
+      _fail(
+        const BubblePawException('writeFailed', 'The host input pipe failed.'),
+      );
     }
     return completer.future;
   }
@@ -227,10 +241,12 @@ class StdioBubblePawTransport implements BubblePawTransport {
 
   bool _appendRecordBytes(List<int> bytes, int start, int end) {
     if (_line.length + end - start > _maxRecordBytes) {
-      _fail(const BubblePawException(
-        'protocolError',
-        'The host JSON record exceeds the transport limit.',
-      ));
+      _fail(
+        const BubblePawException(
+          'protocolError',
+          'The host JSON record exceeds the transport limit.',
+        ),
+      );
       return false;
     }
     _line.addAll(bytes.getRange(start, end));
@@ -253,10 +269,11 @@ class StdioBubblePawTransport implements BubblePawTransport {
     }
     if (!decoded.containsKey('id')) {
       if (decoded['method'] is! String ||
-          decoded.containsKey('result') || decoded.containsKey('error') ||
+          decoded.containsKey('result') ||
+          decoded.containsKey('error') ||
           (decoded.containsKey('params') &&
-            decoded['params'] is! Map<String, Object?> &&
-            decoded['params'] is! List<Object?>)) {
+              decoded['params'] is! Map<String, Object?> &&
+              decoded['params'] is! List<Object?>)) {
         _protocolError();
         return;
       }
@@ -266,14 +283,19 @@ class StdioBubblePawTransport implements BubblePawTransport {
     final id = decoded['id'];
     final hasResult = decoded.containsKey('result');
     final hasError = decoded.containsKey('error');
-    if (id is! int || id < 1 || id >= _nextId ||
-        decoded.containsKey('method') || hasResult == hasError) {
+    if (id is! int ||
+        id < 1 ||
+        id >= _nextId ||
+        decoded.containsKey('method') ||
+        hasResult == hasError) {
       _protocolError();
       return;
     }
     final error = decoded['error'];
-    if (hasError && (error is! Map<String, Object?> ||
-        error['code'] is! int || error['message'] is! String)) {
+    if (hasError &&
+        (error is! Map<String, Object?> ||
+            error['code'] is! int ||
+            error['message'] is! String)) {
       _protocolError();
       return;
     }
@@ -283,9 +305,11 @@ class StdioBubblePawTransport implements BubblePawTransport {
     if (pending == null) return;
     pending.timer.cancel();
     if (hasError) {
-      pending.completer.completeError(_classifyRpcError(
-        (error as Map<String, Object?>)['message']! as String,
-      ));
+      pending.completer.completeError(
+        _classifyRpcError(
+          (error as Map<String, Object?>)['message']! as String,
+        ),
+      );
     } else {
       pending.completer.complete(decoded['result']);
     }
@@ -305,36 +329,47 @@ class StdioBubblePawTransport implements BubblePawTransport {
         text.startsWith('unknown approval') ||
         text.contains('not found')) {
       return const BubblePawException(
-        'notFound', 'The requested host resource was not found.',
+        'notFound',
+        'The requested host resource was not found.',
       );
     }
     if ((text.startsWith('approval ') && text.contains(' is already ')) ||
-        text.contains('already resolved') || text.contains('already decided')) {
+        text.contains('already resolved') ||
+        text.contains('already decided')) {
       return const BubblePawException(
-        'conflict', 'The requested operation conflicts with the host state.',
+        'conflict',
+        'The requested operation conflicts with the host state.',
       );
     }
-    if (text.contains('denied') || text.contains('permission') ||
+    if (text.contains('denied') ||
+        text.contains('permission') ||
         text.contains('belongs to another workspace')) {
       return const BubblePawException(
-        'denied', 'The host denied the requested operation.',
+        'denied',
+        'The host denied the requested operation.',
       );
     }
-    if (text.startsWith('invalid ') || text.contains(' is required') ||
-        text.contains(' must be ') || text.contains('missing required')) {
+    if (text.startsWith('invalid ') ||
+        text.contains(' is required') ||
+        text.contains(' must be ') ||
+        text.contains('missing required')) {
       return const BubblePawException(
-        'invalid', 'The host rejected invalid request parameters.',
+        'invalid',
+        'The host rejected invalid request parameters.',
       );
     }
     return const BubblePawException(
-      'rpcError', 'The BubblePaw host rejected the request.',
+      'rpcError',
+      'The BubblePaw host rejected the request.',
     );
   }
 
-  void _protocolError() => _fail(const BubblePawException(
-    'protocolError',
-    'The host returned an invalid JSON-RPC record.',
-  ));
+  void _protocolError() => _fail(
+    const BubblePawException(
+      'protocolError',
+      'The host returned an invalid JSON-RPC record.',
+    ),
+  );
 
   void _receiveStderr(List<int> bytes) {
     // Stderr is an untrusted channel: even a normal-looking token or path can
@@ -367,10 +402,12 @@ class StdioBubblePawTransport implements BubblePawTransport {
     try {
       code = await _exitCode;
     } on Object {
-      _fail(const BubblePawException(
-        'hostExited',
-        'The host exit status is unavailable.',
-      ));
+      _fail(
+        const BubblePawException(
+          'hostExited',
+          'The host exit status is unavailable.',
+        ),
+      );
       return;
     }
     _exited = true;
@@ -378,15 +415,19 @@ class StdioBubblePawTransport implements BubblePawTransport {
     await _bounded(Future.wait<void>([_stdoutDone.future, _stderrDone.future]));
     _flushStderrLine();
     if (!_closing) {
-      _fail(BubblePawHostExited(
-        exitCode: code,
-        stderrTail: _stderrLines.join('\n'),
-      ));
+      _fail(
+        BubblePawHostExited(
+          exitCode: code,
+          stderrTail: _stderrLines.join('\n'),
+        ),
+      );
     } else {
-      _rejectPending(BubblePawHostExited(
-        exitCode: code,
-        stderrTail: _stderrLines.join('\n'),
-      ));
+      _rejectPending(
+        BubblePawHostExited(
+          exitCode: code,
+          stderrTail: _stderrLines.join('\n'),
+        ),
+      );
     }
   }
 
@@ -421,14 +462,20 @@ class StdioBubblePawTransport implements BubblePawTransport {
 
   Future<void> _dispose() async {
     _closing = true;
-    _rejectPending(const BubblePawException(
-      'transportClosed',
-      'The BubblePaw transport is closed.',
-    ));
+    _rejectPending(
+      const BubblePawException(
+        'transportClosed',
+        'The BubblePaw transport is closed.',
+      ),
+    );
     if (_failure == null && !_exited) {
       try {
-        await _request('shutdown', const {}, shutdownTimeout,
-          duringShutdown: true);
+        await _request(
+          'shutdown',
+          const {},
+          shutdownTimeout,
+          duringShutdown: true,
+        );
       } on Object {
         // Cleanup continues after a rejected, timed-out, or broken shutdown.
       }
@@ -441,7 +488,11 @@ class StdioBubblePawTransport implements BubblePawTransport {
     if (!_exited) await _bounded(_exitCode.then<void>((_) {}));
     if (!_exited && !_terminated) {
       _terminated = true;
-      try { _terminate(); } on Object { /* Already exited or unavailable. */ }
+      try {
+        _terminate();
+      } on Object {
+        /* Already exited or unavailable. */
+      }
       await _bounded(_exitCode.then<void>((_) {}));
     }
     await _bounded(_stdoutSubscription.cancel());
