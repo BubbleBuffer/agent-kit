@@ -17,7 +17,10 @@ dependencies:
   agent_kit_bubblepaw:
     path: ../../packages/agent_kit_bubblepaw
   bb_ui:
-    path: ../../packages/bb_ui
+    git:
+      url: https://github.com/BubbleBuffer/bb-ui
+      ref: v0.4.0
+      path: packages/bb_ui
 
 dev_dependencies:
   flutter_test:
