@@ -46,6 +46,7 @@ class AgentChatPane extends StatefulWidget {
     this.onReviewApproval,
     this.onOpenAgent,
     this.onOpenJob,
+    this.onOpenContext,
     this.contentWidth = 720,
   });
 
@@ -101,6 +102,11 @@ class AgentChatPane extends StatefulWidget {
   /// A crew strip chip was opened.
   final ValueChanged<ChildAgent>? onOpenAgent;
   final ValueChanged<BackgroundJob>? onOpenJob;
+
+  /// Opens the Context pane on Now: the header's context meter and the
+  /// compaction marker's View call it. Null leaves both inert (the meter is
+  /// then a plain readout).
+  final VoidCallback? onOpenContext;
 
   /// The width of the content column.
   final double contentWidth;
@@ -282,6 +288,21 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       onOpenChild: a.onOpenChild,
       onLinkTap: a.onLinkTap,
       onRefTap: a.onRefTap,
+      onViewContext: widget.onOpenContext ?? a.onViewContext,
+      onAnswerChildQuestion: _caps.has(KitCapability.answerChildQuestion)
+          ? (childId, questionId, text) => _run(
+              () => backend.answerChildQuestion(
+                widget.chatId,
+                childId,
+                questionId,
+                text,
+              ),
+            )
+          : null,
+      onResume: _caps.has(KitCapability.resume)
+          ? () => _run(() => backend.resume(widget.chatId))
+          : null,
+      now: widget.now ?? a.now,
     );
   }
 
@@ -333,6 +354,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
           onToggleWorkspace: widget.onToggleWorkspace,
           menuItems: _menu(),
           hideEmptyMenu: true,
+          onOpenContext: snap.context == null ? null : widget.onOpenContext,
         ),
         if (strip)
           CrewStrip(
@@ -450,7 +472,11 @@ class _AgentChatPaneState extends State<AgentChatPane> {
     double contentWidth,
   ) {
     final t = context.bb;
-    final interrupted = !running && snap.run?.outcome == RunOutcome.interrupted;
+    // The run outcome is the fallback for snapshots without the item.
+    final interrupted =
+        !running &&
+        snap.run?.outcome == RunOutcome.interrupted &&
+        !snap.items.any((i) => i is InterruptedItem);
     final transcript = TranscriptList(
       key: ValueKey('transcript-${widget.chatId}'),
       items: snap.items,

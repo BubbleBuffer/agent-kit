@@ -445,6 +445,7 @@ class KitLayout {
     this.sizeMedium = 600,
     this.sizeExpanded = 1000,
     this.fitComposer = 460,
+    this.contextSplit = 680,
     this.paneMinWidth = 200,
     this.paneMinHeight = 120,
     this.edgeTab = 28,
@@ -463,6 +464,10 @@ class KitLayout {
 
   /// Composer width below which Stop and Send drop their labels.
   final double fitComposer;
+
+  /// Context pane width from which a summary's detail sits beside the list
+  /// instead of replacing it.
+  final double contextSplit;
 
   /// A workspace pane never renders narrower than this.
   final double paneMinWidth;

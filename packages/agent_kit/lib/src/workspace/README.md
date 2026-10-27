@@ -10,6 +10,8 @@ sections of `NOTES.md`; `.ws-*`, `.pane*`, `.dock-*`, `.edge-tab` in
 `app.css`. Pane minimums and the edge tab width are `KitLayout` tokens. The
 kit owns the tree; the host supplies what a pane shows.
 
+`WorkspaceKind.context` (id `context`) is the kind the workbench builds as the Context pane itself.
+
 Add a widget here as its own file, export it from `workspace.dart`, and add a
 gallery specimen and a golden (see `docs/agent-kit.md`).
 

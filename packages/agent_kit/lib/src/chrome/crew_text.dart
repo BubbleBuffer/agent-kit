@@ -59,10 +59,26 @@ String agentLabel(ChildAgent agent, DateTime now) => switch (agent.state) {
   WorkState.done => 'Result ready',
   WorkState.failed => 'Failed',
   WorkState.cancelled => 'Cancelled',
-  WorkState.waitingForAnswer => 'Asking parent',
+  WorkState.waitingForAnswer => _asking(agent, now),
   WorkState.idle => 'Idle',
   WorkState.timedOut => 'Timed out',
 };
+
+/// `Asking parent · 40s`: the wait runs from the question and never expires.
+String _asking(ChildAgent agent, DateTime now) {
+  final q = agent.pendingQuestion;
+  if (q == null) return 'Asking parent';
+  final d = now.difference(q.askedAt);
+  return 'Asking parent · ${formatElapsed(d.isNegative ? Duration.zero : d)}';
+}
+
+/// The question an asking agent shows in the ledger's mono line, in quotes;
+/// null for any other agent.
+String? askingLine(ChildAgent agent) {
+  final q = agent.pendingQuestion;
+  if (agent.state != WorkState.waitingForAnswer || q == null) return null;
+  return '“${q.text}”';
+}
 
 /// The ledger's status label of a job.
 String jobLabel(BackgroundJob job, DateTime now) => switch (job.state) {

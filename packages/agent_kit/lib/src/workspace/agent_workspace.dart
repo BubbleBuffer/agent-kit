@@ -62,6 +62,14 @@ class WorkspaceKind {
     icon: WorkspaceIcons.activity,
   );
 
+  /// What the agent remembers and what was compacted. The workbench adds it
+  /// to the + menu by itself when the backend has the `context` capability.
+  static const context = WorkspaceKind(
+    id: 'context',
+    label: 'Context',
+    icon: WorkspaceIcons.layers,
+  );
+
   /// Browser, Terminal, File and Activity, in the order of the mockup's menu.
   static const standard = [browser, terminal, file, activity];
 }
@@ -73,6 +81,7 @@ abstract final class WorkspaceIcons {
   static const IconData terminal = LucideIcons.terminal;
   static const IconData fileCode = LucideIcons.fileCode;
   static const IconData activity = LucideIcons.activity;
+  static const IconData layers = LucideIcons.layers;
   static const IconData arrowLeft = LucideIcons.arrowLeft;
   static const IconData arrowRight = LucideIcons.arrowRight;
   static const IconData rotateCw = LucideIcons.rotateCw;

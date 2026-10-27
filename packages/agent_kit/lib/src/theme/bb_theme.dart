@@ -136,7 +136,14 @@ class BbTheme extends ThemeExtension<BbTheme> {
       railInk = colors.dark ? colors.railInk : colors.textPrimary,
       railMuted = colors.dark ? colors.railMuted : colors.textSecondary,
       railLine = colors.dark ? colors.railLine : colors.border,
-      status = _statuses(colors);
+      status = _statuses(colors),
+      askingParent = BbStatusStyle(
+        mark: colors.palette.statusAskingParentMark,
+        ink: colors.palette.statusAskingParentInk,
+      ),
+      ctxOpening = colors.palette.ctxOpening,
+      ctxSummary = colors.palette.ctxSummary,
+      ctxLive = colors.palette.ctxLive;
 
   /// Scratch's palette this theme was derived from; `bb_ui` reads it.
   final AppColors colors;
@@ -192,6 +199,13 @@ class BbTheme extends ThemeExtension<BbTheme> {
 
   /// Status roles (see [statusStyle]).
   final Map<ChatStatus, BbStatusStyle> status;
+
+  /// A child waiting on its parent: muted, never a fill or the accent.
+  final BbStatusStyle askingParent;
+
+  /// The context meter's non-text segments: the fixed opening, the compacted
+  /// summaries and the live messages.
+  final Color ctxOpening, ctxSummary, ctxLive;
 
   final BbRadii radii = const BbRadii();
   final BbMotion motion = const BbMotion();

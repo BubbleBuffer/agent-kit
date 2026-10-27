@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 
 import '../status/status.dart';
 import '../theme/theme.dart';
+import 'chrome_button.dart' show chromeTooltip;
 import 'chrome_format.dart';
 import 'chrome_icons.dart';
 import 'crew_text.dart';
@@ -67,11 +68,14 @@ class CrewLedger extends StatelessWidget {
               key: ValueKey('ledger-agent-${agent.id}'),
               glyph: glyphBot,
               title: agent.task,
-              detail: agent.activity,
+              detail: askingLine(agent) ?? agent.activity,
+              detailTip: askingLine(agent),
               status: StatusMark.work(
                 agent.state,
                 label: agentLabel(agent, clock),
-                detail: agent.toolCalls > 0
+                detail:
+                    agent.toolCalls > 0 &&
+                        agent.state != WorkState.waitingForAnswer
                     ? plural(agent.toolCalls, 'call')
                     : null,
               ),
@@ -106,6 +110,7 @@ class _LedgerRow extends StatelessWidget {
     required this.status,
     required this.onTap,
     this.detail,
+    this.detailTip,
     this.mono = false,
     this.failed = false,
   });
@@ -113,10 +118,20 @@ class _LedgerRow extends StatelessWidget {
   final LucideGlyph glyph;
   final String title;
   final String? detail;
+
+  /// The full text for a truncated [detail], as a tooltip.
+  final String? detailTip;
   final Widget status;
   final bool mono;
   final bool failed;
   final VoidCallback? onTap;
+
+  Widget _detailText(BbTheme theme) => Text(
+    detail!,
+    style: ts(const TypeSpec(12, 16, 400), theme.faint, mono: true),
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -157,16 +172,13 @@ class _LedgerRow extends StatelessWidget {
                     ),
                     if (detail != null) ...[
                       const SizedBox(height: 2),
-                      Text(
-                        detail!,
-                        style: ts(
-                          const TypeSpec(12, 16, 400),
-                          theme.faint,
-                          mono: true,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      detailTip == null
+                          ? _detailText(theme)
+                          : chromeTooltip(
+                              context,
+                              detailTip!,
+                              _detailText(theme),
+                            ),
                     ],
                     const SizedBox(height: 2),
                     status,

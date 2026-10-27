@@ -62,7 +62,19 @@ class StatusMark extends StatelessWidget {
     this.label,
     this.detail,
     this.animate = true,
-  });
+  }) : _asking = false;
+
+  /// A child waiting for its parent's answer: a static speech-bubble glyph
+  /// in the muted "asking" ink, worded "Asking parent". It is not "needs
+  /// you" and does not count as running.
+  const StatusMark.askingParent({
+    super.key,
+    this.variant = StatusMarkVariant.dot,
+    this.label,
+    this.detail,
+    this.animate = true,
+  }) : status = ChatStatus.idle,
+       _asking = true;
 
   /// The pill form of [status].
   const StatusMark.pill(
@@ -71,9 +83,11 @@ class StatusMark extends StatelessWidget {
     this.label,
     this.detail,
     this.animate = true,
-  }) : variant = StatusMarkVariant.pill;
+  }) : variant = StatusMarkVariant.pill,
+       _asking = false;
 
-  /// The status of a unit of work.
+  /// The status of a unit of work. A child waiting for an answer shows as
+  /// [StatusMark.askingParent].
   StatusMark.work(
     WorkState state, {
     super.key,
@@ -81,9 +95,11 @@ class StatusMark extends StatelessWidget {
     this.label,
     this.detail,
     this.animate = true,
-  }) : status = statusOfWork(state);
+  }) : status = statusOfWork(state),
+       _asking = state == WorkState.waitingForAnswer;
 
   final ChatStatus status;
+  final bool _asking;
   final StatusMarkVariant variant;
   final String? label;
   final String? detail;
@@ -92,8 +108,8 @@ class StatusMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = BbTheme.of(context);
-    final style = theme.statusStyle(status);
-    final text = label ?? statusLabel(status);
+    final style = _asking ? theme.askingParent : theme.statusStyle(status);
+    final text = label ?? (_asking ? 'Asking parent' : statusLabel(status));
     return switch (variant) {
       StatusMarkVariant.dot => _dotForm(theme, style, text),
       StatusMarkVariant.pill => _pillForm(theme, style, text),
@@ -109,7 +125,15 @@ class StatusMark extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _Glyph(status: status, style: style, animate: animate),
+        if (_asking)
+          _icon(
+            LucideIcons.messageCircleQuestion300,
+            LucideIcons.messageCircleQuestion,
+            LucideIcons.messageCircleQuestion500,
+            style.ink,
+          )
+        else
+          _Glyph(status: status, style: style, animate: animate),
         SizedBox(width: theme.spacing.xs + 2),
         Flexible(
           child: Text.rich(
@@ -157,24 +181,31 @@ class StatusMark extends StatelessWidget {
         ),
       );
     }
-    final icon = switch (status) {
-      ChatStatus.done => _icon(
-        LucideIcons.circleCheck300,
-        LucideIcons.circleCheck,
-        LucideIcons.circleCheck500,
-        style.ink,
-      ),
-      ChatStatus.failed => _icon(
-        LucideIcons.circleX300,
-        LucideIcons.circleX,
-        LucideIcons.circleX500,
-        style.ink,
-      ),
-      _ => Padding(
-        padding: const EdgeInsets.all(2),
-        child: _Glyph(status: status, style: style, animate: animate),
-      ),
-    };
+    final icon = _asking
+        ? _icon(
+            LucideIcons.messageCircleQuestion300,
+            LucideIcons.messageCircleQuestion,
+            LucideIcons.messageCircleQuestion500,
+            style.ink,
+          )
+        : switch (status) {
+            ChatStatus.done => _icon(
+              LucideIcons.circleCheck300,
+              LucideIcons.circleCheck,
+              LucideIcons.circleCheck500,
+              style.ink,
+            ),
+            ChatStatus.failed => _icon(
+              LucideIcons.circleX300,
+              LucideIcons.circleX,
+              LucideIcons.circleX500,
+              style.ink,
+            ),
+            _ => Padding(
+              padding: const EdgeInsets.all(2),
+              child: _Glyph(status: status, style: style, animate: animate),
+            ),
+          };
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

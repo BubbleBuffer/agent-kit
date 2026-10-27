@@ -53,6 +53,10 @@ rename, per-model usage (the host supplies it to the workbench).
   the width beside the rail is expanded (chat 44%, 444 to 584 px) or medium
   (workspace 40%, 240 to 420 px); a full-screen sheet over the chat when it is
   compact.
+- With the `context` capability the + menu gets a Context kind. The
+  compaction marker's View and the header meter open the Context pane (they
+  add it when absent and bring it forward on Now); `AgentContextPane` loads
+  the structure and answers the History and summary loaders.
 - Layout follows the widget's own constraints through `SizeClass`, never the
   window.
 - Host data stays parameters: `modelUsage`, `detailFor`, the pane builder,

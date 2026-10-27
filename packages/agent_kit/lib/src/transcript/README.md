@@ -14,6 +14,7 @@ callbacks, never a backend.
 | `exec_output.dart` | `ExecOutput` (12-line clamp with fade, footer, callbacks) | `pre.out`, `.ev-foot` |
 | `file_edit_row.dart`, `diff_view.dart` | `FileEditRow`, `DiffView` | `.edit-row`, `.diff`, `.fl` (Scene D) |
 | `plan_checklist.dart` | `PlanChecklist` | `.plan` |
+| `child_question_row.dart` | `ChildQuestionRow` (pending, answered by the agent or you, cancelled; Open child, Answer yourself) | `.cq-*` (scene A) |
 | `return_line.dart` | `ReturnLine`, `InterruptedNotice` | `.return-line` |
 | `transcript_support.dart` | internal: glyphs, `KitTextButton`, formatting | |
 

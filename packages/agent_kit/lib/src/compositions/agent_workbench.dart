@@ -24,10 +24,12 @@ import 'package:flutter/widgets.dart';
 import '../chrome/chrome.dart';
 import '../composer/composer.dart';
 import '../composer/composer_parts.dart' show KitButton;
+import '../context/context_pane.dart' show ContextPaneController;
 import '../theme/theme.dart';
 import '../transcript/transcript.dart';
 import '../workspace/workspace.dart';
 import 'agent_chat_pane.dart';
+import 'agent_context_pane.dart';
 
 /// The agent app: rail, chat, crew and workspace on one [backend].
 class AgentWorkbench extends StatefulWidget {
@@ -129,6 +131,8 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
   String? _listError;
   late bool _workspaceShown = widget.initialWorkspaceShown;
   int _listing = 0;
+  final ContextPaneController _context = ContextPaneController();
+  ContextView? _contextView;
 
   RailController get _rail =>
       widget.railController ?? (_ownRail ??= RailController());
@@ -159,6 +163,7 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
 
   @override
   void dispose() {
+    _context.dispose();
     _ownRail?.dispose();
     super.dispose();
   }
@@ -188,10 +193,57 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
 
   void _select(String id) {
     if (id == _selected) return;
-    setState(() => _selected = id);
+    setState(() {
+      _selected = id;
+      _contextView = null;
+    });
+  }
+
+  bool get _canContext =>
+      widget.backend.capabilities.has(KitCapability.context);
+
+  /// The header's context meter and the compaction marker's View: add the
+  /// Context pane when the chat has none, show the workspace and bring the
+  /// pane to the front on the Now tab.
+  void _openContext() {
+    final controller = widget.workspaceController;
+    if (!_hasWorkspace || controller == null) return;
+    final existing = controller.layout.tabs
+        .where((t) => t.kind == WorkspaceKind.context.id)
+        .firstOrNull;
+    if (existing == null) {
+      controller.addPane(WorkspaceKind.context.id);
+    } else {
+      controller.activate(existing.id);
+    }
+    setState(() => _workspaceShown = true);
+    // The pane is built in the next frame when it was just added.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _context.showNow());
+  }
+
+  Widget _paneBuilder(BuildContext context, WorkspaceTab tab) {
+    if (tab.kind != WorkspaceKind.context.id || !_canContext) {
+      return widget.workspacePaneBuilder!(context, tab);
+    }
+    final chat = _selected;
+    if (chat == null) return const SizedBox.shrink();
+    return AgentContextPane(
+      backend: widget.backend,
+      chatId: chat,
+      view: _contextView,
+      controller: _context,
+      now: widget.now,
+    );
   }
 
   void _onSnapshot(ChatSnapshot snap) {
+    if (snap.chatId == _selected && snap.context != _contextView) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && snap.chatId == _selected) {
+          setState(() => _contextView = snap.context);
+        }
+      });
+    }
     // Keep the rail's row in step with the open chat.
     final row = _chats.where((c) => c.id == snap.chatId).firstOrNull;
     final now = ChatSummary.of(snap);
@@ -278,8 +330,15 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
       key: _workspaceKey,
       child: AgentWorkspace(
         controller: widget.workspaceController!,
-        kinds: widget.workspaceKinds,
-        paneBuilder: widget.workspacePaneBuilder!,
+        kinds: [
+          ...widget.workspaceKinds,
+          if (_canContext &&
+              !widget.workspaceKinds.any(
+                (k) => k.id == WorkspaceKind.context.id,
+              ))
+            WorkspaceKind.context,
+        ],
+        paneBuilder: _paneBuilder,
         open: shown,
         onClose: _toggleWorkspace,
         sizeClass: area,
@@ -344,6 +403,7 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
         onReviewApproval: widget.onReviewApproval,
         onOpenAgent: widget.onOpenAgent,
         onOpenJob: widget.onOpenJob,
+        onOpenContext: _hasWorkspace && _canContext ? _openContext : null,
       );
     }
     if (whole.isCompact) {

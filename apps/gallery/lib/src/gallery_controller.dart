@@ -59,6 +59,13 @@ class GalleryController extends ChangeNotifier {
     galleryWorkspaceLayout(),
   );
 
+  /// Scene F: one Context pane, shown beside the chat.
+  WorkspaceController get contextWorkspaceController => _contextWorkspace;
+  late WorkspaceController _contextWorkspace = _contextLayout();
+
+  static WorkspaceController _contextLayout() =>
+      WorkspaceController()..addPane('context');
+
   /// The backend (for commands from scenes).
   AgentBackend? get backend => _backend;
 
@@ -96,6 +103,7 @@ class GalleryController extends ChangeNotifier {
     await _feed?.close();
     _clock = _newClock();
     _workspace = WorkspaceController(galleryWorkspaceLayout());
+    _contextWorkspace = _contextLayout();
     final backend = ScriptedBackend(
       scripts: [quotaReconnectScript()],
       clock: _clock,
