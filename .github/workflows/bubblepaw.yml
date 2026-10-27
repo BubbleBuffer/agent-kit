@@ -1,0 +1,76 @@
+name: BubblePaw adapter
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bubblepaw:
+    name: adapter and released stdio host
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+          cache: true
+      - run: flutter pub get
+      - name: Analyze the adapter
+        working-directory: packages/agent_kit_bubblepaw
+        run: dart analyze --fatal-infos
+      - name: Adapter unit tests (local-host test skips without opt-in)
+        if: ${{ !cancelled() }}
+        working-directory: packages/agent_kit_bubblepaw
+        run: dart test
+      - name: Download and verify the pinned public host
+        id: host
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset=bubblepaw-v0.2.2-x86_64-unknown-linux-gnu.tar.gz
+          base=https://github.com/BubbleBuffer/BubblePaw-Core/releases/download/v0.2.2
+          destination="$RUNNER_TEMP/bubblepaw-v0.2.2"
+          mkdir -p "$destination"
+          cd "$destination"
+          curl --fail --location --retry 3 "$base/$asset" --output "$asset"
+          curl --fail --location --retry 3 "$base/SHA256SUMS" --output SHA256SUMS
+          awk -v name="$asset" '$2 == name || $2 == "*" name { print }' SHA256SUMS > selected.sha256
+          test "$(wc -l < selected.sha256)" -eq 1
+          sha256sum -c selected.sha256
+          tar -xzf "$asset"
+          binary="$destination/bubblepaw-v0.2.2-x86_64-unknown-linux-gnu/bubblepaw"
+          test -f "$binary"
+          chmod +x "$binary"
+          printf 'BP_TEST_BIN=%s\n' "$binary" >> "$GITHUB_ENV"
+      - name: Real stdio demo and injected-gap recovery (offline provider)
+        if: ${{ !cancelled() && steps.host.outcome == 'success' }}
+        working-directory: packages/agent_kit_bubblepaw
+        run: dart test test/local_transport_test.dart --reporter expanded
+      - name: Gallery tests (scripted mode preserved)
+        if: ${{ !cancelled() }}
+        working-directory: apps/gallery
+        run: flutter test --exclude-tags golden
+      - name: Build the gallery for web
+        if: ${{ !cancelled() }}
+        working-directory: apps/gallery
+        run: flutter build web
+      - name: Build the live gallery for Linux
+        if: ${{ !cancelled() && steps.host.outcome == 'success' }}
+        shell: bash
+        working-directory: apps/gallery
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+          # Generate only the standard platform runner in this ephemeral checkout.
+          flutter create --platforms=linux --project-name agent_kit_gallery .
+          flutter build linux --dart-define=BP_BIN="$BP_TEST_BIN" --dart-define=BP_WORKSPACE="$RUNNER_TEMP/gallery-workspace" --dart-define=BP_DATA="$RUNNER_TEMP/gallery-data"
