@@ -389,79 +389,72 @@ void main() {
 
   for (final useCoreMethod in [false, true]) {
     final method = useCoreMethod ? 'rewind' : 'rewindToNewChat';
-    test(
-      '$method announces the new chat and preserves the source',
-      () async {
-        final peer = _BackendPeer()..features = ['sessions', 'events', 'rewind'];
-        final selectedMessage = <String, Object?>{
-          'id': 'm1',
-          'role': 'user',
-          'content': 'Keep this canonical message',
-        };
-        final sourceState = <String, Object?>{
-          ...peer.state(seq: 8),
-          'messages': [
-            selectedMessage,
-            {
-              'id': 'm2',
-              'role': 'assistant',
-              'content': 'Later source message',
-            },
-          ],
-        };
-        final newState = <String, Object?>{
-          ...peer.state(seq: 9),
-          'session': {
-            'id': 's2',
-            'title': 'Rewound chat',
-            'parent_session_id': 's1',
-          },
-          'messages': [selectedMessage],
-        };
-        peer.handler = (method, params) => switch (method) {
-          'session.rewind' => {'session_id': 's2'},
-          'session.state' =>
-            params['session_id'] == 's2' ? newState : sourceState,
-          _ => peer.defaultResponse(method, params),
-        };
-        final backend = await peer.connect();
-        addTearDown(() => peer.close(backend));
-        final sourceBefore = await backend.loadChat('s1');
-        final sourceEvents = <KitEvent>[];
-        final listener = backend
-            .events('s1', after: sourceBefore.seq)
-            .listen(sourceEvents.add);
-        addTearDown(listener.cancel);
-        await peer.waitFor((call) => call.method == 'events.after');
-        final firstAction = peer.calls.length;
-        final created = backend.createdChats.first;
-        if (useCoreMethod) {
-          await backend.rewind('s1', 'm1');
-        } else {
-          final summary = await backend.rewindToNewChat('s1', 'm1');
-          expect(summary.id, 's2');
-          expect(summary.title, 'Rewound chat');
-          expect(summary.parentId, 's1');
-        }
-        final emitted = await created;
-        expect(emitted.id, 's2');
-        expect(emitted.title, 'Rewound chat');
-        expect(emitted.parentId, 's1');
-        final actionCalls = peer.calls.skip(firstAction).toList();
-        expect(actionCalls.map((call) => call.method), [
-          'session.rewind',
-          'session.state',
-        ]);
-        expect(actionCalls.first.params, {
-          'session_id': 's1',
-          'message_id': 'm1',
-        });
-        expect(actionCalls.last.params, {'session_id': 's2'});
-        final sourceAfter = await backend.loadChat('s1');
-        expect(sourceAfter.toJson(), sourceBefore.toJson());
-        expect(sourceEvents, isEmpty);
-      },
-    );
+    test('$method announces the new chat and preserves the source', () async {
+      final peer = _BackendPeer()..features = ['sessions', 'events', 'rewind'];
+      final selectedMessage = <String, Object?>{
+        'id': 'm1',
+        'role': 'user',
+        'content': 'Keep this canonical message',
+      };
+      final sourceState = <String, Object?>{
+        ...peer.state(seq: 8),
+        'messages': [
+          selectedMessage,
+          {'id': 'm2', 'role': 'assistant', 'content': 'Later source message'},
+        ],
+      };
+      final newState = <String, Object?>{
+        ...peer.state(seq: 9),
+        'session': {
+          'id': 's2',
+          'title': 'Rewound chat',
+          'parent_session_id': 's1',
+        },
+        'messages': [selectedMessage],
+      };
+      peer.handler = (method, params) => switch (method) {
+        'session.rewind' => {'session_id': 's2'},
+        'session.state' =>
+          params['session_id'] == 's2' ? newState : sourceState,
+        _ => peer.defaultResponse(method, params),
+      };
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      final sourceBefore = await backend.loadChat('s1');
+      final sourceEvents = <KitEvent>[];
+      final listener = backend
+          .events('s1', after: sourceBefore.seq)
+          .listen(sourceEvents.add);
+      addTearDown(listener.cancel);
+      await peer.waitFor((call) => call.method == 'events.after');
+      final firstAction = peer.calls.length;
+      final created = backend.createdChats.first;
+      if (useCoreMethod) {
+        await backend.rewind('s1', 'm1');
+      } else {
+        final summary = await backend.rewindToNewChat('s1', 'm1');
+        expect(summary.id, 's2');
+        expect(summary.title, 'Rewound chat');
+        expect(summary.parentId, 's1');
+      }
+      final emitted = await created;
+      expect(emitted.id, 's2');
+      expect(emitted.title, 'Rewound chat');
+      expect(emitted.parentId, 's1');
+      final actionCalls = peer.calls.skip(firstAction).toList();
+      expect(actionCalls.map((call) => call.method), [
+        'session.rewind',
+        'session.state',
+      ]);
+      expect(actionCalls.first.params, {
+        'session_id': 's1',
+        'message_id': 'm1',
+      });
+      expect(actionCalls.last.params, {'session_id': 's2'});
+      final sourceAfter = await backend.loadChat('s1');
+      expect(sourceAfter.toJson(), sourceBefore.toJson());
+      expect(sourceEvents, isEmpty);
+    });
   }
 
   test(

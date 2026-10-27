@@ -64,17 +64,32 @@ void main() {
           .listen(events.add, onError: errors.add);
       addTearDown(subscription.cancel);
 
+      String diagnostics() {
+        final snapshot = feed.snapshot;
+        return 'kitKinds=${events.map((event) => event.kind).toList()}; '
+            'snapshot={seq:${snapshot?.seq}, runId:${snapshot?.run?.id}, '
+            'outcome:${snapshot?.run?.outcome?.name}, '
+            'stale:${snapshot?.stale}, items:${snapshot?.items.length}}; '
+            'errorTypes=${errors.map((error) => error.runtimeType).toList()}; '
+            'requests=${transport.requestCounts}; '
+            'hostShapes=${transport.notificationShapes}';
+      }
+
       final first = await backend.send(chat.id, 'Run the offline demo');
       expect(first.delivery, SendDelivery.started);
       await _until(
         () =>
             feed.snapshot?.run?.id == first.runId &&
             feed.snapshot?.run?.outcome == RunOutcome.completed,
+        stage: 'first completed snapshot',
+        diagnostics: diagnostics,
       );
       await _until(
         () => events.whereType<RunFinished>().any(
           (event) => event.runId == first.runId,
         ),
+        stage: 'first KIT run.finished event',
+        diagnostics: diagnostics,
       );
       expect(events.whereType<RunStarted>(), isNotEmpty);
       expect(
@@ -105,6 +120,8 @@ void main() {
             feed.snapshot?.run?.outcome == RunOutcome.completed &&
             feed.snapshot!.seq > previousSeq &&
             !feed.snapshot!.stale,
+        stage: 'injected gap recovery',
+        diagnostics: diagnostics,
       );
       expect(transport.droppedEvents, 1);
       expect(
@@ -128,6 +145,8 @@ void main() {
         () =>
             feed.snapshot?.run?.id == third.runId &&
             feed.snapshot?.run?.outcome == RunOutcome.completed,
+        stage: 'subsequent completed snapshot',
+        diagnostics: diagnostics,
       );
       expect(errors, isEmpty);
       expect(feed.snapshot!.stale, isFalse);
@@ -139,12 +158,20 @@ void main() {
   );
 }
 
-Future<void> _until(bool Function() predicate) async {
-  await (() async {
-    while (!predicate()) {
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-    }
-  })().timeout(const Duration(seconds: 30));
+Future<void> _until(
+  bool Function() predicate, {
+  required String stage,
+  required String Function() diagnostics,
+}) async {
+  try {
+    await (() async {
+      while (!predicate()) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+    })().timeout(const Duration(seconds: 30));
+  } on TimeoutException {
+    fail('Timed out waiting for $stage. ${diagnostics()}');
+  }
 }
 
 /// Forwards a real child's requests and notifications. Only the explicitly
@@ -169,12 +196,45 @@ class _GapTransport implements BubblePawTransport {
   int droppedEvents = 0;
   int injectedGaps = 0;
   bool _disposed = false;
+  final requestCounts = <String, int>{};
+  final notificationShapes = <Map<String, Object?>>[];
 
   void dropNextDurableEvent(String chatId) => _dropFor = chatId;
 
   void _forward(Map<String, Object?> notification) {
     final params = notification['params'];
     if (notification['method'] == 'event' && params is Map) {
+      if (notificationShapes.length < 128) {
+        // Only protocol shape is retained: no text, arguments, values or paths.
+        final type = params['type'];
+        const knownTypes = {
+          'host_state_changed',
+          'output',
+          'session_settled',
+          'run_started',
+          'run_waiting_for_quota',
+          'run_quota_resumed',
+          'paragraph',
+          'model_request_started',
+          'text_delta',
+          'tool_started',
+          'tool_finished',
+          'steering_accepted',
+          'followup_queued',
+          'run_finished',
+          'approval_requested',
+          'approval_resolved',
+        };
+        final key = params['key'];
+        const knownKeys = {'todo', 'question', 'usage.last_request'};
+        notificationShapes.add({
+          'type': knownTypes.contains(type) ? type : '<other>',
+          if (type == 'host_state_changed')
+            'key': knownKeys.contains(key) ? key : '<other>',
+          'sequence': params['sequence'] is int ? params['sequence'] : null,
+          'durable': params['durable'] == true,
+        });
+      }
       if (params['durable'] == true) {
         if (_dropFor != null && params['session_id'] == _dropFor) {
           _dropFor = null;
@@ -205,6 +265,7 @@ class _GapTransport implements BubblePawTransport {
     String method, [
     Map<String, Object?> params = const {},
   ]) {
+    requestCounts.update(method, (count) => count + 1, ifAbsent: () => 1);
     if (method == 'session.state') stateReads++;
     if (method == 'events.after') replayReads++;
     return inner.request(method, params);

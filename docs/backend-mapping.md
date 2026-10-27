@@ -59,7 +59,7 @@ verification levels and the complete list of desired port changes.
 | Child/job events | Not advertised: initialization has no complete child feature, and `process.list` does not supply individual cancellation or streamed output. | Children/jobs missing. |
 | `usage.updated` | Authoritative own-session totals/context in `session.state.usage`; changes/finish request snapshot, never add per-run totals twice. | Run token counts; context meter missing. |
 | `gap` | `events.gap` or `events.after.resync`; adapter reloads state, then resumes replay. | gap/resync then reload. |
-| Other host state / `session_settled` | Snapshot refresh; unknown event kinds safely ignored. | Host-state/settled are read triggers. |
+| Other host state / `session_settled` | Unprojected host state (including per-request usage telemetry) is ignored; `session_settled` refreshes the snapshot. Unknown event kinds are ignored. | Host-state/settled are read triggers. |
 
 Transient events never become stored items. The display may show provisional
 assistant text until canonical completion replaces it. The unit and local-host

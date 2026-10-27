@@ -449,7 +449,10 @@ final class BubblePawProjection {
             ),
           ];
         }
-        return [gap()];
+        // usage.last_request is published for every provider response, even
+        // without usage values. It is not a history discontinuity. Session
+        // totals are read on completion; unknown host state has no kit view.
+        return const [];
       case 'run_finished':
         state.replies.remove(run);
         final text = wire['text'];

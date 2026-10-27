@@ -57,6 +57,24 @@ Map<String, Object?> wire(
 };
 
 void main() {
+  test('provider telemetry does not interrupt the live reply with a gap', () {
+    final projection = BubblePawProjection();
+    var snapshot = projection.snapshot(state(), workspaceDirectory: '/example');
+    snapshot = reduceAll(snapshot, projection.event(wire('run_started', 1)));
+    expect(projection.event(wire('host_state_changed', 2, fields: {
+      'key': 'usage.last_request',
+      'value': <String, Object?>{},
+    })), isEmpty);
+    final delta = projection.event(wire('text_delta', 2, durable: false,
+      fields: {'text': 'Reply'}));
+    snapshot = reduceAll(snapshot, delta);
+    expect(snapshot.items.whereType<AssistantMessage>().single.markdown, 'Reply');
+    expect(snapshot.stale, isFalse);
+    final finished = projection.event(wire('run_finished', 3,
+      fields: {'status': 'completed', 'text': 'Reply'}));
+    expect(finished.whereType<RunFinished>(), hasLength(1));
+  });
+
   test('canonical snapshot projects messages, tool outcomes, queue, plan and pending approvals', () {
     final projection = BubblePawProjection();
     final snapshot = projection.snapshot(
