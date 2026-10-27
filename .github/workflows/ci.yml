@@ -66,8 +66,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - run: scripts/test-check-raw-colours.sh
-      - run: scripts/check-raw-colours.sh
+      - run: bash scripts/test-check-raw-colours.sh
+      - run: bash scripts/check-raw-colours.sh
 
   test:
     name: flutter test (${{ matrix.package }})
