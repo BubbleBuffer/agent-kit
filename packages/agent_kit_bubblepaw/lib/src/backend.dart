@@ -558,7 +558,7 @@ final class _Watch {
     projection.replayFrom(chatId, after);
     final result = await _replay();
     if (result.resync) {
-      await recover(retention: true);
+      await recover();
     } else if (result.refresh) {
       await refresh();
     }
@@ -566,6 +566,7 @@ final class _Watch {
 
   Future<_ReplayResult> _replay({int? through}) async {
     var refreshNeeded = false;
+    var resyncNeeded = false;
     while (!closed) {
       final before = cursor;
       final result = _object(
@@ -575,24 +576,25 @@ final class _Watch {
           'limit': 1000,
         }),
       );
-      if (result['resync'] == true) {
-        return const _ReplayResult(resync: true);
-      }
+      // v0.2.2 still returns retained events when the earlier prefix was
+      // pruned. Deliver those events and page onward; resync describes the
+      // missing prefix, not permission to discard the available suffix.
+      resyncNeeded = result['resync'] == true || resyncNeeded;
       final events = _objects(result['events']);
       for (final event in events) {
         if (through != null && (event['sequence'] as int? ?? 0) > through) {
-          return _ReplayResult(refresh: refreshNeeded);
+          return _ReplayResult(resync: resyncNeeded, refresh: refreshNeeded);
         }
         refreshNeeded = _consume(event) || refreshNeeded;
       }
       if (events.length < 1000) {
-        return _ReplayResult(refresh: refreshNeeded);
+        return _ReplayResult(resync: resyncNeeded, refresh: refreshNeeded);
       }
       if (cursor <= before) {
         throw const KitUnavailable('BubblePaw replay made no progress.');
       }
     }
-    return _ReplayResult(refresh: refreshNeeded);
+    return _ReplayResult(resync: resyncNeeded, refresh: refreshNeeded);
   }
 
   // Replaying a page never recursively refreshes. Its caller reconciles once
@@ -642,15 +644,11 @@ final class _Watch {
   /// Refresh representable host state without reporting transport loss or
   /// resetting provisional text/tool reconciliation. Replay precedes the diff:
   /// a snapshot can already contain a tool start whose notification is queued.
-  Future<void> refresh() => _synchronize(gap: false, retention: false);
+  Future<void> refresh() => _synchronize(gap: false);
 
-  Future<void> recover({bool retention = false}) =>
-      _synchronize(gap: true, retention: retention);
+  Future<void> recover() => _synchronize(gap: true);
 
-  Future<void> _synchronize({
-    required bool gap,
-    required bool retention,
-  }) async {
+  Future<void> _synchronize({required bool gap}) async {
     if (closed) return;
     if (++_recoveries > 3) {
       _recoveries--;
@@ -671,43 +669,42 @@ final class _Watch {
         }
       }
       final barrier = BubblePawProjection.hostSequence(snapshot.seq);
-      if (retention) {
+      // Even after retention loss, newly committed events can arrive during
+      // session.state. Deliver every available event up to its barrier before
+      // adopting canonical state; only the actually missing prefix is lost.
+      final replayed = await _replay(through: barrier);
+      if (replayed.resync) {
+        // Retention removed an earlier prefix. Available retained events
+        // have been delivered; explicitly resync the missing part from state.
+        if (!gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
+        _adopt(snapshot);
+      } else if (gap || _projectionGap) {
+        if (!gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
+        // Replay has delivered every retained durable event through this
+        // barrier. Only now may canonical state replace stream state, so
+        // future live fragments use the same baseline as the reloaded feed.
         _adopt(snapshot);
       } else {
-        final replayed = await _replay(through: barrier);
-        if (replayed.resync) {
-          // Retention really removed part of the requested history. We cannot
-          // claim delivery of those events; explicitly resync from fresh state.
+        final changes = _changes(snapshot);
+        final first = view.seq >= barrier * 16
+            ? view.seq + 1
+            : barrier * 16 + 2;
+        if (changes.isNotEmpty &&
+            changes.length > barrier * 16 + 14 - first + 1) {
+          // The fixed 16-slot wire mapping cannot encode an arbitrarily
+          // large snapshot diff, or mutation at an already loaded cursor.
+          // Every replayable durable event has still been delivered first.
           if (!gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
-          _adopt(snapshot);
-        } else if (gap || _projectionGap) {
-          if (!gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
-          // Replay has delivered every retained durable event through this
-          // barrier. Only now may canonical state replace stream state, so
-          // future live fragments use the same baseline as the reloaded feed.
           _adopt(snapshot);
         } else {
-          final changes = _changes(snapshot);
-          final first = view.seq >= barrier * 16
-              ? view.seq + 1
-              : barrier * 16 + 2;
-          if (changes.isNotEmpty &&
-              changes.length > barrier * 16 + 14 - first + 1) {
-            // The fixed 16-slot wire mapping cannot encode an arbitrarily
-            // large snapshot diff, or mutation at an already loaded cursor.
-            // Every replayable durable event has still been delivered first.
-            if (!gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
-            _adopt(snapshot);
-          } else {
-            for (var index = 0; index < changes.length; index++) {
-              emit(changes[index](first + index));
-            }
+          for (var index = 0; index < changes.length; index++) {
+            emit(changes[index](first + index));
           }
         }
       }
       final later = await _replay();
       if (later.resync) {
-        await recover(retention: true);
+        await recover();
       } else if (later.refresh || _projectionGap) {
         // A continuing run can advance during every snapshot request. Do not
         // count ordinary forward progress against the resync retry bound.

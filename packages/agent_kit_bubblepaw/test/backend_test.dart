@@ -338,7 +338,7 @@ void main() {
   );
 
   test(
-    'resync reloads state before replaying from its fresh durable cursor',
+    'retention resync retries available history before adopting a fresh cursor',
     () async {
       final peer = _BackendPeer()..features = ['sessions', 'events'];
       peer.handler = (method, params) => switch (method) {
@@ -363,6 +363,7 @@ void main() {
         'initialize',
         'events.after',
         'session.state',
+        'events.after',
         'events.after',
       ]);
       expect(peer.calls.last.params['after'], 20);
@@ -558,6 +559,55 @@ void main() {
     expect(snapshot.usage?.inputTokens, 150);
     expect(snapshot.usage?.contextTokens, 30);
     expect(snapshot.usage?.outputTokens, 15);
+  });
+
+  test('retention resync delivers retained tools and arrivals during snapshot load', () async {
+    final peer = _BackendPeer()..features = ['sessions', 'events'];
+    final snapshotRequested = Completer<void>();
+    final releaseSnapshot = Completer<void>();
+    final source = <Json>[_recoveryTools().first];
+    var loads = 0;
+    peer.handler = (method, params) async {
+      if (method == 'session.state') {
+        if (++loads == 1) return peer.state(seq: 5);
+        snapshotRequested.complete();
+        await releaseSnapshot.future;
+        return peer.state(seq: 12);
+      }
+      if (method == 'events.after') {
+        final after = params['after']! as int;
+        return {
+          ..._page(source.where((event) =>
+            (event['sequence']! as int) > after).toList()),
+          'resync': after < 9,
+        };
+      }
+      return peer.defaultResponse(method, params);
+    };
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    final snapshot = await backend.loadChat('s1');
+    final events = <KitEvent>[];
+    final done = Completer<void>();
+    final subscription = backend.events('s1', after: snapshot.seq).listen((event) {
+      events.add(event);
+      if (event is RunWaiting && !done.isCompleted) done.complete();
+    });
+    addTearDown(subscription.cancel);
+    await snapshotRequested.future;
+    final result = _recoveryTools().last;
+    source.addAll([result, _waitEvent(14)]);
+    // Both replay and the live notification carry this post-retention result.
+    peer.notify({'method': 'event', 'params': result});
+    peer.notify({'method': 'event', 'params': _waitEvent(14)});
+    releaseSnapshot.complete();
+    await done.future;
+    expect(events.whereType<ToolStarted>(), hasLength(1));
+    expect(events.whereType<ToolFinished>(), hasLength(1));
+    expect(events.whereType<RunWaiting>(), hasLength(1));
+    expect(events.whereType<GapEvent>(), hasLength(1));
+    expect(peer.calls.where((call) => call.method == 'events.after')
+      .map((call) => call.params['after']), [5, 9, 12]);
   });
 
   test('snapshot diffs precede durable replay beyond their source barrier', () async {

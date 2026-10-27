@@ -79,9 +79,11 @@ and is limited to checkpointed file-tool effects; it is not a universal undo.
 
 Each event subscription has independent replay/stream reconciliation state.
 On a gap or replay `resync`, the adapter emits kit `gap`, reloads `session.state`
-and pending approvals, then requests `events.after` using the new snapshot's
-host cursor. Notifications arriving during recovery wait behind it; durable
-duplicates are discarded. Replay is read in pages of 1000.
+and pending approvals, then requests `events.after` from the last delivered
+durable cursor. Retained events through the snapshot boundary are delivered
+before adopting its state; retention loss remains an explicit discontinuity.
+Notifications arriving during recovery wait behind it; durable duplicates are
+discarded. Replay is read in pages of 1000.
 
 Ordinary snapshot refreshes retain the last delivered durable cursor and replay
 from it before emitting snapshot-derived changes. Steering, `run_finished` and
