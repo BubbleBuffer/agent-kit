@@ -212,7 +212,7 @@ final class BubblePawBackend implements AgentBackend {
     final params = _object(notification['params']);
     for (final watch in _watches.toList()) {
       if (method == 'events.gap') {
-        watch.enqueue(watch.recover);
+        watch.enqueue(() => watch.recover());
       } else if (method == 'event' && params['session_id'] == watch.chatId) {
         watch.enqueue(() => watch.consume(params));
       }
@@ -431,7 +431,7 @@ final class BubblePawBackend implements AgentBackend {
 
   Future<void> _refreshWatches(String chatId) async {
     for (final watch in _watches.where((w) => w.chatId == chatId).toList()) {
-      watch.enqueue(watch.recover);
+      watch.enqueue(watch.refresh);
     }
   }
 
@@ -515,19 +515,23 @@ final class BubblePawBackend implements AgentBackend {
 final class _Watch {
   _Watch(this.backend, this.chatId, this.controller) {
     final state = backend._states[chatId];
-    if (state != null) {
-      projection.snapshot(
-        state,
-        workspaceDirectory: backend.workspaceDirectory,
-      );
-    }
+    view = state == null
+        ? ChatSnapshot.empty(chatId)
+        : projection.snapshot(
+            state,
+            workspaceDirectory: backend.workspaceDirectory,
+          );
   }
   final BubblePawBackend backend;
   final String chatId;
   final StreamController<KitEvent> controller;
   final BubblePawProjection projection = BubblePawProjection();
+  late ChatSnapshot view;
   Future<void> _tail = Future<void>.value();
   bool closed = false;
+
+  // Only delivered durable host events advance this cursor. Loading a newer
+  // snapshot must not hide events that subscribers have never received.
   int cursor = 0;
   int _recoveries = 0;
 
@@ -541,9 +545,30 @@ final class _Watch {
         });
   }
 
+  void emit(KitEvent event) {
+    if (closed) return;
+    view = reduce(view, event);
+    controller.add(event);
+  }
+
   Future<void> replay(int after) async {
     cursor = after;
+    // A cached load can be newer than this subscription's requested cursor.
+    // Keep its view for diffs, but never let it suppress requested replay.
+    projection.replayFrom(chatId, after);
+    final result = await _replay();
+    if (result.resync) {
+      await recover();
+    } else if (result.refresh) {
+      await refresh();
+    }
+  }
+
+  Future<_ReplayResult> _replay({int? through}) async {
+    var refreshNeeded = false;
+    var resyncNeeded = false;
     while (!closed) {
+      final before = cursor;
       final result = _object(
         await backend._request('events.after', {
           'session_id': chatId,
@@ -551,43 +576,79 @@ final class _Watch {
           'limit': 1000,
         }),
       );
-      if (result['resync'] == true) {
-        await recover();
-        return;
-      }
+      // v0.2.2 still returns retained events when the earlier prefix was
+      // pruned. Deliver those events and page onward; resync describes the
+      // missing prefix, not permission to discard the available suffix.
+      resyncNeeded = result['resync'] == true || resyncNeeded;
       final events = _objects(result['events']);
       for (final event in events) {
-        await consume(event);
+        if (through != null && (event['sequence'] as int? ?? 0) > through) {
+          return _ReplayResult(resync: resyncNeeded, refresh: refreshNeeded);
+        }
+        refreshNeeded = _consume(event) || refreshNeeded;
       }
-      if (events.length < 1000) return;
-      final next = events.last['sequence'] as int? ?? cursor;
-      if (next <= cursor &&
-          events.every((e) => (e['sequence'] as int? ?? 0) < cursor)) {
-        return;
+      if (events.length < 1000) {
+        return _ReplayResult(resync: resyncNeeded, refresh: refreshNeeded);
       }
-      if (next <= after) return;
-      after = next;
-      cursor = next;
+      if (cursor <= before) {
+        throw const KitUnavailable('BubblePaw replay made no progress.');
+      }
     }
+    return _ReplayResult(resync: resyncNeeded, refresh: refreshNeeded);
   }
 
-  Future<void> consume(Json event) async {
-    if (closed) return;
+  // Replaying a page never recursively refreshes. Its caller reconciles once
+  // at a snapshot barrier, then reads later durable events from the same cursor.
+  bool _consume(Json event) {
+    if (closed) return false;
     final seq = event['sequence'] as int? ?? 0;
     final durable = event['durable'] != false;
-    if ((durable && seq <= cursor) || (!durable && seq < cursor)) return;
+    if ((durable && seq <= cursor) || (!durable && seq < cursor)) return false;
     if (durable) cursor = seq;
-    final mapped = projection.event(event);
-    for (final kit in mapped) {
+    var refreshNeeded = false;
+    for (final kit in projection.event(event)) {
       if (kit is GapEvent) {
-        await recover();
-        return;
+        // The source stream cannot describe this view (e.g. a text retry or
+        // nested transient tool). Its fresh canonical state is authoritative.
+        refreshNeeded = true;
+        _projectionGap = true;
+      } else {
+        emit(kit);
       }
-      if (!closed) controller.add(kit);
+    }
+    return refreshNeeded || _needsRefresh(event);
+  }
+
+  bool _projectionGap = false;
+
+  static bool _needsRefresh(Json event) => switch (event['type']) {
+    'run_started' ||
+    'run_finished' ||
+    'steering_accepted' ||
+    'followup_queued' ||
+    'session_settled' => true,
+    'host_state_changed' => event['key'] == 'usage.last_request',
+    _ => false,
+  };
+
+  Future<void> consume(Json event) async {
+    if (_consume(event)) {
+      if (_projectionGap) {
+        await recover();
+      } else {
+        await refresh();
+      }
     }
   }
 
-  Future<void> recover() async {
+  /// Refresh representable host state without reporting transport loss or
+  /// resetting provisional text/tool reconciliation. Replay precedes the diff:
+  /// a snapshot can already contain a tool start whose notification is queued.
+  Future<void> refresh() => _synchronize(gap: false);
+
+  Future<void> recover() => _synchronize(gap: true);
+
+  Future<void> _synchronize({required bool gap}) async {
     if (closed) return;
     if (++_recoveries > 3) {
       _recoveries--;
@@ -596,20 +657,137 @@ final class _Watch {
       );
     }
     try {
-      controller.add(GapEvent(seq: cursor * 16 + 15, chat: chatId));
-      final snapshot = await backend.loadChat(chatId);
-      final state = backend._states[chatId];
-      if (state != null) {
-        projection.snapshot(
-          state,
-          workspaceDirectory: backend.workspaceDirectory,
-        );
+      if (gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
+      var snapshot = await backend.loadChat(chatId);
+      if (closed) return;
+      // A concurrent caller may have started the shared load before the most
+      // recent event. Retry rather than applying an older snapshot over it.
+      if (BubblePawProjection.hostSequence(snapshot.seq) < cursor) {
+        snapshot = await backend.loadChat(chatId);
+        if (BubblePawProjection.hostSequence(snapshot.seq) < cursor) {
+          throw const KitUnavailable('BubblePaw returned an older snapshot.');
+        }
       }
-      if (!closed) await replay(BubblePawProjection.hostSequence(snapshot.seq));
+      final barrier = BubblePawProjection.hostSequence(snapshot.seq);
+      // Even after retention loss, newly committed events can arrive during
+      // session.state. Deliver every available event up to its barrier before
+      // adopting canonical state; only the actually missing prefix is lost.
+      final replayed = await _replay(through: barrier);
+      if (replayed.resync) {
+        // Retention removed an earlier prefix. Available retained events
+        // have been delivered; explicitly resync the missing part from state.
+        if (!gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
+        _adopt(snapshot);
+      } else if (gap || _projectionGap) {
+        if (!gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
+        // Replay has delivered every retained durable event through this
+        // barrier. Only now may canonical state replace stream state, so
+        // future live fragments use the same baseline as the reloaded feed.
+        _adopt(snapshot);
+      } else {
+        final changes = _changes(snapshot);
+        final first = view.seq >= barrier * 16
+            ? view.seq + 1
+            : barrier * 16 + 2;
+        if (changes.isNotEmpty &&
+            changes.length > barrier * 16 + 14 - first + 1) {
+          // The fixed 16-slot wire mapping cannot encode an arbitrarily
+          // large snapshot diff, or mutation at an already loaded cursor.
+          // Every replayable durable event has still been delivered first.
+          if (!gap) emit(GapEvent(seq: cursor * 16 + 15, chat: chatId));
+          _adopt(snapshot);
+        } else {
+          for (var index = 0; index < changes.length; index++) {
+            emit(changes[index](first + index));
+          }
+        }
+      }
+      final later = await _replay();
+      if (later.resync) {
+        await recover();
+      } else if (later.refresh || _projectionGap) {
+        // A continuing run can advance during every snapshot request. Do not
+        // count ordinary forward progress against the resync retry bound.
+        enqueue(_projectionGap ? () => recover() : refresh);
+      }
     } finally {
       _recoveries--;
     }
   }
+
+  void _adopt(ChatSnapshot snapshot) {
+    final base = BubblePawProjection.hostSequence(snapshot.seq) * 16;
+    final sequence = view.seq >= base ? view.seq + 1 : base + 2;
+    final usage = snapshot.usage;
+    // Recovery snapshots carry authoritative session totals too. Deliver the
+    // change after retained durable events, before replacing reconciliation
+    // state. A fully loaded cursor has no slot; the explicit gap covers it.
+    if (usage != null && usage != view.usage && sequence <= base + 14) {
+      emit(UsageUpdated(seq: sequence, chat: chatId, usage: usage));
+    }
+    projection.adopt(snapshot);
+    view = snapshot;
+    cursor = BubblePawProjection.hostSequence(snapshot.seq);
+    _projectionGap = false;
+  }
+
+  List<KitEvent Function(int)> _changes(ChatSnapshot snapshot) {
+    final changes = <KitEvent Function(int)>[];
+    if (snapshot.title != view.title) {
+      changes.add(
+        (seq) => ChatRenamed(seq: seq, chat: chatId, title: snapshot.title),
+      );
+    }
+    for (final item in snapshot.items) {
+      if (view.items.any((old) => old.id == item.id)) continue;
+      if (item is UserMessage) {
+        changes.add(
+          (seq) => UserMessageAdded(
+            seq: seq,
+            chat: chatId,
+            at: item.at,
+            itemId: item.id,
+            text: item.text,
+            refs: item.refs,
+          ),
+        );
+      } else if (item is SystemLine) {
+        changes.add(
+          (seq) => SystemLineAdded(
+            seq: seq,
+            chat: chatId,
+            at: item.at,
+            itemId: item.id,
+            text: item.text,
+          ),
+        );
+      }
+    }
+    for (final old in view.queue) {
+      if (!snapshot.queue.any((input) => input.id == old.id)) {
+        changes.add(
+          (seq) => QueueRemoved(seq: seq, chat: chatId, inputId: old.id),
+        );
+      }
+    }
+    for (final input in snapshot.queue) {
+      if (!view.queue.contains(input)) {
+        changes.add((seq) => QueueAdded(seq: seq, chat: chatId, input: input));
+      }
+    }
+    final usage = snapshot.usage;
+    if (usage != null && usage != view.usage) {
+      // Replacement session-own totals, never addition of run or request usage.
+      changes.add((seq) => UsageUpdated(seq: seq, chat: chatId, usage: usage));
+    }
+    return changes;
+  }
+}
+
+final class _ReplayResult {
+  const _ReplayResult({this.resync = false, this.refresh = false});
+  final bool resync;
+  final bool refresh;
 }
 
 Json _object(Object? value) => value is Map<String, Object?>

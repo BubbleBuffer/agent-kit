@@ -36,7 +36,7 @@ verification levels and the complete list of desired port changes.
 
 | Kit event | BubblePaw stdio | Scratch |
 |---|---|---|
-| `chat.renamed` | `session.rename` updates metadata without a harness rename event; adapter emits gap and reloads. | Reload after `renameSession`. |
+| `chat.renamed` | `session.rename` updates metadata without a harness rename event; adapter emits the snapshot title diff. | Reload after `renameSession`. |
 | `chat.archived` | **Missing** on stdio. | Archive missing (delete only). |
 | `chat.settings` | Model read from runs/`run_started`; no model-list/settings or profile RPC. | `run_started.model`; profile missing. |
 | `chat.workspace` | Host-bound workspace is supplied by the application; no branch/worktree data in stdio state. | Session project id/name. |
@@ -45,7 +45,7 @@ verification levels and the complete list of desired port changes.
 | `run.finished` | `run_finished {status,error}`; completed, failed, cancelled, interrupted. | Same kind/status. |
 | `message.user` | Canonical user IDs/text are recovered from `session.state.messages`; run events omit them. | Reload after run start/steering. |
 | `message.delta` | `text_delta` is provisional, `paragraph` confirms it. Matching prefixes emit only the missing suffix. Mismatch/retry requests resnapshot. | `paragraph`. |
-| `message.assistant` | `run_finished.text` completes provisional reply, followed by a canonical reload to recover real message IDs. | `run_finished.text` or reload. |
+| `message.assistant` | `run_finished.text` completes the provisional reply without a gap. Explicit snapshot reload recovers canonical message IDs. | `run_finished.text` or reload. |
 | `message.system` | Canonical system messages/tool orphan results come from state; `output.record` text publications map to stable-ID plain system lines. File/image/execution publications have no kit renderer. | `output` or reload. |
 | Thinking | No reasoning-text capability; model-request boundaries reset/reconcile provisional text. | No reasoning text. |
 | `tool.started`, `tool.finished` | Durable `tool_started.call` and `tool_finished {call_id,result}` map directly; canonical calls/results are reconstructed on reload. No exit code is invented. | Tool started/finished, summaries in activity. |
@@ -57,12 +57,13 @@ verification levels and the complete list of desired port changes.
 | `question.asked`, `question.resolved` | **Built:** `host_state_changed {key:"question",value}`. One root question with free text and optional suggestions. A cleared question triggers state reload; snapshots retain only pending questions, so resolved prompt history disappears on reload. Child questions are not root prompts. | Questions missing. |
 | Queue changes | `steering_accepted` / `followup_queued` omit input IDs, so reload real `session.state.inputs`; response IDs are retained by commands. No edit/remove methods. | Follow-up kind exists; IDs require reload. |
 | Child/job events | Not advertised: initialization has no complete child feature, and `process.list` does not supply individual cancellation or streamed output. | Children/jobs missing. |
-| `usage.updated` | Authoritative own-session totals/context in `session.state.usage`; changes/finish request snapshot, never add per-run totals twice. | Run token counts; context meter missing. |
-| `gap` | `events.gap` or `events.after.resync`; adapter reloads state, then resumes replay. | gap/resync then reload. |
-| Other host state / `session_settled` | Unprojected host state (including per-request usage telemetry) is ignored; `session_settled` refreshes the snapshot. Unknown event kinds are ignored. | Host-state/settled are read triggers. |
+| `usage.updated` | `usage.last_request`, run completion and snapshot refresh trigger a diff of authoritative own-session totals/context in `session.state.usage`. Changed values emit `UsageUpdated`; per-run totals are never added twice. | Run token counts; context meter missing. |
+| `gap` | `events.gap` or `events.after.resync`; reload state and replay from the last delivered durable cursor. A snapshot cursor does not discard undelivered events. Retention loss requires a snapshot reset. | gap/resync then reload. |
+| Other host state / `session_settled` | Unprojected host state is ignored; `session_settled` refreshes snapshot-derived fields without an unconditional gap. Unknown event kinds are ignored. | Host-state/settled are read triggers. |
 
 Transient events never become stored items. The display may show provisional
-assistant text until canonical completion replaces it. The unit and local-host
+assistant IDs until an explicit snapshot reload replaces them; rewind requires
+a canonical message ID from that snapshot. The unit and local-host
 tests are distinct from live-model acceptance; neither proves a paid provider.
 
 ## Commands

@@ -10,9 +10,9 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 /// These are native Dart sequences, not JavaScript-safe wire cursors. Always
 /// use the original host cursor (or [hostSequence]) for `events.after`.
 ///
-/// Canonical message IDs are only available in session.state. Run completion
-/// and queue changes finish with a [GapEvent], requesting a reload.
-/// Provisional reply IDs disappear when that snapshot replaces the old one.
+/// Canonical message IDs are only available in session.state. Live replies keep
+/// their provisional IDs through completion, until an explicit snapshot reload.
+/// Queue and usage changes are reconciled by the backend from session.state.
 /// Explicit `text` publications are preserved as system lines; file, image,
 /// archived table and execution outputs have no matching kit renderer.
 final class BubblePawProjection {
@@ -20,6 +20,35 @@ final class BubblePawProjection {
 
   /// Converts a kit sequence back to its BubblePaw durable cursor.
   static int hostSequence(int kitSequence) => kitSequence ~/ 16;
+
+  /// Seeds a subscription at its requested cursor, even when the cached
+  /// snapshot was loaded later. A newer snapshot must not suppress replay.
+  void replayFrom(String chatId, int after) {
+    final state = _sessions[chatId];
+    if (state == null || after < state.sequence) {
+      _sessions[chatId] = _Session(after);
+    }
+  }
+
+  /// Resets stream reconciliation only after an explicit view discontinuity.
+  void adopt(ChatSnapshot snapshot) {
+    final sequence = hostSequence(snapshot.seq);
+    final state = _Session(
+      sequence,
+      snapshotSequence: sequence,
+      model: snapshot.run?.model,
+    );
+    for (final item in snapshot.items.whereType<AssistantMessage>()) {
+      final run = item.runId;
+      if (item.streaming && run != null) {
+        final reply = state.reply(run);
+        reply.confirmed = item.markdown;
+        reply.visible = item.markdown;
+        reply.requestPrefix = item.markdown;
+      }
+    }
+    _sessions[snapshot.chatId] = state;
+  }
 
   /// Releases all stream reconciliation state, or just that of [chatId].
   void reset([String? chatId]) {
@@ -475,8 +504,7 @@ final class BubblePawProjection {
             error: _safeRunError(wire['error']),
           ),
           // Run usage is an aggregate for this run, not session totals. The
-          // following snapshot reload obtains the authoritative session usage.
-          gap(),
+          // backend reads authoritative session usage without declaring a gap.
         ];
       case 'output':
         final line = _outputLine(_map(wire['record']));
@@ -494,7 +522,8 @@ final class BubblePawProjection {
       case 'followup_queued':
       case 'session_settled':
         // Input notifications omit queue/message IDs; never manufacture them.
-        return [gap()];
+        // The backend refreshes queue/usage without resetting this projection.
+        return const [];
       default:
         return const [];
     }
