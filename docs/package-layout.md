@@ -99,6 +99,6 @@ Flutter analysis, widget/gallery tests, agent goldens, strict core analysis and
 tests, and the Git consumer check on pushes. `bubblepaw.yml` analyzes and tests
 the adapter, verifies it against a pinned public BubblePaw host, and builds the
 gallery for web and Linux. Colour generation and neutral package CI run in
-bb-ui. `private-strings.yml` checks tracked files with the `PRIVATE_STRINGS`
+bb-ui; the `raw-colours` job here checks the kit's own source. `private-strings.yml` checks tracked files with the `PRIVATE_STRINGS`
 secret, secret formats and personal tool-folder rules. All jobs run on
 GitHub-hosted runners.
