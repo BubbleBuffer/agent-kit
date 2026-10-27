@@ -127,7 +127,7 @@ All builds and tests run on GitHub-hosted CI.
    capabilities, gap/resync recovery, protocol mismatch and crashes.
 2. **Local transport:** opt in with `BP_TEST_BIN`. CI downloads the pinned Linux
    v0.2.2 archive, checks its entry in `SHA256SUMS`, and runs the real child with
-   the built-in `demo` provider, read-only workspace, JS mode and automatic
+   the built-in `demo` provider, read-only workspace, native mode and automatic
    summaries disabled. It sends messages, sees kit run/text/completion, and
    survives dropped real notifications followed by an injected `events.gap`.
    Gap injection tests adapter recovery, not an actual host buffer overflow.

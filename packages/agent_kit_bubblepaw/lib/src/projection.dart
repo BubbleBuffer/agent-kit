@@ -501,9 +501,11 @@ final class BubblePawProjection {
 final _unknownTime = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
 int _base(int seq) {
-  if (seq < 0 || seq > 576460752303423487) {
+  // v0.2.2 store_serving.rs caps source cursors at (1 << 53) - 1. Scaling
+  // still fits native Dart; this literal also lets non-live web apps compile.
+  if (seq < 0 || seq > 9007199254740991) {
     throw const FormatException(
-      'BubblePaw sequence cannot fit the native kit cursor',
+      'BubblePaw sequence is outside the protocol range',
     );
   }
   return seq * 16;
@@ -525,7 +527,10 @@ SystemLine? _outputLine(Map<String, Object?> record) {
   final output = _map(record['output']);
   final text = output['text'];
   final id = record['id'];
-  if (output['type'] != 'text' || text is! String || id is! String || id.isEmpty) {
+  if (output['type'] != 'text' ||
+      text is! String ||
+      id is! String ||
+      id.isEmpty) {
     return null;
   }
   return SystemLine(id: id, text: text, at: _time(record['created_at']));

@@ -26,11 +26,13 @@ void main() {
           binaryPath: binary!,
           workspaceDirectory: workspace.path,
           dataDirectory: data.path,
-          // v0.2.2 runner/tests/control_stdio.rs uses JS + demo with automatic
-          // summaries disabled. Read-only demo lists this disposable workspace.
+          // v0.2.2's demo supports the native surface (provider/scripted.rs).
+          // It lists only this disposable workspace. JS nested progress can
+          // legitimately trigger a canonical reload before run_finished arrives;
+          // native mode lets this test also observe the complete KIT event trio.
           arguments: const [
             '--set',
-            "agent.execution_mode='js'",
+            "agent.execution_mode='native'",
             '--provider',
             'demo',
             '--no-auto-summarize',
