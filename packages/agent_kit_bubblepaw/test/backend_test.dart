@@ -813,7 +813,9 @@ void main() {
     ) {
       events.add(event);
       if (event is ToolStarted && !tool.isCompleted) tool.complete();
-      if (event is RunWaiting && event.seq == 1007 * 16 && !drained.isCompleted) {
+      if (event is RunWaiting &&
+          event.seq == 1007 * 16 &&
+          !drained.isCompleted) {
         drained.complete();
       }
     });
