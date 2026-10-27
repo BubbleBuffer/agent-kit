@@ -66,25 +66,34 @@ class ContextMeterBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            if (total != null) ...[
-              Text(
-                ctxTokens(total),
-                style: tabular(ts(const TypeSpec(18, 22, 700), t.ink)),
-              ),
-              const SizedBox(width: 6),
-            ],
             Flexible(
-              child: Text(
-                '${total != null ? 'of ' : ''}${ctxLimit(window)} tokens',
-                style: head,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  if (total != null) ...[
+                    Text(
+                      ctxTokens(total),
+                      style: tabular(ts(const TypeSpec(18, 22, 700), t.ink)),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Flexible(
+                    child: Text(
+                      '${total != null ? 'of ' : ''}${ctxLimit(window)} tokens',
+                      style: head,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const Spacer(),
             if (percent != null)
               Text(
                 '$percent%',
@@ -160,19 +169,42 @@ class ContextMeterBar extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Wrap(
-          spacing: 14,
-          runSpacing: 2,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            for (final s in segments) _Legend(s),
-            if (cap > 0)
-              Text(
-                'Compacts near ${ctxLimit(cap)}',
-                key: const ValueKey('context-cap-label'),
-                style: ts(t.typeScale.uiSmall, t.faint, weight: 400),
-              ),
-          ],
+        LayoutBuilder(
+          builder: (context, box) {
+            final capLabel = cap > 0
+                ? Text(
+                    'Compacts near ${ctxLimit(cap)}',
+                    key: const ValueKey('context-cap-label'),
+                    style: ts(t.typeScale.uiSmall, t.faint, weight: 400),
+                  )
+                : null;
+            final legend = [for (final s in segments) _Legend(s)];
+            // Room for it: the cap label sits at the right of the legend;
+            // otherwise it wraps in with the legend.
+            if (capLabel == null || box.maxWidth < 440) {
+              return Wrap(
+                spacing: 14,
+                runSpacing: 2,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [...legend, ?capLabel],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 14,
+                    runSpacing: 2,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: legend,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                capLabel,
+              ],
+            );
+          },
         ),
       ],
     );

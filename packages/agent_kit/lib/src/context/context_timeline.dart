@@ -94,8 +94,9 @@ class _EventRow extends StatelessWidget {
     switch (event.kind) {
       case ContextEventKind.applied:
         final eps = [for (final id in event.episodeIds) ?details.episode(id)];
-        if (eps.isEmpty)
+        if (eps.isEmpty) {
           return 'Replaced messages ${seqRange(event.firstSeq, event.lastSeq)}';
+        }
         final tags = eps.length == 1
             ? episodeTag(eps.first)
             : '${episodeTag(eps.first)}–${episodeTag(eps.last)}';
