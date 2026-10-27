@@ -1,4 +1,4 @@
-// Golden screenshots of the gallery scenes (A 1440 and 1000, C 390, D 1600 and 1000, the Components sheet whole), light and
+// Golden screenshots of the gallery scenes (A 1440 and 1000, C 390, D 1600 and 1000, F and G 1600 and 390, the Components sheet whole), light and
 // dark, with the scripted chat played to its end on a manual clock. CI
 // compares them with the committed PNGs (goldens/) and uploads them as the
 // `gallery-shots` artifact. Re-render with
@@ -18,6 +18,7 @@ const _shots = <GalleryScene, List<(int, double)>>{
   GalleryScene.phone: [(390, 844)],
   GalleryScene.workspace: [(1600, 900), (1000, 800)],
   GalleryScene.context: [(1600, 900), (390, 844)],
+  GalleryScene.outline: [(1600, 900), (390, 844)],
   GalleryScene.components: [(1000, 800)],
 };
 

@@ -33,6 +33,7 @@ there and which mockup parts it covers.
 | `composer/` | composer, approval bar, queue row, picks | built |
 | `chrome/` | rail, header, crew strip, ledger | built |
 | `context/` | Context pane, meter bar, compaction marker | built |
+| `outline/` | chapter cards, headings, dividers, where-am-I strip, contents, `OutlineController` | built |
 | `workspace/` | split tree, panes, docking, edge tabs | built |
 | `compositions/` | `AgentWorkbench`, `AgentChatPane` | built |
 | `shared/` | internal helpers: path segments, the one icon drawing (`kit_icon.dart`) | built |
@@ -176,7 +177,8 @@ Only "needs you" fills a pill and only it is warm.
 
 `apps/gallery` (`flutter run -d chrome` in that folder). The toolbar switches
 scene (the mockup's A workbench, C phone, D workspace and F context as
-`AgentWorkbench` on the fake backend, B Scratch pane still a placeholder, plus Components, which
+`AgentWorkbench` on the fake backend, B Scratch pane still a placeholder, G Outline
+as a hand-built chat in chapters on an `OutlineController`, plus Components, which
 lists each widget in each state), light or
 dark, and the width (a 360 to 1600 px slider that constrains the content, so
 size classes follow it). The chat is the "Quota bar flickers on reconnect"
@@ -204,8 +206,9 @@ time.
 Golden tests are tagged `golden`; the normal test job excludes them and the
 `goldens` job runs them. They render `StatusMark` in `packages/agent_kit`
 (`test/goldens/status_mark_{light,dark}.png`) and every gallery scene in
-`apps/gallery` (A at 1440 and 1000, C at 390, D at 1600 and 1000, and the
-whole Components sheet at 1000 px, light and dark;
+`apps/gallery` (A at 1440 and 1000, C at 390, D at 1600 and 1000, F context and
+G outline at 1600 and 390, and the whole Components sheet at 1000 px, light and
+dark;
 `test/goldens/<scene>_<width>_<theme>.png`), with the scripted chat played to
 its end. Text is real because the bundled fonts are loaded in the tests.
 Rendering happens only in CI, on `ubuntu-latest` with Flutter pinned to the
