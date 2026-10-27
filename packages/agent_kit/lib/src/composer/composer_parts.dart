@@ -13,6 +13,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../shared/path_segments.dart';
 import '../theme/theme.dart';
 
 /// The Lucide glyphs the composer widgets draw (all three stroke weights).
@@ -454,10 +455,10 @@ String formatWaiting(DateTime requestedAt, DateTime now) {
 /// The tail of [path] for the action line: `…/usage/mod.rs`. Leading `./` and
 /// `../` are dropped; a path of one or two segments is kept whole.
 String shortenPath(String path) {
-  final segments = path
-      .split(RegExp(r'[\\/]'))
-      .where((s) => s.isNotEmpty && s != '.' && s != '..')
-      .toList();
+  final segments = [
+    for (final s in pathSegments(path))
+      if (s != '.' && s != '..') s,
+  ];
   if (segments.length <= 2) return segments.join('/');
   return '…/${segments.sublist(segments.length - 2).join('/')}';
 }

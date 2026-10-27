@@ -5,6 +5,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../shared/path_segments.dart';
 import '../theme/theme.dart';
 
 const glyphChevronDown = (
@@ -92,8 +93,7 @@ bool isTouch(BuildContext context) =>
 
 /// The last [parts] segments of [path] ("usage/mod.rs").
 String tailPath(String path, {int parts = 2}) {
-  final segs = path.split(RegExp(r'[\/]')).where((s) => s.isNotEmpty);
-  final list = segs.toList();
+  final list = pathSegments(path);
   if (list.length <= parts) return list.join('/');
   return list.sublist(list.length - parts).join('/');
 }
