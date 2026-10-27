@@ -239,9 +239,8 @@ Requested core changes, kept outside this implementation's scope:
 - Split context details, summary loading and history paging capabilities; use
   canonical message-ID cursors for history. The HTTP `/messages` endpoint does
   not exist in v0.2.2 stdio, and message IDs have no integer event sequence.
-- Distinguish single-question/text support from multi-item/multi-select support.
+- Express the single-item and no-skip limits beyond the supported question kinds.
 - Carry transient tool boundaries and text replacement/reset explicitly.
-- Advertise reference attachments, follow-up admission and approvals separately.
 - Allow unknown question/queue timestamps and unknown session-list status.
 
 The internal transport interface is deliberately small. HTTP/SSE is not built.
