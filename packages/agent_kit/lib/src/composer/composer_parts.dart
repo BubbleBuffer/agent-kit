@@ -13,8 +13,11 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../shared/kit_icon.dart';
 import '../shared/path_segments.dart';
 import '../theme/theme.dart';
+
+export '../shared/kit_icon.dart' show KitIcon;
 
 /// The Lucide glyphs the composer widgets draw (all three stroke weights).
 abstract final class ComposerGlyphs {
@@ -105,26 +108,6 @@ bool isTouch(BbTheme t) => t.formFactor == FormFactor.mobile;
 
 /// The height of the agent's buttons (`--ctl-h`: 32, and 40 on touch).
 double controlHeight(BbTheme t) => isTouch(t) ? 40 : t.layout.controlHeight;
-
-/// A Lucide glyph at [size], drawn at the mockup's 1.5 px visual stroke.
-class KitIcon extends StatelessWidget {
-  const KitIcon(this.glyph, {super.key, this.size = 14, this.color});
-
-  final LucideGlyph glyph;
-  final double size;
-
-  /// Defaults to the secondary icon colour.
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) => ExcludeSemantics(
-    child: LucideIcon(
-      lucideWeight(glyph, size, 1.5),
-      size: size,
-      color: color ?? context.bb.colors.iconSecondary,
-    ),
-  );
-}
 
 /// A shortcut hint: a small outlined mono label (`.kc`).
 class KeyCap extends StatelessWidget {
