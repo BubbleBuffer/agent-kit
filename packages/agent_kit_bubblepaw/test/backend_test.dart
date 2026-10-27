@@ -11,15 +11,18 @@ import '../tool/live_check_support.dart';
 
 void main() {
   test('attempt 5 preserves queued paragraphs across refresh replay', () async {
-    final captured = File(
-      'test/fixtures/transport/attempt-5-events.jsonl',
-    ).readAsLinesSync().map((line) => jsonDecode(line) as Json).toList();
+    final captured = File('test/fixtures/transport/attempt-5-events.jsonl')
+        .readAsLinesSync()
+        .map((line) => jsonDecode(line) as Json)
+        .toList();
     final source = [
       for (final entry in captured)
         (entry['record']! as Json)['params']! as Json,
     ];
     expect(
-      source.where((event) => event['durable'] == true).map((e) => e['sequence']),
+      source
+          .where((event) => event['durable'] == true)
+          .map((e) => e['sequence']),
       List.generate(15, (index) => index + 1),
     );
     expect(source, hasLength(47));
@@ -32,8 +35,9 @@ void main() {
         .where((event) => event['type'] == 'approval_requested')
         .map((event) => event['approval']! as Json)
         .toList();
-    final finalText = source
-        .singleWhere((event) => event['type'] == 'run_finished')['text']! as String;
+    final finalText =
+        source.singleWhere((event) => event['type'] == 'run_finished')['text']!
+            as String;
     peer.handler = (method, params) {
       if (method == 'events.after') {
         if (params['after'] == 1 && ++firstRefreshReads == 2) {
@@ -95,7 +99,9 @@ void main() {
     final observed = <KitEvent>[];
     final observations = StreamController<KitEvent>.broadcast();
     addTearDown(observations.close);
-    final subscription = backend.events('id_1', after: initial.seq).listen((event) {
+    final subscription = backend.events('id_1', after: initial.seq).listen((
+      event,
+    ) {
       observed.add(event);
       observations.add(event);
       acceptance.onEvent(event);
@@ -156,9 +162,13 @@ void main() {
     await acceptance.verifyAfterUsage(terminal, 'id_2');
     expect(observed.whereType<ToolStarted>(), hasLength(2));
     expect(observed.whereType<ToolFinished>(), hasLength(2));
+    expect(observed.whereType<ApprovalRequested>(), hasLength(2));
     expect(observed.whereType<ApprovalResolved>(), hasLength(2));
     expect(observed.whereType<RunFinished>(), hasLength(1));
-    expect(observed.whereType<AssistantMessageCompleted>().single.markdown, finalText);
+    expect(
+      observed.whereType<AssistantMessageCompleted>().single.markdown,
+      finalText,
+    );
     final deltas = observed.whereType<MessageDelta>().toList();
     expect(deltas.map((event) => event.text).join(), finalText);
     var length = 0;
@@ -167,6 +177,70 @@ void main() {
       length += delta.text.length;
     }
   });
+
+  test(
+    'initial replay cannot drain notifications across a queued host gap',
+    () async {
+      final peer = _BackendPeer()..features = ['sessions', 'events'];
+      final firstReplay = Completer<Object?>();
+      var replayCount = 0;
+      peer.handler = (method, params) {
+        if (method == 'events.after') {
+          if (++replayCount == 1) return firstReplay.future;
+          return _page([]);
+        }
+        if (method == 'session.state') return peer.state(seq: 1);
+        return peer.defaultResponse(method, params);
+      };
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      addTearDown(() {
+        if (!firstReplay.isCompleted) firstReplay.complete(_page([]));
+      });
+      final events = <KitEvent>[];
+      final delivered = Completer<void>();
+      final subscription = backend.events('s1', after: 0).listen((event) {
+        events.add(event);
+        if (event is MessageDelta && !delivered.isCompleted)
+          delivered.complete();
+      });
+      addTearDown(subscription.cancel);
+      await peer.waitFor((call) => call.method == 'events.after');
+      peer.notify({
+        'method': 'events.gap',
+        'params': {'skipped': 1},
+      });
+      peer.notify({
+        'method': 'event',
+        'params': {
+          'sequence': 1,
+          'durable': false,
+          'session_id': 's1',
+          'run_id': 'r1',
+          'type': 'text_delta',
+          'text': 'After the explicit gap',
+        },
+      });
+      firstReplay.complete(
+        _page([
+          {
+            'sequence': 1,
+            'durable': true,
+            'session_id': 's1',
+            'run_id': 'r1',
+            'type': 'run_started',
+          },
+        ]),
+      );
+      await delivered.future;
+      expect(events.whereType<GapEvent>(), hasLength(1));
+      expect(events.whereType<MessageDelta>(), hasLength(1));
+      expect(
+        events.indexWhere((event) => event is GapEvent),
+        lessThan(events.indexWhere((event) => event is MessageDelta)),
+      );
+    },
+  );
 
   test('attempt 3 durable replay waits for terminal session usage', () async {
     final captured = (await File(

@@ -83,7 +83,11 @@ and pending approvals, then requests `events.after` from the last delivered
 durable cursor. Retained events through the snapshot boundary are delivered
 before adopting its state; retention loss remains an explicit discontinuity.
 Notifications arriving during recovery wait behind it; durable duplicates are
-discarded. Replay is read in pages of 1000.
+discarded. During ordinary refresh replay, already-buffered notifications through
+each replay boundary are delivered in arrival order before the cursor advances.
+This keeps transient confirming paragraphs ahead of later durable approvals or
+tools; a refresh cannot turn a valid next model request into a false text retry.
+Each buffered notification is consumed once. Replay is read in pages of 1000.
 
 Ordinary snapshot refreshes retain the last delivered durable cursor and replay
 from it before emitting snapshot-derived changes. Steering, `run_finished` and
@@ -192,6 +196,13 @@ The attempt-3 fixture preserves recorded durable ordering. Its content-bearing
 payloads were removed at capture time; the regression uses explicit synthetic
 replacements and cannot identify that historical run's exact failed check. See
 `test/fixtures/transport/attempt-3-README.md` for the evidence limits.
+
+The attempt-5 regression preserves all 47 captured event notifications, including
+transient text and all 15 durable sequences. It reproduces a confirming paragraph
+overtaken by approval replay during a usage refresh, then checks zero gaps through
+tools, approvals, steering, usage and completion. Content and snapshots are
+synthetic because the capture removed them. See
+`test/fixtures/transport/attempt-5-README.md` for the recorded boundaries and limits.
 
 Workspace and data directories default to temporary directories that the script
 removes. Optional `--workspace` and `--data-dir` retain caller-supplied directories;
