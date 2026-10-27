@@ -287,7 +287,7 @@ class _EpisodeBlock extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: state == ContextState.ready
-                  ? const Border(left: BorderSide(width: 3, color: Color(0x00000000)))
+                  ? Border(left: BorderSide(width: 3, color: t.surface.withValues(alpha: 0)))
                   : Border(left: BorderSide(width: 3, color: gutter)),
             ),
             child: Padding(

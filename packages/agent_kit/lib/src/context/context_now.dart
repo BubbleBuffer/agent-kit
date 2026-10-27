@@ -57,7 +57,7 @@ class _ContextRowState extends State<ContextRow> {
     final border = widget.dashed
         ? null
         : Border.all(
-            color: widget.selected ? t.seam : const Color(0x00000000),
+            color: widget.selected ? t.seam : t.surface.withValues(alpha: 0),
           );
     final body = Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
