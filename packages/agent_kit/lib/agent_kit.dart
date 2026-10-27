@@ -5,6 +5,7 @@ library;
 
 export 'src/chrome/chrome.dart';
 export 'src/compositions/compositions.dart';
+export 'src/context/context.dart';
 export 'src/composer/composer.dart';
 export 'src/status/status.dart';
 export 'src/theme/theme.dart';

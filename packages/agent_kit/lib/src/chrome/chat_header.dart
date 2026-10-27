@@ -52,6 +52,7 @@ class ChatHeader extends StatelessWidget {
     this.onToggleWorkspace,
     this.menuItems = const [],
     this.hideEmptyMenu = false,
+    this.onOpenContext,
   });
 
   final ChatSummary chat;
@@ -68,6 +69,10 @@ class ChatHeader extends StatelessWidget {
   /// Leaves the ⋯ button out when there are no [menuItems], instead of
   /// drawing it disabled.
   final bool hideEmptyMenu;
+
+  /// Makes the context meter a button that opens the Context pane. Without
+  /// it the meter is a plain readout.
+  final VoidCallback? onOpenContext;
 
   @override
   Widget build(BuildContext context) {
@@ -129,6 +134,7 @@ class ChatHeader extends StatelessWidget {
                       contextTokens: usage?.contextTokens,
                       contextLimit: usage?.contextLimit,
                       showLabel: !narrow,
+                      onTap: onOpenContext,
                     ),
                   if (onToggleWorkspace != null)
                     ChromeIconButton(
@@ -262,6 +268,7 @@ class ContextMeter extends StatelessWidget {
     this.contextTokens,
     this.contextLimit,
     this.showLabel = true,
+    this.onTap,
   });
 
   /// The fill, 0 to 1 (`Usage.contextFraction`).
@@ -270,6 +277,10 @@ class ContextMeter extends StatelessWidget {
   final int? contextLimit;
   final bool showLabel;
 
+  /// Turns the meter into a button ("38% context"); the tap opens the
+  /// Context pane.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final theme = context.bb;
@@ -277,43 +288,67 @@ class ContextMeter extends StatelessWidget {
     final tip = contextLimit == null
         ? 'Context: $percent%'
         : 'Context: $percent% of ${formatTokens(contextLimit!)}';
+    final readout = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showLabel) ...[
+            Text(
+              '$percent% context',
+              style: ts(theme.typeScale.uiSmall, theme.faint),
+              maxLines: 1,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Container(
+            width: 40,
+            height: 2,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: theme.seam,
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: fraction.clamp(0.0, 1.0),
+                child: ColoredBox(color: theme.threadStrong),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    final tap = onTap;
+    if (tap == null) {
+      return chromeTooltip(
+        context,
+        tip,
+        Semantics(
+          label: '$percent% context used',
+          excludeSemantics: true,
+          child: readout,
+        ),
+      );
+    }
+    final touch = theme.formFactor == FormFactor.mobile;
     return chromeTooltip(
       context,
       tip,
       Semantics(
-        label: '$percent% context used',
+        button: true,
+        label: '$percent% context used. Open the context view',
         excludeSemantics: true,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (showLabel) ...[
-                Text(
-                  '$percent% context',
-                  style: ts(theme.typeScale.uiSmall, theme.faint),
-                  maxLines: 1,
-                ),
-                const SizedBox(width: 8),
-              ],
-              Container(
-                width: 40,
-                height: 2,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: theme.seam,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: fraction.clamp(0.0, 1.0),
-                    child: ColoredBox(color: theme.threadStrong),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        onTap: tap,
+        child: Hover(
+          key: const ValueKey('header-context'),
+          onTap: tap,
+          borderRadius: theme.radii.ctl,
+          hoverBackground: theme.hover,
+          pressedBackground: theme.pressed,
+          lift: 0,
+          child: SizedBox(height: touch ? 40 : 32, child: Center(child: readout)),
         ),
       ),
     );

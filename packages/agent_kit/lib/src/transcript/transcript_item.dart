@@ -19,7 +19,9 @@ import 'package:agent_kit_core/agent_kit_core.dart'
         UserMessage;
 import 'package:flutter/widgets.dart';
 
+import '../context/compaction_marker.dart';
 import 'activity_group.dart';
+import 'child_question_row.dart';
 import 'file_edit_row.dart';
 import 'markdown.dart';
 import 'messages.dart';
@@ -38,6 +40,10 @@ class TranscriptActions {
     this.onOpenChild,
     this.onLinkTap,
     this.onRefTap,
+    this.onViewContext,
+    this.onAnswerChildQuestion,
+    this.onResume,
+    this.now,
   });
 
   /// Renders assistant prose.
@@ -63,6 +69,20 @@ class TranscriptActions {
 
   /// A context chip of a user message was tapped.
   final ValueChanged<KitRef>? onRefTap;
+
+  /// "View" on a compaction marker: open the Context pane on Now.
+  final VoidCallback? onViewContext;
+
+  /// "Send answer" of a pending child question: `(childId, questionId,
+  /// text)`. Null leaves "Answer yourself" out.
+  final void Function(String childId, String questionId, String text)?
+  onAnswerChildQuestion;
+
+  /// "Resume" on an interrupted notice.
+  final VoidCallback? onResume;
+
+  /// Replaces the wall clock for waiting times (tests, the gallery).
+  final DateTime? now;
 }
 
 /// The widget for [item].
@@ -100,9 +120,19 @@ class TranscriptItemView extends StatelessWidget {
       onOpen: actions.onOpenFile == null ? null : () => actions.onOpenFile!(e),
     ),
     final ChildResult r => ReturnLine(r, onOpen: actions.onOpenChild),
-    // Drawn by the context and child-question widgets.
-    CompactionItem() ||
-    ChildQuestionItem() ||
-    InterruptedItem() => const SizedBox.shrink(),
+    final CompactionItem c => CompactionMarker(
+      c,
+      onView: actions.onViewContext,
+    ),
+    final ChildQuestionItem q => ChildQuestionRow(
+      q,
+      now: actions.now,
+      onOpenChild: actions.onOpenChild,
+      onAnswer: actions.onAnswerChildQuestion,
+    ),
+    final InterruptedItem i => InterruptedNotice(
+      text: i.reason ?? 'Interrupted by a restart',
+      onResume: actions.onResume,
+    ),
   };
 }

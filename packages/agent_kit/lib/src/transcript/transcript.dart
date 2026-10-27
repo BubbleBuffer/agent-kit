@@ -4,6 +4,7 @@
 library;
 
 export 'activity_group.dart';
+export 'child_question_row.dart';
 export 'code_block.dart';
 export 'diff_view.dart';
 export 'exec_output.dart';
