@@ -7,7 +7,9 @@
 // through the backend. This is the only widget in the kit, with
 // AgentWorkbench, that calls a backend.
 //
-// Controls the backend lacks (by its capabilities) are left out, not disabled.
+// Optional controls the backend lacks (by its capabilities) are left out.
+// Sending, stopping and approval decisions stay drawn but disabled when the
+// backend lacks their capabilities, unless the host overrides paneActions.
 // Controls a host turns off with [AgentPaneActions] (a read-only view) stay
 // drawn but disabled, and nothing reaches the backend through them.
 // A typed backend error shows as one dismissible line above the composer,
@@ -27,13 +29,14 @@ import '../composer/composer_parts.dart'
 import '../theme/theme.dart';
 import '../transcript/transcript.dart';
 
-/// Which of the pane's actions work. The default is all of them; a host that
+/// Overrides which of the pane's actions work. Without an override, the pane
+/// derives these actions from the backend's [KitCapabilities]. A host that
 /// can show a chat but not drive it passes [readOnly].
 ///
 /// A turned-off action stays on screen, drawn disabled, and cannot be invoked
 /// (not by tap, key or the semantics action). Messages, pending approvals and
-/// the rest of the dock are still shown. This is separate from the backend's
-/// [KitCapabilities], which decide whether a control exists at all.
+/// the rest of the dock are still shown. An explicit override takes precedence
+/// over the backend's send, cancel and approve capabilities.
 ///
 /// Only the actions named here are covered: the other commands (answering a
 /// question, the queue, undo, resume, fork, archive and the model and
@@ -47,7 +50,7 @@ class AgentPaneActions {
     this.decide = true,
   });
 
-  /// Every action works (the default).
+  /// Every action works, regardless of the backend's capabilities.
   static const all = AgentPaneActions();
 
   /// Messages and approvals are shown; sending, stopping and deciding are off.
@@ -91,8 +94,8 @@ class AgentChatPane extends StatefulWidget {
     this.onOpenJob,
     this.onOpenContext,
     this.contentWidth = 720,
-    this.paneActions = AgentPaneActions.all,
-  });
+    AgentPaneActions? paneActions,
+  }) : _paneActionsOverride = paneActions;
 
   /// Where the chat lives.
   final AgentBackend backend;
@@ -155,9 +158,19 @@ class AgentChatPane extends StatefulWidget {
   /// The width of the content column.
   final double contentWidth;
 
-  /// Which actions work; [AgentPaneActions.readOnly] shows the chat without
-  /// letting the user send, stop or decide an approval.
-  final AgentPaneActions paneActions;
+  /// Overrides which actions work. When omitted, send, stop and approval
+  /// decisions follow the backend's send, cancel and approve capabilities.
+  /// [AgentPaneActions.readOnly] disables all three; [AgentPaneActions.all]
+  /// explicitly enables them even if the backend omits those capabilities.
+  AgentPaneActions get paneActions =>
+      _paneActionsOverride ??
+      AgentPaneActions(
+        send: backend.capabilities.has(KitCapability.send),
+        stop: backend.capabilities.has(KitCapability.cancel),
+        decide: backend.capabilities.has(KitCapability.approve),
+      );
+
+  final AgentPaneActions? _paneActionsOverride;
 
   @override
   State<AgentChatPane> createState() => _AgentChatPaneState();
@@ -180,6 +193,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
 
   KitCapabilities get _caps => widget.backend.capabilities;
   bool get _canSteer => _caps.has(KitCapability.steer);
+  AgentPaneActions get _paneActions => widget.paneActions;
 
   @override
   void initState() {
@@ -298,7 +312,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
   // ------------------------------------------------------------- commands
 
   void _submit(ComposerSubmission s) {
-    if (!widget.paneActions.send) return;
+    if (!_paneActions.send) return;
     final backend = widget.backend;
     final id = widget.chatId;
     _run(
@@ -622,9 +636,9 @@ class _AgentChatPaneState extends State<AgentChatPane> {
                 widget.onReviewApproval == null || approvals[i].diff == null
                 ? null
                 : () => widget.onReviewApproval!(approvals[i]),
-            enabled: widget.paneActions.decide,
+            enabled: _paneActions.decide,
             onDecide: (decision) {
-              if (!widget.paneActions.decide) return;
+              if (!_paneActions.decide) return;
               _run(() => backend.decideApproval(id, approvals[i].id, decision));
             },
           ),
@@ -669,12 +683,15 @@ class _AgentChatPaneState extends State<AgentChatPane> {
         AgentComposer(
           onSubmit: _submit,
           running: running,
-          canSend: widget.paneActions.send,
-          placeholder: widget.paneActions.send
+          canSend: _paneActions.send,
+          placeholder: _paneActions.send
               ? 'Steer the agent…'
               : 'This chat is read-only.',
-          onStop: widget.paneActions.stop
-              ? () => _run(() => backend.cancel(id))
+          onStop: _paneActions.stop
+              ? () {
+                  if (!_paneActions.stop) return;
+                  _run(() => backend.cancel(id));
+                }
               : null,
           models: models,
           modelId: snap.model,

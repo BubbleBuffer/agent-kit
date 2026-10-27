@@ -54,7 +54,8 @@ in `backend.features` without inventing support for them.
 | `loadContext`, `loadSummary` | No method | Missing |
 | `loadHistoryRange` | No stdio paging method or integer message sequence | Missing: see the port gap below |
 
-Capabilities enabled: rename, resume, usage; steer with `steer`, questions with
+Capabilities enabled: createChat, send, cancel, rename, resume, usage; approve
+with `approvals`, steer with `steer`, questions with
 `question`, plan with `todo`, and rewind with `rewind`. Capabilities for queue
 editing/send-now, children, child answers, jobs, archive, edit undo, fork, models,
 profiles, reasoning text, worktrees and context are absent. Widgets hide those
@@ -67,7 +68,8 @@ Questions have one item with ID `answer`. Suggested answers become pick-one
 options with an Other input; without suggestions the item is free text. Skips,
 multiple items, multiple choices, and choosing both a suggestion and text are
 rejected without calling `question.answer`. This does not advertise multi-select
-or multi-question support.
+or multi-question support. `BackendConstraints` exposes reference rejection,
+the supported question kinds, and whether `follow_up` was negotiated.
 
 `rewindToNewChat(chatId, messageId)` returns the new chat summary, and
 `createdChats` also emits it. The core's `rewind` delegates to this operation;

@@ -7,7 +7,7 @@ tokens live in [bb-ui](https://github.com/BubbleBuffer/bb-ui).
 | Package | What it is |
 |---|---|
 | [`agent_kit`](packages/agent_kit) | Flutter agent UI: theme, status, transcript, composer, chrome, context, workspace and compositions. |
-| [`agent_kit_core`](packages/agent_kit_core) | Pure Dart chat models, the `AgentBackend` port, event reducer, typed command errors and a scripted backend. |
+| [`agent_kit_core`](packages/agent_kit_core) | Pure Dart chat models, the `ChatReader` and `AgentBackend` ports, capabilities and constraints, event reducer, typed command errors and a scripted backend. |
 | [`agent_kit_bubblepaw`](packages/agent_kit_bubblepaw) | Pure Dart BubblePaw stdio JSON-RPC backend implementing that port. |
 
 [`apps/gallery`](apps/gallery) keeps the agent scenes, scripted backend and

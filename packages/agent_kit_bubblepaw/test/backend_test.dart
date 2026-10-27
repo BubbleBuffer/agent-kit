@@ -368,10 +368,20 @@ void main() {
       addTearDown(() => peer.close(backend));
       expect(peer.calls.single.method, 'initialize');
       expect(backend.features, containsAll(['sessions', 'events', 'question']));
+      expect(backend.capabilities.has(KitCapability.send), isTrue);
+      expect(backend.capabilities.has(KitCapability.cancel), isTrue);
+      expect(backend.capabilities.has(KitCapability.createChat), isTrue);
+      expect(backend.capabilities.has(KitCapability.approve), isTrue);
       expect(backend.capabilities.has(KitCapability.questions), isTrue);
       expect(backend.capabilities.has(KitCapability.steer), isTrue);
       expect(backend.capabilities.has(KitCapability.plan), isTrue);
       expect(backend.capabilities.has(KitCapability.rewind), isTrue);
+      expect(backend.constraints.acceptsReferences, isFalse);
+      expect(backend.constraints.followUpWhileRunning, isTrue);
+      expect(backend.constraints.supportedQuestionKinds, {
+        QuestionKind.text,
+        QuestionKind.pickOne,
+      });
       for (final capability in [
         KitCapability.children,
         KitCapability.jobs,
@@ -387,6 +397,89 @@ void main() {
       }
     },
   );
+
+  test(
+    'constraints follow negotiated features and retain unknown names',
+    () async {
+      final peer = _BackendPeer()
+        ..features = ['sessions', 'events', 'future-feature'];
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      expect(backend.features, contains('future-feature'));
+      expect(backend.capabilities.values, {
+        KitCapability.send,
+        KitCapability.cancel,
+        KitCapability.createChat,
+        KitCapability.rename,
+        KitCapability.resume,
+        KitCapability.usage,
+      });
+      expect(backend.constraints.acceptsReferences, isFalse);
+      expect(backend.constraints.followUpWhileRunning, isFalse);
+      expect(backend.constraints.supportedQuestionKinds, isEmpty);
+    },
+  );
+
+  test(
+    'question and follow-up features are negotiated independently',
+    () async {
+      final peer = _BackendPeer()
+        ..features = ['sessions', 'events', 'question'];
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      expect(backend.capabilities.has(KitCapability.questions), isTrue);
+      expect(backend.capabilities.has(KitCapability.steer), isFalse);
+      expect(backend.constraints.supportedQuestionKinds, {
+        QuestionKind.text,
+        QuestionKind.pickOne,
+      });
+      expect(backend.constraints.followUpWhileRunning, isFalse);
+    },
+  );
+
+  test('follow-up is available without steer or questions', () async {
+    final peer = _BackendPeer()..features = ['sessions', 'events', 'follow_up'];
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    peer.handler = (method, params) => switch (method) {
+      'run.follow_up' => {'id': 'i1'},
+      _ => peer.defaultResponse(method, params),
+    };
+    expect(backend.capabilities.has(KitCapability.steer), isFalse);
+    expect(backend.capabilities.has(KitCapability.questions), isFalse);
+    expect(backend.constraints.supportedQuestionKinds, isEmpty);
+    expect(backend.constraints.followUpWhileRunning, isTrue);
+
+    expect(await backend.followup('s1', 'next'), 'i1');
+    expect(peer.calls.map((call) => call.method), [
+      'initialize',
+      'run.follow_up',
+    ]);
+  });
+
+  test('minimal host provides create, send and cancel commands', () async {
+    final peer = _BackendPeer()..features = ['sessions', 'events'];
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    peer.handler = (method, params) => switch (method) {
+      'session.open' => {'id': 's1', 'title': params['title']},
+      'run.start' => {'id': 'r1'},
+      _ => peer.defaultResponse(method, params),
+    };
+
+    final chat = await backend.createChat(title: 'Example');
+    expect(chat.id, 's1');
+    final result = await backend.send(chat.id, 'hello');
+    expect(result.delivery, SendDelivery.started);
+    await backend.cancel(chat.id);
+    expect(peer.calls.map((call) => call.method), [
+      'initialize',
+      'session.open',
+      'run.start',
+      'run.cancel',
+    ]);
+    expect(peer.calls.last.params, {'session_id': 's1'});
+  });
 
   test(
     'version mismatch retains both versions and shuts down the owned peer',
@@ -430,6 +523,7 @@ void main() {
     final peer = _BackendPeer()..features = ['sessions', 'events'];
     final backend = await peer.connect();
     addTearDown(() => peer.close(backend));
+    expect(backend.capabilities.has(KitCapability.approve), isFalse);
     await expectLater(
       backend.steer('s1', 'hello'),
       throwsA(isA<KitUnsupported>()),
@@ -450,7 +544,7 @@ void main() {
     );
     await expectLater(
       backend.decideApproval('s1', 'a1', ApprovalDecision.approve),
-      throwsA(isA<KitInvalid>()),
+      throwsA(isA<KitUnsupported>()),
     );
     await expectLater(
       backend.editQueued('s1', 'i1', 'hello'),
@@ -493,6 +587,45 @@ void main() {
     );
     expect(peer.calls.skip(before).map((call) => call.method), ['run.start']);
   });
+
+  test('send preserves busy when follow-up was not negotiated', () async {
+    final peer = _BackendPeer()..features = ['sessions', 'events'];
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    peer.handler = (method, params) => switch (method) {
+      'run.start' => const _RpcFailure(
+        'Session already has an active run r1; steer or follow up instead',
+      ),
+      _ => peer.defaultResponse(method, params),
+    };
+
+    await expectLater(backend.send('s1', 'next'), throwsA(isA<KitBusy>()));
+    expect(peer.calls.map((call) => call.method), ['initialize', 'run.start']);
+  });
+
+  test(
+    'text commands reject references before issuing host commands',
+    () async {
+      final peer = _BackendPeer();
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      const refs = [KitRef(kind: 'file', id: 'example', label: 'Example')];
+
+      await expectLater(
+        backend.send('s1', 'hello', refs: refs),
+        throwsA(isA<KitInvalid>()),
+      );
+      await expectLater(
+        backend.steer('s1', 'hello', refs: refs),
+        throwsA(isA<KitInvalid>()),
+      );
+      await expectLater(
+        backend.followup('s1', 'hello', refs: refs),
+        throwsA(isA<KitInvalid>()),
+      );
+      expect(peer.calls.map((call) => call.method), ['initialize']);
+    },
+  );
 
   test(
     'send rejects blank text and reserved slash commands before RPC',

@@ -17,10 +17,20 @@ import 'snapshot.dart';
 /// stale and stays so until [reload].
 final class ChatFeed {
   /// Creates a feed; call [start] to load.
-  ChatFeed(this.backend, this.chatId);
+  ChatFeed(this.reader, this.chatId);
 
-  /// The backend.
-  final AgentBackend backend;
+  /// The read port followed by this feed.
+  final ChatReader reader;
+
+  /// The original write-capable backend, for existing callers.
+  ///
+  /// Throws [StateError] when this feed was constructed with a read-only
+  /// [ChatReader]. Consumers of read-only feeds use [reader].
+  AgentBackend get backend {
+    final source = reader;
+    if (source is AgentBackend) return source;
+    throw StateError('This feed has a read-only ChatReader. Use reader.');
+  }
 
   /// The chat followed.
   final String chatId;
@@ -45,10 +55,10 @@ final class ChatFeed {
   Future<ChatSnapshot> reload() async {
     await _sub?.cancel();
     _sub = null;
-    final snap = await backend.loadChat(chatId);
+    final snap = await reader.loadChat(chatId);
     if (_closed) return snap;
     _set(snap);
-    _sub = backend
+    _sub = reader
         .events(chatId, after: snap.seq)
         .listen(_onEvent, onError: _onError, onDone: _onDone);
     return snap;
@@ -76,7 +86,7 @@ final class ChatFeed {
   Future<void> _reloadAfterGap() async {
     _buffer = [];
     try {
-      var snap = await backend.loadChat(chatId);
+      var snap = await reader.loadChat(chatId);
       for (final e in _buffer ?? const <KitEvent>[]) {
         snap = reduce(snap, e);
       }

@@ -7,7 +7,8 @@ import 'models.dart';
 import 'snapshot.dart';
 import 'value.dart';
 
-/// An optional backend feature. Widgets hide what a backend lacks.
+/// A backend feature. An absent capability means its commands are unsupported
+/// and must fail with [KitUnsupported]. Widgets gate the corresponding actions.
 enum KitCapability {
   /// `steer`: deliver a message into the running turn.
   steer,
@@ -71,6 +72,18 @@ enum KitCapability {
   /// the parent's place. Needs engine support: a user message to a child in
   /// `waitingForAnswer`.
   answerChildQuestion,
+
+  /// `send` and `followup`.
+  send,
+
+  /// `cancel`.
+  cancel,
+
+  /// `decideApproval`.
+  approve,
+
+  /// `createChat`.
+  createChat,
 }
 
 /// The set of [KitCapability] a backend declares.
@@ -82,7 +95,7 @@ final class KitCapabilities extends KitValue {
   /// Every capability.
   factory KitCapabilities.all() => KitCapabilities(KitCapability.values);
 
-  /// No optional capability.
+  /// No capability, including commands that write to a chat.
   factory KitCapabilities.none() => KitCapabilities(const []);
 
   /// Reads capabilities from JSON; unknown names are skipped.
@@ -106,6 +119,84 @@ final class KitCapabilities extends KitValue {
         if (values.contains(c)) c.name,
     ],
   };
+}
+
+/// Input shapes and running-turn behaviour supported by a backend.
+///
+/// These declarations refine capabilities; they do not grant commands.
+final class BackendConstraints extends KitValue {
+  /// Creates constraints, copying [supportedQuestionKinds] into an immutable set.
+  BackendConstraints({
+    bool acceptsReferences = true,
+    Iterable<QuestionKind> supportedQuestionKinds = QuestionKind.values,
+    bool followUpWhileRunning = true,
+  }) : this._(
+         acceptsReferences,
+         Set.unmodifiable(supportedQuestionKinds),
+         followUpWhileRunning,
+       );
+
+  const BackendConstraints._(
+    this.acceptsReferences,
+    this.supportedQuestionKinds,
+    this.followUpWhileRunning,
+  );
+
+  /// The behaviour existing backends had before constraints were declared.
+  static const defaults = BackendConstraints._(true, {
+    QuestionKind.pickOne,
+    QuestionKind.pickAny,
+    QuestionKind.text,
+  }, true);
+
+  /// Reads constraints from JSON, keeping defaults for absent fields.
+  factory BackendConstraints.fromJson(Json j) => BackendConstraints(
+    acceptsReferences: j.boolean('acceptsReferences', fallback: true),
+    supportedQuestionKinds: j.containsKey('supportedQuestionKinds')
+        ? QuestionKind.values.where(
+            (kind) => j.strings('supportedQuestionKinds').contains(kind.name),
+          )
+        : QuestionKind.values,
+    followUpWhileRunning: j.boolean('followUpWhileRunning', fallback: true),
+  );
+
+  /// Whether outgoing messages may carry [KitRef] references.
+  final bool acceptsReferences;
+
+  /// The question input kinds this backend can answer.
+  final Set<QuestionKind> supportedQuestionKinds;
+
+  /// Whether a message can be queued as a follow-up while a run is active.
+  final bool followUpWhileRunning;
+
+  @override
+  Json toJson() => {
+    'acceptsReferences': acceptsReferences,
+    'supportedQuestionKinds': [
+      for (final kind in QuestionKind.values)
+        if (supportedQuestionKinds.contains(kind)) kind.name,
+    ],
+    'followUpWhileRunning': followUpWhileRunning,
+  };
+}
+
+/// Optional declarations that refine a backend's input support.
+///
+/// Kept separate from [AgentBackend] so existing implementers remain valid.
+abstract interface class BackendConstraintsProvider {
+  /// The backend's supported input shapes and running-turn behaviour.
+  BackendConstraints get constraints;
+}
+
+/// Supplies defaults for backends that do not declare constraints.
+extension BackendConstraintAccess on AgentBackend {
+  /// The backend's constraints, or the existing behaviour by default.
+  BackendConstraints get constraints {
+    final backend = this;
+    return backend is BackendConstraintsProvider
+        ? (backend as BackendConstraintsProvider).constraints
+        : BackendConstraints.defaults;
+  }
 }
 
 /// The user's answer to an approval request.
@@ -268,21 +359,14 @@ final class KitFailed extends KitError {
   String get code => 'failed';
 }
 
-/// The port between the kit and a host's agent backend.
+/// Read access to chats, without authority to issue write commands.
 ///
 /// Reads follow snapshot-plus-events: [loadChat] returns a snapshot up to
 /// sequence N, and [events] streams what follows N. A consumer folds the
 /// events into the snapshot with `reduce`, and reloads on a `gap`
 /// (`ChatFeed` does all of this).
-///
-/// Commands return futures that complete when the backend has accepted
-/// the command, not when its effects are done: effects arrive as events.
-/// A command fails with a [KitError]; one that needs a missing capability
-/// fails with [KitUnsupported]. Rewind and fork change history in ways
-/// the event vocabulary does not express, so after them the backend sends
-/// a `gap` on the affected chat.
-abstract interface class AgentBackend {
-  /// The optional features this backend supports.
+abstract interface class ChatReader {
+  /// The features this backend supports.
   KitCapabilities get capabilities;
 
   /// A page of chats, newest first, optionally filtered by [query].
@@ -297,6 +381,31 @@ abstract interface class AgentBackend {
   /// `gap`.
   Stream<KitEvent> events(String chatId, {required int after});
 
+  /// The structure behind the chat's context view. Needs `context`.
+  /// Summary texts may be left empty; [loadSummary] has the whole text.
+  Future<ContextDetails> loadContext(String chatId);
+
+  /// Original messages, [firstSeq] to [lastSeq] inclusive. Needs `context`.
+  Future<HistoryPage> loadHistoryRange(
+    String chatId,
+    int firstSeq,
+    int lastSeq,
+  );
+
+  /// One summary with its whole text. Needs `context`; fails with
+  /// [KitNotFound] for an unknown id.
+  Future<ContextSummary> loadSummary(String chatId, String summaryId);
+}
+
+/// The port between the kit and a host's agent backend.
+///
+/// Commands return futures that complete when the backend has accepted
+/// the command, not when its effects are done: effects arrive as events.
+/// A command fails with a [KitError]; one that needs a missing capability
+/// fails with [KitUnsupported]. Rewind and fork change history in ways
+/// the event vocabulary does not express, so after them the backend sends
+/// a `gap` on the affected chat.
+abstract interface class AgentBackend implements ChatReader {
   /// Creates an empty chat.
   Future<ChatSummary> createChat({String? title, String? workspace});
 
@@ -395,21 +504,4 @@ abstract interface class AgentBackend {
 
   /// Sets the profile for the chat's next runs.
   Future<void> setProfile(String chatId, String profileId);
-
-  /// The structure behind the chat's context view: chapters, episodes,
-  /// summaries and the compaction timeline. Needs the `context` capability.
-  /// Summary texts may be left empty; [loadSummary] has the whole text.
-  Future<ContextDetails> loadContext(String chatId);
-
-  /// A range of the chat's original messages, [firstSeq] to [lastSeq]
-  /// inclusive, for the windowed history. Needs the `context` capability.
-  Future<HistoryPage> loadHistoryRange(
-    String chatId,
-    int firstSeq,
-    int lastSeq,
-  );
-
-  /// One summary with its whole text. Needs the `context` capability; fails
-  /// with `KitNotFound` for an unknown id.
-  Future<ContextSummary> loadSummary(String chatId, String summaryId);
 }

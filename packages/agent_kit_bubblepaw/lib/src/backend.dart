@@ -12,7 +12,8 @@ import 'transport.dart';
 /// Create with [start], await initialization, and always await [dispose].
 /// Optional commands are advertised only when the negotiated host feature and
 /// the stdio method can carry the kit semantics.
-final class BubblePawBackend implements AgentBackend {
+final class BubblePawBackend
+    implements AgentBackend, BackendConstraintsProvider {
   BubblePawBackend._(this._transport, this.workspaceDirectory);
 
   /// The protocol understood by this adapter (independent of binary version).
@@ -65,6 +66,10 @@ final class BubblePawBackend implements AgentBackend {
         );
       }
       backend._capabilities = KitCapabilities([
+        KitCapability.send,
+        KitCapability.cancel,
+        KitCapability.createChat,
+        if (backend.features.contains('approvals')) KitCapability.approve,
         if (backend.features.contains('steer')) KitCapability.steer,
         if (backend.features.contains('question')) KitCapability.questions,
         if (backend.features.contains('todo')) KitCapability.plan,
@@ -73,6 +78,13 @@ final class BubblePawBackend implements AgentBackend {
         KitCapability.resume,
         KitCapability.usage,
       ]);
+      backend._constraints = BackendConstraints(
+        acceptsReferences: false,
+        followUpWhileRunning: backend.features.contains('follow_up'),
+        supportedQuestionKinds: backend.features.contains('question')
+            ? const {QuestionKind.text, QuestionKind.pickOne}
+            : const <QuestionKind>{},
+      );
       return backend;
     } catch (_) {
       await backend.dispose();
@@ -95,6 +107,7 @@ final class BubblePawBackend implements AgentBackend {
   /// Exact features returned by initialize; unknown features are retained.
   late final Set<String> features;
   late final KitCapabilities _capabilities;
+  late final BackendConstraints _constraints;
 
   /// New sessions created by [rewindToNewChat] (also called by [rewind]).
   /// The original session is never relabelled as the rewound session.
@@ -102,6 +115,9 @@ final class BubblePawBackend implements AgentBackend {
 
   @override
   KitCapabilities get capabilities => _capabilities;
+
+  @override
+  BackendConstraints get constraints => _constraints;
 
   BubblePawProjection _projection(String id) =>
       _projections.putIfAbsent(id, BubblePawProjection.new);
@@ -236,6 +252,7 @@ final class BubblePawBackend implements AgentBackend {
 
   @override
   Future<ChatSummary> createChat({String? title, String? workspace}) async {
+    _require(KitCapability.createChat);
     if (workspace != null && workspace != workspaceDirectory) {
       throw const KitInvalid('This host is bound to one workspace.');
     }
@@ -262,6 +279,7 @@ final class BubblePawBackend implements AgentBackend {
     String text, {
     List<KitRef> refs = const [],
   }) async {
+    _require(KitCapability.send);
     _text(text, refs);
     try {
       final result = _object(
@@ -280,6 +298,7 @@ final class BubblePawBackend implements AgentBackend {
         runId: result['id'] as String,
       );
     } on KitBusy {
+      if (!constraints.followUpWhileRunning) rethrow;
       final id = await followup(chatId, text, refs: refs);
       return SendResult(delivery: SendDelivery.queued, inputId: id);
     }
@@ -301,7 +320,8 @@ final class BubblePawBackend implements AgentBackend {
     String text, {
     List<KitRef> refs = const [],
   }) async {
-    if (!features.contains('follow_up')) {
+    _require(KitCapability.send);
+    if (!constraints.followUpWhileRunning) {
       throw const KitInvalid('This host does not accept follow-up input.');
     }
     return _input('run.follow_up', chatId, text, refs);
@@ -326,6 +346,7 @@ final class BubblePawBackend implements AgentBackend {
 
   @override
   Future<void> cancel(String chatId) async {
+    _require(KitCapability.cancel);
     await _request('run.cancel', {'session_id': chatId});
   }
 
@@ -341,9 +362,7 @@ final class BubblePawBackend implements AgentBackend {
     String approvalId,
     ApprovalDecision decision,
   ) async {
-    if (!features.contains('approvals')) {
-      throw const KitInvalid('This host does not provide approval requests.');
-    }
+    _require(KitCapability.approve);
     final approvals = _objects(
       await _request('approval.list', {'session_id': chatId}),
     );
