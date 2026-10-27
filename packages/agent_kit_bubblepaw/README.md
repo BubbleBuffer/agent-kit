@@ -181,6 +181,17 @@ canonical steering delivery and the final reply. It also requires at least one
 `UsageUpdated` and zero kit gaps during this ordinary run. Choose a provider that
 reports usage; missing usage or a resync makes the check fail. The printed result
 includes approval, process, usage and gap counts without message contents.
+Every check prints its own PASS/FAIL line, including observed approvals, exec
+starts/finishes, steering queue events and command acceptance, usage events,
+gaps and completion. Failures and timeouts print the same diagnostic rows.
+Usage reconciliation may finish after `run.finished`, so the script waits for
+the first usage event within the existing overall deadline before verifying.
+Canonical history checks print separate rows once that stage is reached.
+
+The attempt-3 fixture preserves recorded durable ordering. Its content-bearing
+payloads were removed at capture time; the regression uses explicit synthetic
+replacements and cannot identify that historical run's exact failed check. See
+`test/fixtures/transport/attempt-3-README.md` for the evidence limits.
 
 Workspace and data directories default to temporary directories that the script
 removes. Optional `--workspace` and `--data-dir` retain caller-supplied directories;

@@ -1,4 +1,5 @@
-// Helpers for opt-in live acceptance. Unit tests use synthetic inputs only.
+// Helpers for opt-in live acceptance. Tests use synthetic payloads and redacted
+// recorded protocol ordering; no live credentials or model calls.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -8,6 +9,56 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 class LiveCheckFailure implements Exception {
   const LiveCheckFailure(this.message);
   final String message;
+}
+
+/// Fixed labels and numeric observations only: never event content or IDs.
+class LiveCheckDiagnostic {
+  const LiveCheckDiagnostic(this.name, this.passed, this.observed);
+  final String name;
+  final bool passed;
+  final String observed;
+
+  @override
+  String toString() => '${passed ? 'PASS' : 'FAIL'}: $name; $observed';
+}
+
+List<LiveCheckDiagnostic> canonicalDiagnostics(
+  ChatSnapshot? snapshot, {
+  required String steeringText,
+}) {
+  final steering =
+      snapshot?.items
+          .whereType<UserMessage>()
+          .where((message) => message.text == steeringText)
+          .length ??
+      0;
+  final replies =
+      snapshot?.items
+          .whereType<AssistantMessage>()
+          .where(
+            (message) =>
+                !message.streaming &&
+                message.markdown.contains('STEERING_ACCEPTED'),
+          )
+          .length ??
+      0;
+  return [
+    LiveCheckDiagnostic(
+      'canonical snapshot',
+      snapshot != null,
+      'loaded=${snapshot == null ? 0 : 1}; required=1',
+    ),
+    LiveCheckDiagnostic(
+      'canonical steering',
+      steering > 0,
+      'matches=$steering; required>=1',
+    ),
+    LiveCheckDiagnostic(
+      'canonical final reply',
+      replies > 0,
+      'matches=$replies; required>=1',
+    ),
+  ];
 }
 
 class LiveCheckOptions {
@@ -76,14 +127,20 @@ class LiveAcceptance {
   final Future<void> Function(String) approve;
   final Future<String> Function() steer;
   final _finished = Completer<RunFinished>();
+  final _usageObserved = Completer<void>();
   final _seenApprovals = <String>{};
   final _execCalls = <String>{};
+  final _finishedExecCalls = <String>{};
   final _completedExecCalls = <String>{};
   final _operations = <Future<void>>[];
   bool _steeringStarted = false;
   bool _steered = false;
   bool _failed = false;
+  int _failures = 0;
+  int _completionEvents = 0;
+  RunFinished? _completion;
   int approvals = 0;
+  int steeringEvents = 0;
   int usageUpdates = 0;
   int gaps = 0;
   int get completedExecs => _completedExecCalls.length;
@@ -92,8 +149,26 @@ class LiveAcceptance {
     await Future.wait(_operations);
   }
 
+  /// Session usage can be reconciled after run.finished has been delivered.
+  /// The caller applies the same overall live-run deadline to this wait.
+  Future<void> verifyAfterUsage(RunFinished event, String runId) async {
+    await settled;
+    if (!_failed &&
+        event.outcome == RunOutcome.completed &&
+        usageUpdates == 0) {
+      await _usageObserved.future;
+    }
+    verify(event, runId);
+  }
+
   void onEvent(KitEvent event) {
-    if (event is UsageUpdated) usageUpdates++;
+    if (event is QueueAdded && event.input.mode == QueueMode.steer) {
+      steeringEvents++;
+    }
+    if (event is UsageUpdated) {
+      usageUpdates++;
+      if (!_usageObserved.isCompleted) _usageObserved.complete();
+    }
     if (event is GapEvent) gaps++;
     if (event is ApprovalRequested &&
         event.approval.state == ApprovalState.pending &&
@@ -114,13 +189,14 @@ class LiveAcceptance {
         });
       }
     }
-    if (event is ToolFinished &&
-        _execCalls.contains(event.callId) &&
-        _execSucceeded(event)) {
-      _completedExecCalls.add(event.callId);
+    if (event is ToolFinished && _execCalls.contains(event.callId)) {
+      _finishedExecCalls.add(event.callId);
+      if (_execSucceeded(event)) _completedExecCalls.add(event.callId);
     }
-    if (event is RunFinished && !_finished.isCompleted) {
-      _finished.complete(event);
+    if (event is RunFinished) {
+      _completionEvents++;
+      _completion ??= event;
+      if (!_finished.isCompleted) _finished.complete(event);
     }
   }
 
@@ -150,6 +226,8 @@ class LiveAcceptance {
 
   void fail() {
     _failed = true;
+    _failures++;
+    if (!_usageObserved.isCompleted) _usageObserved.complete();
     if (!_finished.isCompleted) {
       _finished.completeError(
         const LiveCheckFailure('event or command failed'),
@@ -158,7 +236,7 @@ class LiveAcceptance {
   }
 
   void closed() {
-    if (!_finished.isCompleted) fail();
+    if (!_finished.isCompleted || usageUpdates == 0) fail();
   }
 
   void verify(RunFinished event, String runId) {
@@ -174,6 +252,53 @@ class LiveAcceptance {
         'approval/exec/steering/usage/gap/completion checks failed',
       );
     }
+  }
+
+  List<LiveCheckDiagnostic> diagnostics({String? expectedRunId}) {
+    final completion = _completion;
+    final matches =
+        completion != null &&
+        expectedRunId != null &&
+        completion.runId == expectedRunId;
+    final completed = completion?.outcome == RunOutcome.completed;
+    return [
+      LiveCheckDiagnostic(
+        'approvals',
+        approvals >= 2,
+        'requested=${_seenApprovals.length}; answered=$approvals; required>=2',
+      ),
+      LiveCheckDiagnostic(
+        'exec starts',
+        _execCalls.length >= 2,
+        'started=${_execCalls.length}; required>=2',
+      ),
+      LiveCheckDiagnostic(
+        'exec finishes',
+        completedExecs >= 2,
+        'finished=${_finishedExecCalls.length}; successful=$completedExecs; required>=2',
+      ),
+      LiveCheckDiagnostic(
+        'steering',
+        _steered,
+        'events=$steeringEvents; started=${_steeringStarted ? 1 : 0}; delivered=${_steered ? 1 : 0}; required=1',
+      ),
+      LiveCheckDiagnostic(
+        'usage',
+        usageUpdates >= 1,
+        'updates=$usageUpdates; required>=1',
+      ),
+      LiveCheckDiagnostic('gaps', gaps == 0, 'observed=$gaps; required=0'),
+      LiveCheckDiagnostic(
+        'completion',
+        matches && completed,
+        'events=$_completionEvents; matched=${matches ? 1 : 0}; completed=${completed ? 1 : 0}; required=1',
+      ),
+      LiveCheckDiagnostic(
+        'command/event health',
+        !_failed,
+        'failures=$_failures; required=0',
+      ),
+    ];
   }
 }
 
