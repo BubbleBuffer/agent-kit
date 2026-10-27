@@ -143,6 +143,7 @@ class LiveAcceptance {
   int steeringEvents = 0;
   int usageUpdates = 0;
   int gaps = 0;
+  final _gapDetails = <String>[];
   int get completedExecs => _completedExecCalls.length;
   Future<RunFinished> get finished => _finished.future;
   Future<void> get settled async {
@@ -169,7 +170,12 @@ class LiveAcceptance {
       usageUpdates++;
       if (!_usageObserved.isCompleted) _usageObserved.complete();
     }
-    if (event is GapEvent) gaps++;
+    if (event is GapEvent) {
+      gaps++;
+      _gapDetails.add(
+        'kind=${event.kind}; seq=${event.seq}; skipped=${event.skipped ?? 'unknown'}',
+      );
+    }
     if (event is ApprovalRequested &&
         event.approval.state == ApprovalState.pending &&
         _seenApprovals.add(event.approval.id)) {
@@ -287,7 +293,12 @@ class LiveAcceptance {
         usageUpdates >= 1,
         'updates=$usageUpdates; required>=1',
       ),
-      LiveCheckDiagnostic('gaps', gaps == 0, 'observed=$gaps; required=0'),
+      LiveCheckDiagnostic(
+        'gaps',
+        gaps == 0,
+        'observed=$gaps; required=0'
+            '${_gapDetails.isEmpty ? '' : '; ${_gapDetails.join(' | ')}'}',
+      ),
       LiveCheckDiagnostic(
         'completion',
         matches && completed,

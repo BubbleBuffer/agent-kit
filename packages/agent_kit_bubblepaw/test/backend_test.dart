@@ -10,6 +10,164 @@ import 'package:test/test.dart';
 import '../tool/live_check_support.dart';
 
 void main() {
+  test('attempt 5 preserves queued paragraphs across refresh replay', () async {
+    final captured = File(
+      'test/fixtures/transport/attempt-5-events.jsonl',
+    ).readAsLinesSync().map((line) => jsonDecode(line) as Json).toList();
+    final source = [
+      for (final entry in captured)
+        (entry['record']! as Json)['params']! as Json,
+    ];
+    expect(
+      source.where((event) => event['durable'] == true).map((e) => e['sequence']),
+      List.generate(15, (index) => index + 1),
+    );
+    expect(source, hasLength(47));
+    final peer = _BackendPeer();
+    var available = 0;
+    var barrier = 0;
+    var firstRefreshReads = 0;
+    final firstRefreshRead = Completer<void>();
+    final approvals = source
+        .where((event) => event['type'] == 'approval_requested')
+        .map((event) => event['approval']! as Json)
+        .toList();
+    final finalText = source
+        .singleWhere((event) => event['type'] == 'run_finished')['text']! as String;
+    peer.handler = (method, params) {
+      if (method == 'events.after') {
+        if (params['after'] == 1 && ++firstRefreshReads == 2) {
+          firstRefreshRead.complete();
+        }
+        return {
+          'events': [
+            for (final event in source)
+              if (event['durable'] == true &&
+                  (event['sequence']! as int) > (params['after']! as int) &&
+                  (event['sequence']! as int) <= available)
+                event,
+          ],
+          'last_seq': available,
+          'resync': false,
+        };
+      }
+      if (method == 'session.state') {
+        return {
+          ...peer.state(seq: barrier),
+          'session': {'id': 'id_1', 'title': 'Synthetic replay'},
+          'runs': [
+            if (barrier > 0)
+              {
+                'id': 'id_2',
+                'model': 'synthetic-model',
+                'status': barrier < 14 ? 'running' : 'completed',
+              },
+          ],
+          'streaming_text': barrier >= 8
+              ? 'Planning the first command.\n\nPlanning the second command.'
+              : barrier >= 2
+              ? 'Planning the first command.'
+              : '',
+          'inputs': [
+            if (barrier == 6)
+              {
+                'id': 'id_5',
+                'text': 'Keep the summary brief.',
+                'kind': 'steer',
+                'state': 'pending',
+              },
+          ],
+          'usage': _sessionUsage(barrier * 10, barrier),
+        };
+      }
+      if (method == 'approval.list') return approvals;
+      if (method == 'run.steer') return {'id': 'id_5'};
+      return peer.defaultResponse(method, params);
+    };
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    final initial = await backend.loadChat('id_1');
+    final acceptance = LiveAcceptance(
+      approve: (id) =>
+          backend.decideApproval('id_1', id, ApprovalDecision.approve),
+      steer: () => backend.steer('id_1', 'Keep the summary brief.'),
+    );
+    final observed = <KitEvent>[];
+    final observations = StreamController<KitEvent>.broadcast();
+    addTearDown(observations.close);
+    final subscription = backend.events('id_1', after: initial.seq).listen((event) {
+      observed.add(event);
+      observations.add(event);
+      acceptance.onEvent(event);
+    }, onError: (Object _, StackTrace _) => acceptance.fail());
+    addTearDown(subscription.cancel);
+    Future<KitEvent> seen(bool Function(KitEvent) matches) {
+      for (final event in observed) {
+        if (matches(event)) return Future.value(event);
+      }
+      return observations.stream.firstWhere(matches);
+    }
+
+    void release(int first, int last, {required int seq, int? snapshot}) {
+      available = seq;
+      barrier = snapshot ?? seq;
+      for (final entry in captured) {
+        final order = entry['order']! as int;
+        if (order >= first && order <= last) {
+          peer.notify(entry['record']! as Json);
+        }
+      }
+    }
+
+    await peer.waitFor((call) => call.method == 'events.after');
+    release(12, 18, seq: 1);
+    await seen((event) => event is UsageUpdated);
+    await firstRefreshRead.future;
+    // Original orders 24..35: paragraph(2) is already buffered when the
+    // telemetry refresh's snapshot(2) reads the retained approval(3).
+    release(24, 30, seq: 3, snapshot: 2);
+    await seen((event) => event is ApprovalRequested);
+    await acceptance.settled;
+    release(40, 43, seq: 6);
+    await seen((event) => event is QueueAdded);
+    await acceptance.settled;
+    // Original order 62 caused the false gap: paragraph(2) had been dropped,
+    // leaving the first request's visible text unconfirmed at this boundary.
+    release(61, 73, seq: 7);
+    await seen((event) => event is ToolFinished);
+    release(74, 76, seq: 9);
+    await seen(
+      (event) => event is ApprovalRequested && event.approval.id == 'id_7',
+    );
+    await acceptance.settled;
+    release(89, 114, seq: 12);
+    await seen((event) => event is ToolFinished && event.callId == 'id_6');
+    release(115, 118, seq: 15);
+    final terminal = await acceptance.finished;
+    await acceptance.settled;
+    // Drain queued completion/settlement refreshes without a timer.
+    final drained = seen((event) => event is RunWaiting);
+    peer.notify({
+      'method': 'event',
+      'params': {..._waitEvent(16), 'session_id': 'id_1', 'run_id': 'id_2'},
+    });
+    await drained;
+    expect(observed.whereType<GapEvent>(), isEmpty);
+    await acceptance.verifyAfterUsage(terminal, 'id_2');
+    expect(observed.whereType<ToolStarted>(), hasLength(2));
+    expect(observed.whereType<ToolFinished>(), hasLength(2));
+    expect(observed.whereType<ApprovalResolved>(), hasLength(2));
+    expect(observed.whereType<RunFinished>(), hasLength(1));
+    expect(observed.whereType<AssistantMessageCompleted>().single.markdown, finalText);
+    final deltas = observed.whereType<MessageDelta>().toList();
+    expect(deltas.map((event) => event.text).join(), finalText);
+    var length = 0;
+    for (final delta in deltas) {
+      expect(delta.offset, length);
+      length += delta.text.length;
+    }
+  });
+
   test('attempt 3 durable replay waits for terminal session usage', () async {
     final captured = (await File(
       'test/fixtures/transport/attempt-3-trace.jsonl',

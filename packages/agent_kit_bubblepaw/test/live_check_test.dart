@@ -321,6 +321,12 @@ void main() {
       await check(_diagnosticFixture(successfulExecs: 1), {'exec finishes'});
       await check(_diagnosticFixture(usage: false), {'usage'});
       await check(_diagnosticFixture(gap: true), {'gaps'});
+      final gapReport = (await _diagnosticFixture(gap: true))
+          .diagnostics(expectedRunId: 'SYNTHETIC_PRIVATE_RUN')
+          .singleWhere((check) => check.name == 'gaps')
+          .toString();
+      expect(gapReport, matches(r'kind=gap; seq=\d+; skipped=unknown'));
+      expect(gapReport, isNot(contains('SYNTHETIC_PRIVATE')));
       await check(_diagnosticFixture(health: false), {'command/event health'});
       await check(_diagnosticFixture(), {
         'completion',
