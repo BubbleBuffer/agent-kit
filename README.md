@@ -1,41 +1,49 @@
 # agent-kit
 
-Flutter UI packages and a pure Dart agent-chat core, shared by BubbleBuffer
-apps: Scratch today, BubblePaw Desktop next. No Material.
+Agent chat widgets and backend ports for BubbleBuffer apps. The three library
+packages share version **0.5.0**; product-neutral Flutter primitives and design
+tokens live in [bb-ui](https://github.com/BubbleBuffer/bb-ui).
 
 | Package | What it is |
 |---|---|
-| [`bb_tokens`](packages/bb_tokens) | Design tokens: colours (light and dark), type scale, layout, radii, motion. Scratch's look is the default. |
-| [`bb_ui`](packages/bb_ui) | Product-neutral primitives: buttons, icon buttons, fields, hover, menus, tooltip, Lucide icons, sheets and modals, picker sheet, foldable stack card, reference chip, marked list, settings rows and controls. |
-| [`agent_kit_core`](packages/agent_kit_core) | Pure Dart agent-chat core: view models, the `AgentBackend` port, the event reducer, typed command errors and a scripted fake backend. See [docs/agent-kit-core.md](docs/agent-kit-core.md). |
+| [`agent_kit`](packages/agent_kit) | Flutter agent UI: theme, status, transcript, composer, chrome, context, workspace and compositions. |
+| [`agent_kit_core`](packages/agent_kit_core) | Pure Dart chat models, the `AgentBackend` port, event reducer, typed command errors and a scripted backend. |
+| [`agent_kit_bubblepaw`](packages/agent_kit_bubblepaw) | Pure Dart BubblePaw stdio JSON-RPC backend implementing that port. |
 
-The Flutter agent widgets (`agent_kit`) come later.
+[`apps/gallery`](apps/gallery) keeps the agent scenes, scripted backend and
+optional live BubblePaw mode. Its bundled fonts and committed goldens remain
+here. The neutral component gallery belongs to bb-ui.
 
 ## Use it
 
-Pin a tag of `bb_ui` through git; `bb_tokens` comes with it, and
-`package:bb_ui/tokens.dart` re-exports it. See
-[docs/package-layout.md](docs/package-layout.md).
+Depend on the agent widget package through Git:
 
 ```yaml
 dependencies:
-  bb_ui:
+  agent_kit:
     git:
       url: https://github.com/BubbleBuffer/agent-kit.git
-      ref: v0.1.0
-      path: packages/bb_ui
+      ref: v0.5.0
+      path: packages/agent_kit
 ```
 
-The primitives use the font families Atkinson Hyperlegible Next, Fragment
-Mono and Bricolage Grotesque. The kit does not bundle them yet; the app
-declares them.
+The package brings `agent_kit_core` and pins `bb_ui` to
+`https://github.com/BubbleBuffer/bb-ui`, ref `v0.4.0`, path `packages/bb_ui`.
+Tokens are re-exported through `package:bb_ui/tokens.dart`. A host that imports
+`bb_ui` directly should declare that identical Git source. See
+[package layout and pinning](docs/package-layout.md) for multiple agent packages.
+
+Hosts bundle Atkinson Hyperlegible Next, Fragment Mono and Bricolage Grotesque.
+The gallery includes those fonts with their OFL licences for its own use and
+the agent widget tests.
 
 ## Develop
 
-A Dart pub workspace: `flutter pub get` at the root, then `flutter analyze`
-and `flutter test` in a package (`dart test` in `agent_kit_core`). CI runs
-`dart format`, `flutter analyze`, the tests of each package, a git-consumer check and the private-strings
-check. Docs: [docs/README.md](docs/README.md).
+This is a Dart pub workspace containing the three libraries and agent gallery.
+CI runs formatting, analysis, package tests, golden comparisons and a Git
+consumer check on GitHub-hosted runners. The BubblePaw workflow also checks the
+adapter against a pinned public host and builds the gallery. Colour generation
+and neutral package checks live in bb-ui. See [the docs](docs/README.md).
 
 ## Licence
 

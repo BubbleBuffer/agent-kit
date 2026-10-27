@@ -1,7 +1,8 @@
 # agent_kit and the gallery
 
 `packages/agent_kit` is the Flutter widget package of the kit. It depends on
-`bb_ui` (primitives, which bring `bb_tokens`) and `agent_kit_core` (chat view
+`bb_ui` from [bb-ui](https://github.com/BubbleBuffer/bb-ui), pinned to `v0.4.0`
+(primitives, which bring `bb_tokens`), and `agent_kit_core` (chat view
 models and the backend port). `apps/gallery` shows its widgets on
 `agent_kit_core`'s scripted fake backend. The look is the approved Scratch-skin
 mockup (`lab/design/scratch-skin/` in the agent GUI lab: `theme.css` for
@@ -101,10 +102,10 @@ Also on the theme: `typeScale` (Scratch's `TypeScale`, mobile under the 768 px
 form factor), `spacing` (`KitSpacing`), `radii`, `motion` (with the 2400 ms
 `breathe` loop), `layout` (`KitLayout`) and `statusStyle(status)`.
 
-### Tokens added to `bb_tokens`
+### Tokens supplied by `bb_tokens`
 
-`theme.css` has values Scratch's tokens lack. They live in `bb_tokens`'
-`tokens.dart`, matching `theme.css`:
+`theme.css` has values Scratch's tokens lack. They live in bb-ui's `bb_tokens`
+package and remain available through `package:bb_ui/tokens.dart`:
 
 - `KitLayout`: `sizeMedium` 600, `sizeExpanded` 1000, `fitComposer` 460,
   `paneMinWidth` 200, `paneMinHeight` 120, `edgeTab` 28, `controlHeight` 32,
@@ -118,28 +119,20 @@ form factor), `spacing` (`KitSpacing`), `radii`, `motion` (with the 2400 ms
 
 ### One colour source
 
-No colour is written by hand. The palette is the `agent-kit` profile of the
-BubbleBuffer design repository. It is vendored as
-`packages/bb_tokens/tokens/agent-kit.json` (header: source repository, commit,
-command), and `packages/bb_tokens/tool/generate_colors.dart` writes
-`lib/src/colors.g.dart` from it (`ProfileColors.light` and `.dark`).
+The palette is the `agent-kit` profile of the BubbleBuffer design repository.
+The [bb-ui repository](https://github.com/BubbleBuffer/bb-ui) owns the vendored
+palette, colour generator and generated `ProfileColors.light` and `.dark`.
 `AppColors`, `KitInks`, `spaceColor` and the status styles of `BbTheme` read
 that palette; roles without an `AppColors` field are on `AppColors.palette`.
-The mockup's `theme.css` is generated from the same profile, so mockup and kit
-cannot drift apart.
+The mockup's `theme.css` is generated from the same profile. Widgets use
+`kTransparent` for transparent paint and theme or palette roles for colours.
 
-CI (job "colour source") regenerates `colors.g.dart` and fails on any diff,
-and runs `scripts/check-raw-colours.sh`, which fails on `Color(0x...)`,
-`Color.fromARGB`, `Color.fromRGBO` or `Color.from(` in `packages/agent_kit`,
-`packages/bb_ui` and `apps/` (generated files and tests excepted). Use
-`kTransparent` for "no colour" and a palette role for anything else.
-
-To change a colour, edit the profile in the design repository, vendor the
-palette with its `--profile agent-kit --json` command, run
-`dart tool/generate_colors.dart` in `packages/bb_tokens`, and commit both
-files; the steps are in `packages/bb_tokens/README.md`. The sync is a command,
-not automation, because the design repository may be private and this
-repository's CI cannot reach it.
+Colour generation, drift checking and neutral raw-colour checks run in bb-ui.
+To change the palette, follow its
+[bb_tokens workflow](https://github.com/BubbleBuffer/bb-ui/blob/v0.4.0/packages/bb_tokens/README.md),
+release that dependency and update both `bb_ui` Git pins here together. Agent
+CI then compares the existing agent goldens against the updated palette; it
+does not generate a local copy of the shared colours.
 
 ## Size classes
 
