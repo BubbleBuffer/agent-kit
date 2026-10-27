@@ -25,6 +25,15 @@ models and callbacks.
   edit, the Steer/Queue switch, the model and profile picks, undo, resume,
   questions, fork and archive. The header's menu button goes with its last
   item.
+- Read-only: `paneActions: AgentPaneActions.readOnly` (default
+  `AgentPaneActions.all`) keeps the transcript and the pending approvals and
+  turns off send, stop and the approval decisions. Those controls stay drawn,
+  disabled (the 45% disabled style, `enabled: false` in semantics), and
+  nothing reaches the backend through them; `send`, `stop` and `decide` can be
+  turned off one by one. It does not cover the other commands (answering a
+  question, the queue, undo, resume, fork, archive, the picks), which follow
+  `KitCapabilities` alone. Underneath: `AgentComposer.canSend` and
+  `ApprovalBar.enabled`.
 - Loading shows "Loading…". A failed load shows the message and Retry.
 - The snapshot's plan draws as the transcript's plan checklist. A resolved
   question draws its `QuestionAnswerLines` after the last item that was

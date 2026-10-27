@@ -49,7 +49,11 @@ every user action to a backend command (approve, deny, answer, steer or queue,
 cancel, edit or remove a queued input, undo an edit, resume, fork, archive,
 pick model or profile). A command that fails shows the error's message in a
 dismissible line; a failed send gives the text back to the composer. Controls
-the backend's `capabilities` lack are hidden, not disabled. Resolved questions
+the backend's `capabilities` lack are hidden, not disabled. A host that can show
+a chat but not drive it passes `paneActions: AgentPaneActions.readOnly`: the
+messages and pending approvals stay, while Send, Stop and Approve, For session
+and Deny are drawn disabled and cannot be invoked (the composer field is
+read-only). Resolved questions
 show their answer lines in the transcript; an interrupted run ends with the
 interrupted notice and a Resume action.
 

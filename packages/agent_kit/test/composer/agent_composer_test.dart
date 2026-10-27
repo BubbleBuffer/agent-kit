@@ -209,6 +209,46 @@ void main() {
     expect(find.text('gpt-6.1-sol'), findsNothing);
   });
 
+  group('canSend off', () {
+    testWidgets('Enter and Send submit nothing; the field is read-only', (
+      tester,
+    ) async {
+      var calls = 0;
+      final controller = TextEditingController(text: 'hello');
+      addTearDown(controller.dispose);
+      await pumpComposer(
+        tester,
+        AgentComposer(
+          onSubmit: (_) => calls++,
+          controller: controller,
+          canSend: false,
+        ),
+      );
+      expect(tester.widget<EditableText>(_field).readOnly, isTrue);
+      await tester.tap(find.text('Send'));
+      await tester.pump();
+      await tester.tap(_field);
+      await _enter(tester);
+      expect(calls, 0);
+      expect(controller.text, 'hello');
+    });
+
+    testWidgets('Stop follows onStop alone', (tester) async {
+      var stops = 0;
+      await pumpComposer(
+        tester,
+        AgentComposer(
+          onSubmit: (_) {},
+          running: true,
+          canSend: false,
+          onStop: () => stops++,
+        ),
+      );
+      await tester.tap(find.text('Stop'));
+      expect(stops, 1);
+    });
+  });
+
   group('mentions', () {
     Future<void> pumpMentions(
       WidgetTester tester,

@@ -14,6 +14,7 @@ Widget _bar(
   VoidCallback? onReview,
   bool Function()? composerEmpty,
   bool captureKeys = true,
+  bool enabled = true,
 }) => ApprovalBar(
   approval: approval ?? fixtureApproval,
   now: fixtureNow,
@@ -21,6 +22,7 @@ Widget _bar(
   onReview: onReview,
   composerEmpty: composerEmpty,
   captureKeys: captureKeys,
+  enabled: enabled,
 );
 
 Future<void> _key(WidgetTester tester, LogicalKeyboardKey key) async {
@@ -270,5 +272,27 @@ void main() {
     final pill = tester.getRect(find.text('Needs approval'));
     expect(approve.top, lessThan(pill.bottom + 40));
     expect(approve.left, greaterThan(500));
+  });
+
+  testWidgets('disabled, nothing decides and Review diff still works', (
+    tester,
+  ) async {
+    final decisions = <ApprovalDecision>[];
+    var reviewed = 0;
+    await pumpComposer(
+      tester,
+      _bar(decisions, enabled: false, onReview: () => reviewed++),
+    );
+    for (final label in ['Approve', 'For session', 'Deny']) {
+      await tester.tap(find.text(label));
+      await tester.pump();
+    }
+    await _key(tester, LogicalKeyboardKey.digit1);
+    await _key(tester, LogicalKeyboardKey.digit2);
+    await _key(tester, LogicalKeyboardKey.digit3);
+    expect(decisions, isEmpty);
+    expect(find.text('Reason for the agent (optional)'), findsNothing);
+    await tester.tap(find.text('Review diff'));
+    expect(reviewed, 1);
   });
 }

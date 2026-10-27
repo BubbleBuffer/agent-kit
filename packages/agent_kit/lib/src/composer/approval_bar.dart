@@ -38,6 +38,7 @@ class ApprovalBar extends StatefulWidget {
     this.composerEmpty,
     this.initiallyDenying = false,
     this.captureKeys = true,
+    this.enabled = true,
   });
 
   /// The request (its tool, target, diff and `requestedAt`).
@@ -64,6 +65,12 @@ class ApprovalBar extends StatefulWidget {
   /// Whether the bar listens for 1, 2 and 3. Turn it off on all but one bar
   /// when several are shown at once (the gallery).
   final bool captureKeys;
+
+  /// Whether the bar can decide. Off, the request is still shown, but Approve,
+  /// For session and Deny are drawn disabled, do nothing when pressed, and
+  /// 1, 2 and 3 are not captured (a read-only host). [onDecide] is never
+  /// called then. Review diff stays available: reading changes nothing.
+  final bool enabled;
 
   @override
   State<ApprovalBar> createState() => _ApprovalBarState();
@@ -108,6 +115,7 @@ class _ApprovalBarState extends State<ApprovalBar> {
 
   bool _onKey(KeyEvent event) {
     if (event is! KeyDownEvent ||
+        !widget.enabled ||
         !widget.captureKeys ||
         _denying ||
         !widget.approval.isPending ||
@@ -144,10 +152,15 @@ class _ApprovalBarState extends State<ApprovalBar> {
     return true;
   }
 
-  void _approve() => widget.onDecide(ApprovalDecision.approve);
-  void _forSession() => widget.onDecide(ApprovalDecision.approveForSession);
+  void _decide(ApprovalDecision decision) {
+    if (widget.enabled) widget.onDecide(decision);
+  }
+
+  void _approve() => _decide(ApprovalDecision.approve);
+  void _forSession() => _decide(ApprovalDecision.approveForSession);
 
   void _openDeny() {
+    if (!widget.enabled) return;
     setState(() => _denying = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _reasonFocus.requestFocus();
@@ -168,7 +181,7 @@ class _ApprovalBarState extends State<ApprovalBar> {
 
   void _deny() {
     final reason = _reason.text.trim();
-    widget.onDecide(
+    _decide(
       reason.isEmpty
           ? const ApprovalDecision.deny()
           : ApprovalDecision.deny(reason),
@@ -212,19 +225,19 @@ class _ApprovalBarState extends State<ApprovalBar> {
         label: 'Approve',
         kind: KitButtonKind.primary,
         keyHint: size.isCompact ? null : '1',
-        onTap: _approve,
+        onTap: widget.enabled ? _approve : null,
       ),
       KitButton(
         label: 'For session',
         keyHint: size.isCompact ? null : '2',
-        onTap: _forSession,
+        onTap: widget.enabled ? _forSession : null,
       ),
       Focus(
         focusNode: _denyAnchor,
         child: KitButton(
           label: 'Deny',
           keyHint: size.isCompact ? null : '3',
-          onTap: _openDeny,
+          onTap: widget.enabled ? _openDeny : null,
         ),
       ),
     ];
@@ -299,7 +312,11 @@ class _ApprovalBarState extends State<ApprovalBar> {
       children: [
         KitButton(label: 'Back', kind: KitButtonKind.quiet, onTap: _back),
         const SizedBox(width: 8),
-        KitButton(label: 'Deny', kind: KitButtonKind.danger, onTap: _deny),
+        KitButton(
+          label: 'Deny',
+          kind: KitButtonKind.danger,
+          onTap: widget.enabled ? _deny : null,
+        ),
       ],
     );
     final title = Row(
