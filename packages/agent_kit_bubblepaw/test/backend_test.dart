@@ -603,67 +603,63 @@ void main() {
     expect(snapshot.usage?.outputTokens, 15);
   });
 
-  test(
-    'gap recovery emits changed snapshot usage once after retained tools',
-    () async {
-      final peer = _BackendPeer()..features = ['sessions', 'events'];
-      var loads = 0;
-      var replays = 0;
-      peer.handler = (method, params) {
-        if (method == 'session.state') {
-          final initial = ++loads == 1;
-          return {
-            ...peer.state(seq: initial ? 5 : 12),
-            'usage': _sessionUsage(initial ? 100 : 150, 30),
-          };
-        }
-        if (method == 'events.after') {
-          if (++replays == 1) return _page([]);
-          return _page([
-            for (final event in _recoveryTools())
-              if ((event['sequence']! as int) > (params['after']! as int))
-                event,
-          ]);
-        }
-        return peer.defaultResponse(method, params);
-      };
-      final backend = await peer.connect();
-      addTearDown(() => peer.close(backend));
-      final snapshot = await backend.loadChat('s1');
-      final changed = Completer<void>();
-      final drained = Completer<void>();
-      final events = <KitEvent>[];
-      final subscription = backend.events('s1', after: snapshot.seq).listen((
-        event,
-      ) {
-        events.add(event);
-        if (event is UsageUpdated && !changed.isCompleted) changed.complete();
-        if (event is RunWaiting && !drained.isCompleted) drained.complete();
-      });
-      addTearDown(subscription.cancel);
-      await peer.waitFor((call) => call.method == 'events.after');
-      peer.notify({
-        'method': 'events.gap',
-        'params': {'after': 5, 'skipped': 2},
-      });
-      await changed.future;
-      // Repeat the same canonical totals, then drain both recoveries through a
-      // later live event. Repeated snapshots cannot add or re-emit those totals.
-      peer.notify({
-        'method': 'events.gap',
-        'params': {'after': 12, 'skipped': 1},
-      });
-      peer.notify({'method': 'event', 'params': _waitEvent(13)});
-      await drained.future;
-      expect(events.whereType<GapEvent>(), hasLength(2));
-      expect(events.whereType<UsageUpdated>(), hasLength(1));
-      expect(events.whereType<UsageUpdated>().single.usage.inputTokens, 150);
-      expect(
-        events.where((event) => event is! GapEvent).map((event) => event.seq),
-        [144, 192, 193, 208],
-      );
-    },
-  );
+  test('gap recovery emits changed snapshot usage once after retained tools', () async {
+    final peer = _BackendPeer()..features = ['sessions', 'events'];
+    var loads = 0;
+    var replays = 0;
+    peer.handler = (method, params) {
+      if (method == 'session.state') {
+        final initial = ++loads == 1;
+        return {
+          ...peer.state(seq: initial ? 5 : 12),
+          'usage': _sessionUsage(initial ? 100 : 150, 30),
+        };
+      }
+      if (method == 'events.after') {
+        if (++replays == 1) return _page([]);
+        return _page([
+          for (final event in _recoveryTools())
+            if ((event['sequence']! as int) > (params['after']! as int)) event,
+        ]);
+      }
+      return peer.defaultResponse(method, params);
+    };
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    final snapshot = await backend.loadChat('s1');
+    final changed = Completer<void>();
+    final drained = Completer<void>();
+    final events = <KitEvent>[];
+    final subscription = backend.events('s1', after: snapshot.seq).listen((
+      event,
+    ) {
+      events.add(event);
+      if (event is UsageUpdated && !changed.isCompleted) changed.complete();
+      if (event is RunWaiting && !drained.isCompleted) drained.complete();
+    });
+    addTearDown(subscription.cancel);
+    await peer.waitFor((call) => call.method == 'events.after');
+    peer.notify({
+      'method': 'events.gap',
+      'params': {'after': 5, 'skipped': 2},
+    });
+    await changed.future;
+    // Repeat the same canonical totals, then drain both recoveries through a
+    // later live event. Repeated snapshots cannot add or re-emit those totals.
+    peer.notify({
+      'method': 'events.gap',
+      'params': {'after': 12, 'skipped': 1},
+    });
+    peer.notify({'method': 'event', 'params': _waitEvent(13)});
+    await drained.future;
+    expect(events.whereType<GapEvent>(), hasLength(2));
+    expect(events.whereType<UsageUpdated>(), hasLength(1));
+    expect(events.whereType<UsageUpdated>().single.usage.inputTokens, 150);
+    expect(
+      events.where((event) => event is! GapEvent).map((event) => event.seq),
+      [144, 192, 193, 208],
+    );
+  });
 
   test('retention resync delivers retained tools and arrivals during snapshot load', () async {
     final peer = _BackendPeer()..features = ['sessions', 'events'];
@@ -789,8 +785,9 @@ void main() {
       {..._recoveryTools().first, 'sequence': 1006},
     ];
     peer.handler = (method, params) {
-      if (method == 'session.state')
+      if (method == 'session.state') {
         return peer.state(seq: ++loads == 1 ? 5 : 1006);
+      }
       if (method == 'events.after') {
         if (++replayCount == 1) return _page([]);
         return _page(
@@ -816,8 +813,9 @@ void main() {
     ) {
       events.add(event);
       if (event is ToolStarted && !tool.isCompleted) tool.complete();
-      if (event is RunWaiting && event.seq == 1007 * 16 && !drained.isCompleted)
+      if (event is RunWaiting && event.seq == 1007 * 16 && !drained.isCompleted) {
         drained.complete();
+      }
     });
     addTearDown(subscription.cancel);
     await peer.waitFor((call) => call.method == 'events.after');
