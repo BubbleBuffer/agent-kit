@@ -195,36 +195,36 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                        glyphIcon(
-                          _glyphBot,
-                          size: 14,
-                          color: t.colors.iconSecondary,
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            task,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: ts(
-                              const TypeSpec(13, 18, 500),
-                              t.ink,
-                              weight: 700,
-                            ),
+                          glyphIcon(
+                            _glyphBot,
+                            size: 14,
+                            color: t.colors.iconSecondary,
                           ),
-                        ),
-                        if (!compact) ...[
                           const SizedBox(width: 8),
-                          Text(
-                            'asked the agent',
-                            maxLines: 1,
-                            style: ts(
-                              const TypeSpec(13, 18, 500),
-                              t.faint,
-                              weight: 400,
+                          Flexible(
+                            child: Text(
+                              task,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: ts(
+                                const TypeSpec(13, 18, 500),
+                                t.ink,
+                                weight: 700,
+                              ),
                             ),
                           ),
-                        ],
+                          if (!compact) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              'asked the agent',
+                              maxLines: 1,
+                              style: ts(
+                                const TypeSpec(13, 18, 500),
+                                t.faint,
+                                weight: 400,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
