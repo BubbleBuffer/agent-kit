@@ -1,6 +1,6 @@
 name: bb_tokens
 description: BubbleBuffer design tokens for Flutter (colours, type, layout, radii, motion), Scratch's look as the default.
-version: 0.3.0
+version: 0.4.0
 publish_to: none
 resolution: workspace
 

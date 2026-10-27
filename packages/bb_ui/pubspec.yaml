@@ -1,6 +1,6 @@
 name: bb_ui
 description: BubbleBuffer UI primitives for Flutter without Material, built on bb_tokens.
-version: 0.3.0
+version: 0.4.0
 publish_to: none
 resolution: workspace
 
