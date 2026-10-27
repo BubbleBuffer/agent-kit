@@ -43,9 +43,10 @@ references are `KitRef` spans `{kind, id, label, start, end}`. Workspace
 panes are not part of core.
 
 - **Transcript items:** user, assistant, system, notice, activity group
-  (thinking, tool and spawn rows), file edit, child result.
+  (thinking, tool and spawn rows), file edit, child result, compaction
+  marker, child question, interrupted.
 - **Panels:** approvals, questions, queue, plan, children, jobs, usage,
-  workspace, run.
+  workspace, run, context.
 - **Status** is derived, never stored: `needsYou` (pending approval or
   question), then `running` (active run, quota wait included, or a running
   child; jobs do not count), then `failed` / `interrupted` / `done` from the
@@ -54,6 +55,67 @@ panes are not part of core.
 - **Approvals** have `requestedAt` and no deadline. After a host restart they
   come back `expired` with reason `restart`, and the run `interrupted`, which
   offers `resume`.
+
+## Context
+
+`ChatSnapshot.context` is a `ContextView?`, the serving view of the model's
+window, replaced whole by a `context.changed` event. Everything a host does
+not record is `null` and left out of the JSON; a widget hides a null, never
+shows zero.
+
+- `ContextView {window, applyCap, responseReserve, blocks, pendingEpisodeIds}`
+  with the sum getters `totalTokens`, `openingTokens`, `memoryTokens` and
+  `liveTokens` (null when a block lacks its tokens).
+- `ContextBlock {kind, label, tokens?, firstSeq?, lastSeq?, summaryId?}`;
+  `ContextBlockKind` is `opening`, `memoryIndex` (the chapter index; `index`
+  is taken by Dart's enum), `anchors`, `chapterSummary`, `episodeSummary`,
+  `rawSuffix`.
+- `ContextDetails` is what `loadContext` returns: `chapters`
+  (`ContextChapter`), `episodes` (`ContextEpisode`), `summaries`
+  (`ContextSummary`, text possibly empty until `loadSummary`) and `events`
+  (`ContextEvent`), with lookups `chapter(id)`, `episode(id)`, `summary(id)`.
+- `ContextEvent {id, kind, at, firstSeq, lastSeq, tokensBefore, tokensAfter,
+  summaryId?, trigger?, triggerText?, inputBefore?, inputAfter?}`;
+  `ContextEventKind` is `episodeWritten`, `chapterClosed`, `applied`;
+  `ContextTrigger` is `pressure`, `emergency`, `sourceSize`, `subjectChange`,
+  `manual`, `unknown` (an unrecognised wire value).
+- `HistoryPage {firstSeq, lastSeq, messages}` of `HistoryMessage {seq, role,
+  preview, tokens?}`, for the windowed history list.
+- `CompactionItem {eventId?, state, episodesSummarized?, tokensBefore?,
+  tokensAfter?, detail?}` is the marker in the transcript. `compaction.updated`
+  updates the one item with that `itemId` in place, keeping its position and
+  first time; `state` is `running`, `done` or `failed`.
+- `InterruptedItem {at, reason?}` (event `interrupted.added`) is the line a
+  run interrupted by a restart leaves; the `run.outcome` fallback stays only
+  for snapshots without it.
+- `Question.answeredAt` is set from `question.resolved`.
+
+Port: `loadContext`, `loadHistoryRange(chatId, from, to)` and `loadSummary`,
+all behind `KitCapability.context`.
+
+## Child questions
+
+A child agent can ask its parent a question. It is not the user's question:
+the child is `WorkState.waitingForAnswer`, and the reducer keeps it out of
+`needsYou`, the pending-question dock and any "waiting for you" count. The
+`WorkState` values also include `idle` and `timedOut`; `WorkStateX.isEnded`
+is true for done, failed, cancelled and timed out.
+
+- `ChildQuestion {id, childId, text, options, askedAt, state, answer?,
+  answeredAt?, answeredBy?}`; `state` is `pending`, `answered` or `cancelled`,
+  `answeredBy` is `parent` or `user`.
+- `ChildAgent.pendingQuestion` holds the open one; the transcript gets a
+  `ChildQuestionItem {question, task}` with id `childq:<questionId>`, updated
+  in place when answered or cancelled. `ChatSnapshot.pendingChildQuestions`
+  lists the open ones.
+- Events: `child.question.asked` (the child waits, a row is added) and
+  `child.question.resolved` (`answer`, `answeredBy`, `at`; the child runs
+  again). A child that ends cancels its open question. A second answer, or one
+  for an unknown question, changes nothing. Progress cannot revive a waiting
+  child.
+- Port: `answerChildQuestion(chatId, childId, questionId, text)` behind
+  `KitCapability.answerChildQuestion`. It is the user answering in the
+  parent's place, recorded as `answeredBy: user`.
 
 ## Questions
 
@@ -96,9 +158,10 @@ is safe to show: `KitUnsupported`, `KitNotFound`, `KitBusy`, `KitConflict`,
 
 Besides the reads, the port has `createChat`, `send` (starts a run or
 queues), `steer`, `followup`, `sendQueuedNow`, `editQueued`, `removeQueued`,
-`cancel`, `resume`, `decideApproval`, `answerQuestion`, `rename`, `archive`,
+`cancel`, `resume`, `decideApproval`, `answerQuestion`, `answerChildQuestion`, `rename`, `archive`,
 `fork`, `rewind`, `cancelChild`, `cancelJob`, `undoEdit`, `listModels`,
-`listProfiles`, `setModel`, `setProfile`.
+`listProfiles`, `setModel`, `setProfile`, and the context reads
+`loadContext`, `loadHistoryRange`, `loadSummary`.
 
 ## Fake backend
 
@@ -122,3 +185,12 @@ reconnecting sends a `gap`. `failNext` makes the next command fail;
 - `test/backend_test.dart`: the clock, the fake backend's commands and
   errors, and the quota scenario end to end through a reconnect, checking
   the final snapshot holds every element of the mockup.
+- `test/context_test.dart`: the context models, the marker updated in place,
+  `interrupted.added`, `Question.answeredAt` and the three context reads.
+- `test/child_question_test.dart`: the child-question model, the reducer flow
+  (a child question never makes the chat `needsYou`), `answerChildQuestion`
+  and the quota scenario's two child questions.
+- The quota scenario also carries the LCM history (two chapters, four
+  episodes, one applied compaction, one ready summary, 48.6k of 128k with an
+  84k cap), the compaction marker and the two child questions (one answered
+  by the parent, one left pending).

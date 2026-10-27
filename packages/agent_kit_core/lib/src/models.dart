@@ -56,6 +56,30 @@ enum WorkState {
 
   /// Cancelled, or abandoned because its run ended.
   cancelled,
+
+  /// A child agent asked its parent a question and waits for the answer.
+  /// The question is addressed to an agent, never to the user, so this does
+  /// not make the chat "need you".
+  waitingForAnswer,
+
+  /// A child agent finished its turn and waits for its next message.
+  idle,
+
+  /// A child agent ran out of time.
+  timedOut,
+}
+
+/// Helpers on [WorkState].
+extension WorkStateX on WorkState {
+  /// Whether the work has ended for good: done, failed, cancelled or timed
+  /// out. A running, waiting or idle child can still change.
+  bool get isEnded => switch (this) {
+    WorkState.done ||
+    WorkState.failed ||
+    WorkState.cancelled ||
+    WorkState.timedOut => true,
+    WorkState.running || WorkState.waitingForAnswer || WorkState.idle => false,
+  };
 }
 
 /// What a tool call does, for its icon and verb. Unknown kinds read as
@@ -627,6 +651,7 @@ final class Question extends KitValue {
     this.state = QuestionState.pending,
     Map<String, QuestionAnswer>? answers,
     this.reason,
+    this.answeredAt,
   }) : items = List.unmodifiable(items),
        answers = answers == null ? null : Map.unmodifiable(answers) {
     if (items.isEmpty || items.length > maxQuestionItems) {
@@ -659,6 +684,7 @@ final class Question extends KitValue {
       state: j.enumOf('state', QuestionState.values, QuestionState.pending),
       answers: answers == null ? null : answersFromJson(answers),
       reason: j.strOpt('reason'),
+      answeredAt: j.timeOpt('answeredAt'),
     );
   }
 
@@ -690,6 +716,10 @@ final class Question extends KitValue {
   /// Why it expired or was cancelled.
   final String? reason;
 
+  /// When the user answered it; null while pending and when the backend
+  /// did not say. Widgets place a resolved question by this time.
+  final DateTime? answeredAt;
+
   /// Whether it still waits for the user.
   bool get isPending => state == QuestionState.pending;
 
@@ -701,6 +731,7 @@ final class Question extends KitValue {
     'state': state.name,
     'answers': answers == null ? null : answersToJson(answers!),
     'reason': reason,
+    'answeredAt': timeJson(answeredAt),
   });
 }
 
@@ -809,11 +840,133 @@ final class PlanItem extends KitValue {
   Json toJson() => {'id': id, 'text': text, 'state': state.name};
 }
 
+/// The state of a [ChildQuestion].
+enum ChildQuestionState {
+  /// Waiting for the parent agent to answer.
+  pending,
+
+  /// Answered.
+  answered,
+
+  /// Withdrawn because the child ended.
+  cancelled,
+}
+
+/// Who answered a [ChildQuestion].
+enum AnsweredBy {
+  /// The parent agent, with an ordinary message.
+  parent,
+
+  /// The user, in the parent's place ("Answer yourself").
+  user,
+}
+
+/// A question a child agent asked its parent.
+///
+/// It goes to the parent agent, not the user: it never makes the chat
+/// "need you", and it is not a [Question]. The child waits as
+/// [WorkState.waitingForAnswer] until the parent answers. [options] are the
+/// child's suggestions; the parent answers in its own words.
+final class ChildQuestion extends KitValue {
+  /// Creates a child question.
+  ChildQuestion({
+    required this.id,
+    required this.childId,
+    required this.text,
+    required this.askedAt,
+    List<String> options = const [],
+    this.state = ChildQuestionState.pending,
+    this.answer,
+    this.answeredAt,
+    this.answeredBy,
+  }) : options = List.unmodifiable(options);
+
+  /// Reads a child question from JSON.
+  factory ChildQuestion.fromJson(Json j) => ChildQuestion(
+    id: j.str('id'),
+    childId: j.str('childId'),
+    text: j.str('text'),
+    options: j.strings('options'),
+    askedAt: j.time('askedAt'),
+    state: j.enumOf(
+      'state',
+      ChildQuestionState.values,
+      ChildQuestionState.pending,
+    ),
+    answer: j.strOpt('answer'),
+    answeredAt: j.timeOpt('answeredAt'),
+    answeredBy: j.enumOpt('answeredBy', AnsweredBy.values),
+  );
+
+  /// The question's id, used by `answerChildQuestion`.
+  final String id;
+
+  /// The asking child's chat id.
+  final String childId;
+
+  /// The question.
+  final String text;
+
+  /// The child's suggested answers; may be empty.
+  final List<String> options;
+
+  /// When it was asked. Widgets derive "Asking parent · 40s" from it; it
+  /// never expires on a timer.
+  final DateTime askedAt;
+
+  /// Pending, answered or cancelled.
+  final ChildQuestionState state;
+
+  /// The answer, once answered.
+  final String? answer;
+
+  /// When it was answered.
+  final DateTime? answeredAt;
+
+  /// Who answered: the parent agent or the user.
+  final AnsweredBy? answeredBy;
+
+  /// Whether it still waits for an answer.
+  bool get isPending => state == ChildQuestionState.pending;
+
+  /// Returns this question resolved as [state].
+  ChildQuestion resolve(
+    ChildQuestionState state, {
+    String? answer,
+    DateTime? at,
+    AnsweredBy? by,
+  }) => ChildQuestion(
+    id: id,
+    childId: childId,
+    text: text,
+    options: options,
+    askedAt: askedAt,
+    state: state,
+    answer: answer,
+    answeredAt: at,
+    answeredBy: by,
+  );
+
+  @override
+  Json toJson() => compact({
+    'id': id,
+    'childId': childId,
+    'text': text,
+    'options': options.isEmpty ? null : options,
+    'askedAt': timeJson(askedAt),
+    'state': state.name,
+    'answer': answer,
+    'answeredAt': timeJson(answeredAt),
+    'answeredBy': answeredBy?.name,
+  });
+}
+
 /// A child agent in the crew.
 ///
 /// [id] is the child's own chat id, so a widget can open it with
 /// `loadChat`. A finished child with a [result] also has a return line in
-/// the parent's transcript.
+/// the parent's transcript. While the child waits for its parent's answer,
+/// [state] is [WorkState.waitingForAnswer] and [pendingQuestion] is set.
 final class ChildAgent extends KitValue {
   /// Creates a child agent.
   const ChildAgent({
@@ -825,6 +978,7 @@ final class ChildAgent extends KitValue {
     this.startedAt,
     this.endedAt,
     this.result,
+    this.pendingQuestion,
   });
 
   /// Reads a child agent from JSON.
@@ -837,6 +991,10 @@ final class ChildAgent extends KitValue {
     startedAt: j.timeOpt('startedAt'),
     endedAt: j.timeOpt('endedAt'),
     result: j.strOpt('result'),
+    pendingQuestion: switch (j.objOpt('pendingQuestion')) {
+      final q? => ChildQuestion.fromJson(q),
+      null => null,
+    },
   );
 
   /// The child's chat id.
@@ -845,7 +1003,8 @@ final class ChildAgent extends KitValue {
   /// What it was asked to do.
   final String task;
 
-  /// Running, done, failed or cancelled.
+  /// Running, waiting for an answer, idle, done, failed, cancelled or timed
+  /// out.
   final WorkState state;
 
   /// What it is doing now, such as `read rate_limits.rs`.
@@ -863,13 +1022,20 @@ final class ChildAgent extends KitValue {
   /// Its final answer, as markdown.
   final String? result;
 
-  /// Returns a copy with the given fields replaced.
+  /// The question it is waiting on, so the strip and the ledger can show it
+  /// without loading the child.
+  final ChildQuestion? pendingQuestion;
+
+  /// Returns a copy with the given fields replaced. [clearQuestion] drops
+  /// [pendingQuestion].
   ChildAgent copyWith({
     WorkState? state,
     String? activity,
     int? toolCalls,
     DateTime? endedAt,
     String? result,
+    ChildQuestion? pendingQuestion,
+    bool clearQuestion = false,
   }) => ChildAgent(
     id: id,
     task: task,
@@ -879,6 +1045,9 @@ final class ChildAgent extends KitValue {
     startedAt: startedAt,
     endedAt: endedAt ?? this.endedAt,
     result: result ?? this.result,
+    pendingQuestion: clearQuestion
+        ? null
+        : pendingQuestion ?? this.pendingQuestion,
   );
 
   @override
@@ -891,6 +1060,7 @@ final class ChildAgent extends KitValue {
     'startedAt': timeJson(startedAt),
     'endedAt': timeJson(endedAt),
     'result': result,
+    'pendingQuestion': pendingQuestion?.toJson(),
   });
 }
 

@@ -7,6 +7,7 @@
 library;
 
 export 'src/backend.dart';
+export 'src/context.dart';
 export 'src/events.dart';
 export 'src/feed.dart';
 export 'src/items.dart';

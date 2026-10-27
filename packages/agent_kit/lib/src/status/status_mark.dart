@@ -32,6 +32,11 @@ ChatStatus statusOfWork(WorkState state) => switch (state) {
   WorkState.done => ChatStatus.done,
   WorkState.failed => ChatStatus.failed,
   WorkState.cancelled => ChatStatus.idle,
+  // A child asking its parent is not working and not for the user: a static
+  // mark. The crew widgets word it ("asking parent").
+  WorkState.waitingForAnswer => ChatStatus.idle,
+  WorkState.idle => ChatStatus.idle,
+  WorkState.timedOut => ChatStatus.failed,
 };
 
 /// How a [StatusMark] is drawn.

@@ -1,0 +1,10 @@
+{"note":"Context: the view is replaced by context.changed; a compaction marker is one item updated in place (running, then done); interrupted.added adds the item the pane renders."}
+{"seq":1,"chat":"c1","kind":"message.user","itemId":"u1","text":"Keep going","at":"2026-10-26T09:00:00.000Z"}
+{"seq":2,"chat":"c1","kind":"context.changed","context":{"window":128000,"applyCap":84000,"responseReserve":44000,"blocks":[{"kind":"opening","label":"Opening","tokens":6100},{"kind":"rawSuffix","label":"Live messages","tokens":900}],"pendingEpisodeIds":["e4"]}}
+{"seq":3,"chat":"c1","kind":"compaction.updated","itemId":"cm1","state":"running","detail":"summarizing episode 4","at":"2026-10-26T09:00:10.000Z"}
+{"seq":4,"chat":"c1","kind":"message.system","itemId":"s1","text":"Working"}
+{"seq":5,"chat":"c1","kind":"compaction.updated","itemId":"cm1","state":"done","eventId":"ev1","episodesSummarized":3,"tokensBefore":41000,"tokensAfter":9000,"at":"2026-10-26T09:00:15.000Z"}
+{"seq":6,"chat":"c1","kind":"context.changed","context":{"window":128000,"applyCap":84000,"responseReserve":44000,"blocks":[{"kind":"opening","label":"Opening","tokens":6100},{"kind":"chapterSummary","label":"Chapter 1","tokens":9000},{"kind":"rawSuffix","label":"Live messages","tokens":33500}]}}
+{"seq":7,"chat":"c1","kind":"compaction.updated","itemId":"cm2","state":"failed","at":"2026-10-26T09:01:00.000Z"}
+{"seq":8,"chat":"c1","kind":"interrupted.added","itemId":"i1","reason":"The host restarted.","at":"2026-10-26T09:02:00.000Z"}
+{"seq":9,"chat":"c1","kind":"interrupted.added","itemId":"i2"}

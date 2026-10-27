@@ -320,7 +320,7 @@ class EvidenceRow extends StatelessWidget {
             ChatStatus.running,
             label: r.meta ?? 'running',
           ),
-          WorkState.failed => StatusMark(
+          WorkState.failed || WorkState.timedOut => StatusMark(
             ChatStatus.failed,
             label: r.meta ?? 'failed',
           ),
@@ -328,7 +328,9 @@ class EvidenceRow extends StatelessWidget {
             ChatStatus.idle,
             label: r.meta ?? 'cancelled',
           ),
-          WorkState.done =>
+          WorkState.done ||
+          WorkState.waitingForAnswer ||
+          WorkState.idle =>
             r.meta == null ? null : Text(r.meta!, maxLines: 1, style: style),
         };
       },
