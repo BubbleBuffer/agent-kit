@@ -46,7 +46,8 @@ class SpacePatch {
   Color get hover => Color.alphaBlend(ink.withValues(alpha: .12), fill);
 
   /// Moss keeps its original backing behind title/glyphs on hover.
-  Color get hoverTextBacking => fill == const Color(0xFF5F7062) ? fill : hover;
+  Color get hoverTextBacking =>
+      fill == ProfileColors.light.spacePatchMossFill ? fill : hover;
 }
 
 SpacePatch? spacePatch(
@@ -55,28 +56,40 @@ SpacePatch? spacePatch(
   bool rail = false,
 }) {
   final dark = brightness == Brightness.dark || (rail && name == 'duvet');
-  final values = switch (name) {
-    'apricot' =>
-      dark ? [0xDB8C56, 0xB0673A, 0x1E2024] : [0xDE945F, 0xBF6F3C, 0x282A2F],
-    'paw' =>
-      dark ? [0xD29891, 0xAC736D, 0x1E2024] : [0xDDA39D, 0xBC7C75, 0x282A2F],
-    'moss' =>
-      dark ? [0x5F7062, 0x4A5A4D, 0xFFFAF1] : [0x5F7062, 0x495A4C, 0xFFFAF1],
-    'duvet' =>
-      dark ? [0xDCD4C8, 0xB5AA9C, 0x282A2F] : [0x2F3138, 0x4C505A, 0xF3EFE7],
-    'sun' =>
-      dark ? [0xE3C48B, 0xBC9A58, 0x1E2024] : [0xF0D29C, 0xCDA663, 0x282A2F],
-    'sky' =>
-      dark ? [0xB9C6D3, 0x93A5B8, 0x1E2024] : [0xCBD5DF, 0xA3B3C4, 0x282A2F],
+  final p = dark ? ProfileColors.dark : ProfileColors.light;
+  return switch (name) {
+    'apricot' => SpacePatch(
+      p.spacePatchApricotFill,
+      p.spacePatchApricotDeep,
+      p.spacePatchApricotInk,
+    ),
+    'paw' => SpacePatch(
+      p.spacePatchPawFill,
+      p.spacePatchPawDeep,
+      p.spacePatchPawInk,
+    ),
+    'moss' => SpacePatch(
+      p.spacePatchMossFill,
+      p.spacePatchMossDeep,
+      p.spacePatchMossInk,
+    ),
+    'duvet' => SpacePatch(
+      p.spacePatchDuvetFill,
+      p.spacePatchDuvetDeep,
+      p.spacePatchDuvetInk,
+    ),
+    'sun' => SpacePatch(
+      p.spacePatchSunFill,
+      p.spacePatchSunDeep,
+      p.spacePatchSunInk,
+    ),
+    'sky' => SpacePatch(
+      p.spacePatchSkyFill,
+      p.spacePatchSkyDeep,
+      p.spacePatchSkyInk,
+    ),
     _ => null,
   };
-  return values == null
-      ? null
-      : SpacePatch(
-          Color(0xFF000000 | values[0]),
-          Color(0xFF000000 | values[1]),
-          Color(0xFF000000 | values[2]),
-        );
 }
 
 class AppColors {
