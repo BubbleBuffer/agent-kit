@@ -626,10 +626,10 @@ class ComposerModeToggle extends StatelessWidget {
         lift: 0,
         background: on ? t.surface : null,
         shadow: on
-            ? const [
+            ? [
                 BoxShadow(
-                  color: Color(0x1A000000),
-                  offset: Offset(0, 1),
+                  color: t.colors.palette.lift,
+                  offset: const Offset(0, 1),
                   blurRadius: 2,
                 ),
               ]

@@ -56,6 +56,46 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
 
+  # One colour source: the palette is vendored from the BubbleBuffer design
+  # repository (packages/bb_tokens/tokens/agent-kit.json) and the Dart colours
+  # are generated from it. Fails when the committed file differs from a fresh
+  # generation, or when kit code writes a raw colour.
+  colours:
+    name: colour source
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+          cache: true
+      - run: flutter pub get
+      - name: Regenerate the colours
+        working-directory: packages/bb_tokens
+        run: dart tool/generate_colors.dart
+      - name: Fail on drift
+        run: |
+          git diff --exit-code -- packages/bb_tokens/lib/src/colors.g.dart || {
+            echo "colors.g.dart is stale: run dart tool/generate_colors.dart in packages/bb_tokens." >&2
+            exit 1
+          }
+      - name: Save the regenerated file
+        if: failure()
+        run: cp packages/bb_tokens/lib/src/colors.g.dart colors.g.dart
+      - name: Upload the regenerated file
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: colors-g-dart
+          path: colors.g.dart
+      - name: No raw colours in kit code
+        if: ${{ !cancelled() }}
+        run: scripts/check-raw-colours.sh
+
   test:
     name: flutter test (${{ matrix.package }})
     runs-on: ubuntu-latest

@@ -107,6 +107,31 @@ form factor), `spacing` (`KitSpacing`), `radii`, `motion` (with the 2400 ms
 - `KitSpacing`: `theme.css` has no scale; the steps are 2, 4, 8, 12, 16 and 24
   px, taken from `app.css`.
 
+### One colour source
+
+No colour is written by hand. The palette is the `agent-kit` profile of the
+BubbleBuffer design repository. It is vendored as
+`packages/bb_tokens/tokens/agent-kit.json` (header: source repository, commit,
+command), and `packages/bb_tokens/tool/generate_colors.dart` writes
+`lib/src/colors.g.dart` from it (`ProfileColors.light` and `.dark`).
+`AppColors`, `KitInks`, `spaceColor` and the status styles of `BbTheme` read
+that palette; roles without an `AppColors` field are on `AppColors.palette`.
+The mockup's `theme.css` is generated from the same profile, so mockup and kit
+cannot drift apart.
+
+CI (job "colour source") regenerates `colors.g.dart` and fails on any diff,
+and runs `scripts/check-raw-colours.sh`, which fails on `Color(0x...)`,
+`Color.fromARGB`, `Color.fromRGBO` or `Color.from(` in `packages/agent_kit`,
+`packages/bb_ui` and `apps/` (generated files and tests excepted). Use
+`kTransparent` for "no colour" and a palette role for anything else.
+
+To change a colour, edit the profile in the design repository, vendor the
+palette with its `--profile agent-kit --json` command, run
+`dart tool/generate_colors.dart` in `packages/bb_tokens`, and commit both
+files; the steps are in `packages/bb_tokens/README.md`. The sync is a command,
+not automation, because the design repository may be private and this
+repository's CI cannot reach it.
+
 ## Size classes
 
 Layout depends on the width of the widget's own container, never the window:

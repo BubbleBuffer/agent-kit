@@ -122,7 +122,7 @@ class Toggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final off = c.dark ? const Color(0x33FFFFFF) : const Color(0x29000000);
+    final off = c.palette.switchOff;
     return Semantics(
       toggled: value,
       button: true,
@@ -148,8 +148,8 @@ class Toggle extends StatelessWidget {
               child: Container(
                 width: 14,
                 height: 14,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFFFFF),
+                decoration: BoxDecoration(
+                  color: c.palette.knob,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -227,7 +227,7 @@ class SelectButton<T> extends StatelessWidget {
       child: Builder(
         builder: (b) => Hover(
           onTap: onChanged == null ? null : () => _open(b),
-          hoverColor: onChanged == null ? const Color(0x00000000) : null,
+          hoverColor: onChanged == null ? kTransparent : null,
           radius: Radii.md,
           padding: const EdgeInsets.fromLTRB(8, 0, 4, 0),
           child: SizedBox(

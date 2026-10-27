@@ -16,7 +16,7 @@
 import 'dart:math' as math;
 
 import 'package:bb_ui/bb_ui.dart'
-    show AppTooltip, Hover, LucideIcon, globalRectOf, ts;
+    show AppTooltip, Hover, LucideIcon, globalRectOf, kTransparent, ts;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -888,7 +888,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
       ),
     );
     return ColoredBox(
-      color: compact ? t.surface : const Color(0x00000000),
+      color: compact ? t.surface : kTransparent,
       child: Column(
         children: [
           bar,
@@ -1340,7 +1340,7 @@ class _DividerState extends State<_Divider> {
     final lit = _hover || _focus || widget.dragging;
     final line = DecoratedBox(
       decoration: BoxDecoration(
-        color: lit ? t.threadStrong : const Color(0x00000000),
+        color: lit ? t.threadStrong : kTransparent,
         borderRadius: BorderRadius.circular(2),
       ),
       child: SizedBox(width: row ? 2 : null, height: row ? null : 2),

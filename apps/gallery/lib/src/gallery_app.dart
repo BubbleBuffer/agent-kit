@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:agent_kit/agent_kit.dart';
+import 'package:bb_ui/bb_ui.dart' show AppColors;
 import 'package:flutter/widgets.dart';
 
 import 'gallery_controller.dart';
@@ -40,7 +41,7 @@ class _GalleryAppState extends State<GalleryApp> {
   @override
   Widget build(BuildContext context) => WidgetsApp(
     title: 'Agent kit gallery',
-    color: const Color(0xFFECE6DB),
+    color: AppColors.light.desk,
     debugShowCheckedModeBanner: false,
     pageRouteBuilder: <T>(settings, builder) => PageRouteBuilder<T>(
       settings: settings,
