@@ -1,0 +1,16 @@
+name: agent_kit_bubblepaw
+description: Pure Dart BubblePaw stdio JSON-RPC backend for the BubbleBuffer agent kit.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  agent_kit_core:
+    path: ../agent_kit_core
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.0

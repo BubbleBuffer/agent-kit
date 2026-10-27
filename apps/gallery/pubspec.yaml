@@ -14,6 +14,8 @@ dependencies:
     path: ../../packages/agent_kit
   agent_kit_core:
     path: ../../packages/agent_kit_core
+  agent_kit_bubblepaw:
+    path: ../../packages/agent_kit_bubblepaw
   bb_ui:
     path: ../../packages/bb_ui
 

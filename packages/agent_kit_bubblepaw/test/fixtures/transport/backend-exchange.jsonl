@@ -1,0 +1,5 @@
+{"jsonrpc":"2.0","id":1,"result":{"protocol_version":"0.1","features":["sessions","events","steer","follow_up","question","todo","rewind"]}}
+{"jsonrpc":"2.0","id":2,"result":{"events":[],"last_seq":3,"resync":false}}
+{"jsonrpc":"2.0","method":"events.gap","params":{"skipped":2,"after":3,"recover_with":"events.after"}}
+{"jsonrpc":"2.0","id":3,"result":{"session":{"id":"s1","title":"Synthetic fixture"},"seq":40,"messages":[],"runs":[],"inputs":[],"question":null,"todo":[]}}
+{"jsonrpc":"2.0","id":4,"result":{"events":[{"sequence":41,"durable":true,"session_id":"s1","run_id":"r1","type":"run_waiting_for_quota","wait":{"reason":"Synthetic quota wait"}}],"last_seq":41,"resync":false}}

@@ -9,6 +9,14 @@ values, `app.css` and `app.js` for structure, `shots/` for the picture, and
 `NOTES.md` for the token mapping and departures). The mockup is the visual
 spec.
 
+`packages/agent_kit_bubblepaw` adds a pure Dart `AgentBackend` over an owned
+BubblePaw stdio JSON-RPC child. It pins protocol `0.1`, negotiates capabilities
+and recovers snapshots after event gaps. See its
+[README](../packages/agent_kit_bubblepaw/README.md) for the v0.2.2 mapping and
+limits. The gallery's optional desktop live mode uses `BP_BIN`, `BP_WORKSPACE`
+and `BP_DATA` Dart defines; with no defines the scripted gallery is unchanged.
+See [gallery usage](../apps/gallery/README.md).
+
 ## Package structure
 
 One folder per widget group under `packages/agent_kit/lib/src/`, so parallel

@@ -1,0 +1,4 @@
+{"sequence":1,"durable":true,"session_id":"session-a","run_id":"run-a","created_at":"2026-01-02T03:00:00Z","type":"run_started","model":"example-model"}
+{"sequence":1,"durable":false,"session_id":"session-a","run_id":"run-a","created_at":"2026-01-02T03:00:01Z","type":"text_delta","text":"Unconfirmed draft"}
+{"sequence":1,"durable":false,"session_id":"session-a","run_id":"run-a","created_at":"2026-01-02T03:00:02Z","type":"model_request_started"}
+{"sequence":1,"durable":false,"session_id":"session-a","run_id":"run-a","created_at":"2026-01-02T03:00:03Z","type":"text_delta","text":"Replacement"}
