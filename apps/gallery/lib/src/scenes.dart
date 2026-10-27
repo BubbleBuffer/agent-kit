@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import '../components/workspace.dart';
 import 'components_scene.dart';
 import 'gallery_controller.dart';
+import 'outline_scene.dart';
 
 enum GalleryScene {
   workbench('A', 'Workbench', 'AgentWorkbench', 1440, 'a-workbench-*.png', [
@@ -53,6 +54,10 @@ enum GalleryScene {
       'Beside the chat; a tab of the workspace sheet when compact.',
     ],
   ),
+  outline('G', 'Outline', 'OutlineList + OutlineWhereStrip', 1600, '', [
+    'A chat in chapters: closed cards, an open heading, section dividers.',
+    'The strip names where you are; its Contents jump to a chapter or section.',
+  ]),
   components('+', 'Components', 'Every widget, every state', 1000, '', []);
 
   const GalleryScene(
@@ -87,6 +92,7 @@ enum GalleryScene {
     phone => 'c_phone',
     workspace => 'd_workspace',
     context => 'f_context',
+    outline => 'g_outline',
     components => 'components',
   };
 }
@@ -99,6 +105,7 @@ Widget buildScene(
   bool tall = false,
 }) {
   if (scene == GalleryScene.components) return ComponentsScene(tall: tall);
+  if (scene == GalleryScene.outline) return const OutlineScene();
   final backend = controller.backend;
   if (backend == null || scene == GalleryScene.scratchPane) {
     return ScenePlaceholder(scene: scene, snapshot: controller.snapshot);

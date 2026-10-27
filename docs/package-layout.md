@@ -14,6 +14,15 @@ apps/
   gallery/             agent scenes, scripted and optional live backend
 ```
 
+`agent_kit` has one folder per widget group under `lib/src/` (see
+[agent_kit and the gallery](agent-kit.md#package-structure)). `outline/` holds the
+chapter presentation of a long chat: chapter cards, headings and section
+dividers, the where-am-I strip, the contents and menus, and the
+`OutlineController` a host owns for fold state and jumps. It works over plain
+view models (`Outline`, `OutlineChapter`, `OutlineSection`) and host-supplied
+`OutlineAction`s, needs nothing in `agent_kit_core`, and is exported through the
+`agent_kit` barrel (README: `packages/agent_kit/lib/src/outline/README.md`).
+
 The three library packages share version `0.6.0`; the gallery remains an
 unpublished app. Local members use relative `path:` dependencies. The pure Dart
 packages have their own strict analysis options; the root Flutter lint rules
