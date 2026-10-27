@@ -36,12 +36,18 @@ void main() {
   final out = StringBuffer()
     ..writeln('// GENERATED CODE, DO NOT EDIT.')
     ..writeln('//')
-    ..writeln('// Source: tokens/agent-kit.json, profile ${json['profile']} of $from.')
-    ..writeln('// Regenerate: dart tool/generate_colors.dart (from packages/bb_tokens).')
+    ..writeln(
+      '// Source: tokens/agent-kit.json, profile ${json['profile']} of $from.',
+    )
+    ..writeln(
+      '// Regenerate: dart tool/generate_colors.dart (from packages/bb_tokens).',
+    )
     ..writeln()
     ..writeln("import 'package:flutter/widgets.dart';")
     ..writeln()
-    ..writeln('/// The resolved light or dark palette of the agent-kit profile.')
+    ..writeln(
+      '/// The resolved light or dark palette of the agent-kit profile.',
+    )
     ..writeln('///')
     ..writeln('/// Role names are the profile\'s. Shadow roles are lists of')
     ..writeln('/// [BoxShadow]; every other role is a [Color], translucent')
