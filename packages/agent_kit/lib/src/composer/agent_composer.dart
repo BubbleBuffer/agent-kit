@@ -89,11 +89,17 @@ class AgentComposer extends StatefulWidget {
     this.controller,
     this.focusNode,
     this.autofocus = false,
+    this.canSend = true,
     this.placeholder = 'Steer the agent…',
   });
 
   /// Called with each submitted message. The composer clears its text.
   final ValueChanged<ComposerSubmission> onSubmit;
+
+  /// Whether sending is available. Off, Send is drawn disabled, Enter does
+  /// not submit and the field is read-only ([onSubmit] is never called). Stop
+  /// follows [onStop] alone: pass null to disable it.
+  final bool canSend;
 
   /// Whether the agent is running: shows Stop and the Steer/Queue switch.
   final bool running;
@@ -292,9 +298,10 @@ class _AgentComposerState extends State<AgentComposer> {
 
   // ---- sending -----------------------------------------------------------
 
-  bool get _canSend => _controller.text.trim().isNotEmpty;
+  bool get _canSend => widget.canSend && _controller.text.trim().isNotEmpty;
 
   void _submit({bool invert = false}) {
+    if (!widget.canSend) return;
     final raw = _controller.text;
     final text = raw.trim();
     if (text.isEmpty) return;
@@ -424,6 +431,7 @@ class _AgentComposerState extends State<AgentComposer> {
                       focusNode: _focus,
                       placeholder: widget.placeholder,
                       autofocus: widget.autofocus,
+                      readOnly: !widget.canSend,
                       onKey: _onKey,
                     ),
                   ),
@@ -503,12 +511,14 @@ class _Field extends StatelessWidget {
     required this.placeholder,
     required this.autofocus,
     required this.onKey,
+    this.readOnly = false,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final String placeholder;
   final bool autofocus;
+  final bool readOnly;
   final FocusOnKeyEventCallback onKey;
 
   @override
@@ -542,6 +552,7 @@ class _Field extends StatelessWidget {
                     selectionControls: noteSelectionControls,
                     cursorWidth: 1.5,
                     autofocus: autofocus,
+                    readOnly: readOnly,
                     minLines: 1,
                     maxLines: 8,
                     keyboardType: TextInputType.multiline,

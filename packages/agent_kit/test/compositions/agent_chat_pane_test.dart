@@ -8,6 +8,7 @@ import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit/src/composer/composer_parts.dart' show KitIconButton;
 import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:agent_kit_core/fake.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -279,6 +280,82 @@ void main() {
       await tester.tap(find.text('Retry'));
       await _settle(tester);
       expect(find.text('Found it'), findsOneWidget);
+    });
+  });
+
+  group('read-only', () {
+    Widget readOnly(ScriptedBackend backend, ManualClock clock) =>
+        AgentChatPane(
+          backend: backend,
+          chatId: quotaChatId,
+          now: clock.now(),
+          paneActions: AgentPaneActions.readOnly,
+        );
+
+    testWidgets('shows the transcript and the pending approval', (
+      tester,
+    ) async {
+      final s = await playedBackend(tester);
+      await pumpApp(tester, readOnly(s.backend, s.clock));
+      expect(find.byType(TranscriptList), findsOneWidget);
+      expect(find.text('Quota bar flickers on reconnect'), findsOneWidget);
+      expect(find.text('Needs approval'), findsOneWidget);
+      expect(find.byType(ApprovalBar), findsOneWidget);
+      expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('This chat is read-only.'), findsOneWidget);
+    });
+
+    testWidgets('send, stop and the decisions cannot be invoked', (
+      tester,
+    ) async {
+      final s = await playedBackend(tester);
+      await pumpApp(tester, readOnly(s.backend, s.clock));
+      s.backend.commands.clear(); // the pane's own reads on opening
+
+      for (final label in ['Send', 'Stop', 'Approve', 'For session', 'Deny']) {
+        await tester.tap(find.text(label));
+        await _settle(tester);
+      }
+      for (final key in [
+        LogicalKeyboardKey.digit1,
+        LogicalKeyboardKey.digit2,
+        LogicalKeyboardKey.digit3,
+      ]) {
+        await tester.sendKeyEvent(key);
+        await _settle(tester);
+      }
+      expect(commandNames(s.backend), isEmpty);
+      // Deny did not open the reason field; the bar is still the same one.
+      expect(find.text('Reason for the agent (optional)'), findsNothing);
+      expect(find.text('Needs approval'), findsOneWidget);
+    });
+
+    testWidgets('semantics call the controls disabled', (tester) async {
+      final handle = tester.ensureSemantics();
+      final s = await playedBackend(tester);
+      await pumpApp(tester, readOnly(s.backend, s.clock));
+      for (final label in ['Send', 'Stop', 'Approve', 'For session', 'Deny']) {
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)),
+          isSemantics(isButton: true, hasEnabledState: true, isEnabled: false),
+          reason: label,
+        );
+      }
+      handle.dispose();
+    });
+
+    testWidgets('a writable pane keeps those controls enabled', (tester) async {
+      final handle = tester.ensureSemantics();
+      final s = await playedBackend(tester);
+      await pumpApp(tester, _pane(s.backend, s.clock));
+      for (final label in ['Stop', 'Approve', 'For session', 'Deny']) {
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)),
+          isSemantics(isButton: true, hasEnabledState: true, isEnabled: true),
+          reason: label,
+        );
+      }
+      handle.dispose();
     });
   });
 
