@@ -1,6 +1,6 @@
 // GENERATED CODE, DO NOT EDIT.
 //
-// Source: tokens/agent-kit.json, profile agent-kit of BubbleBuffer/BubbleBufferDesign@5d1c744fa30f65a631afed54b6b49b5f0f45e56d.
+// Source: tokens/agent-kit.json, profile agent-kit of BubbleBuffer/BubbleBufferDesign@5b30904b0d4e1a45ac66bab2b76837e5e033e525.
 // Regenerate: dart tool/generate_colors.dart (from packages/bb_tokens).
 
 import 'package:flutter/widgets.dart';
@@ -98,6 +98,28 @@ class ProfileColors {
     required this.spaceDuvet,
     required this.spaceSun,
     required this.spaceSky,
+    required this.black,
+    required this.onSpaceTile,
+    required this.liftStrong,
+    required this.selectedIcon,
+    required this.spacePatchApricotFill,
+    required this.spacePatchApricotDeep,
+    required this.spacePatchApricotInk,
+    required this.spacePatchPawFill,
+    required this.spacePatchPawDeep,
+    required this.spacePatchPawInk,
+    required this.spacePatchMossFill,
+    required this.spacePatchMossDeep,
+    required this.spacePatchMossInk,
+    required this.spacePatchDuvetFill,
+    required this.spacePatchDuvetDeep,
+    required this.spacePatchDuvetInk,
+    required this.spacePatchSunFill,
+    required this.spacePatchSunDeep,
+    required this.spacePatchSunInk,
+    required this.spacePatchSkyFill,
+    required this.spacePatchSkyDeep,
+    required this.spacePatchSkyInk,
     required this.scratchRail,
     required this.scratchRail2,
     required this.scratchRailInk,
@@ -190,6 +212,28 @@ class ProfileColors {
   final Color spaceDuvet;
   final Color spaceSun;
   final Color spaceSky;
+  final Color black;
+  final Color onSpaceTile;
+  final Color liftStrong;
+  final Color selectedIcon;
+  final Color spacePatchApricotFill;
+  final Color spacePatchApricotDeep;
+  final Color spacePatchApricotInk;
+  final Color spacePatchPawFill;
+  final Color spacePatchPawDeep;
+  final Color spacePatchPawInk;
+  final Color spacePatchMossFill;
+  final Color spacePatchMossDeep;
+  final Color spacePatchMossInk;
+  final Color spacePatchDuvetFill;
+  final Color spacePatchDuvetDeep;
+  final Color spacePatchDuvetInk;
+  final Color spacePatchSunFill;
+  final Color spacePatchSunDeep;
+  final Color spacePatchSunInk;
+  final Color spacePatchSkyFill;
+  final Color spacePatchSkyDeep;
+  final Color spacePatchSkyInk;
   final Color scratchRail;
   final Color scratchRail2;
   final Color scratchRailInk;
@@ -294,6 +338,28 @@ class ProfileColors {
     spaceDuvet: Color(0xFF2F3138),
     spaceSun: Color(0xFFF0D29C),
     spaceSky: Color(0xFFCBD5DF),
+    black: Color(0xFF000000),
+    onSpaceTile: Color(0xFF282A2F),
+    liftStrong: Color(0x2A000000),
+    selectedIcon: Color(0xFF5F7894),
+    spacePatchApricotFill: Color(0xFFDE945F),
+    spacePatchApricotDeep: Color(0xFFBF6F3C),
+    spacePatchApricotInk: Color(0xFF282A2F),
+    spacePatchPawFill: Color(0xFFDDA39D),
+    spacePatchPawDeep: Color(0xFFBC7C75),
+    spacePatchPawInk: Color(0xFF282A2F),
+    spacePatchMossFill: Color(0xFF5F7062),
+    spacePatchMossDeep: Color(0xFF495A4C),
+    spacePatchMossInk: Color(0xFFFFFAF1),
+    spacePatchDuvetFill: Color(0xFF2F3138),
+    spacePatchDuvetDeep: Color(0xFF4C505A),
+    spacePatchDuvetInk: Color(0xFFF3EFE7),
+    spacePatchSunFill: Color(0xFFF0D29C),
+    spacePatchSunDeep: Color(0xFFCDA663),
+    spacePatchSunInk: Color(0xFF282A2F),
+    spacePatchSkyFill: Color(0xFFCBD5DF),
+    spacePatchSkyDeep: Color(0xFFA3B3C4),
+    spacePatchSkyInk: Color(0xFF282A2F),
     scratchRail: Color(0xFF2F3138),
     scratchRail2: Color(0xFF3B3E45),
     scratchRailInk: Color(0xFFF3EFE7),
@@ -399,6 +465,28 @@ class ProfileColors {
     spaceDuvet: Color(0xFF999DA6),
     spaceSun: Color(0xFFF0D29C),
     spaceSky: Color(0xFFCBD5DF),
+    black: Color(0xFF000000),
+    onSpaceTile: Color(0xFF282A2F),
+    liftStrong: Color(0x2A000000),
+    selectedIcon: Color(0xFF5F7894),
+    spacePatchApricotFill: Color(0xFFDB8C56),
+    spacePatchApricotDeep: Color(0xFFB0673A),
+    spacePatchApricotInk: Color(0xFF1E2024),
+    spacePatchPawFill: Color(0xFFD29891),
+    spacePatchPawDeep: Color(0xFFAC736D),
+    spacePatchPawInk: Color(0xFF1E2024),
+    spacePatchMossFill: Color(0xFF5F7062),
+    spacePatchMossDeep: Color(0xFF4A5A4D),
+    spacePatchMossInk: Color(0xFFFFFAF1),
+    spacePatchDuvetFill: Color(0xFFDCD4C8),
+    spacePatchDuvetDeep: Color(0xFFB5AA9C),
+    spacePatchDuvetInk: Color(0xFF282A2F),
+    spacePatchSunFill: Color(0xFFE3C48B),
+    spacePatchSunDeep: Color(0xFFBC9A58),
+    spacePatchSunInk: Color(0xFF1E2024),
+    spacePatchSkyFill: Color(0xFFB9C6D3),
+    spacePatchSkyDeep: Color(0xFF93A5B8),
+    spacePatchSkyInk: Color(0xFF1E2024),
     scratchRail: Color(0xFF141618),
     scratchRail2: Color(0xFF24262B),
     scratchRailInk: Color(0xFFF3EFE7),
