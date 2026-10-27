@@ -716,6 +716,15 @@ final class _Watch {
   }
 
   void _adopt(ChatSnapshot snapshot) {
+    final base = BubblePawProjection.hostSequence(snapshot.seq) * 16;
+    final sequence = view.seq >= base ? view.seq + 1 : base + 2;
+    final usage = snapshot.usage;
+    // Recovery snapshots carry authoritative session totals too. Deliver the
+    // change after retained durable events, before replacing reconciliation
+    // state. A fully loaded cursor has no slot; the explicit gap covers it.
+    if (usage != null && usage != view.usage && sequence <= base + 14) {
+      emit(UsageUpdated(seq: sequence, chat: chatId, usage: usage));
+    }
     projection.adopt(snapshot);
     view = snapshot;
     cursor = BubblePawProjection.hostSequence(snapshot.seq);

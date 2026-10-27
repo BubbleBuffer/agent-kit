@@ -422,13 +422,18 @@ void main() {
     final initial = await backend.loadChat('s1');
     final events = <KitEvent>[];
     final done = Completer<void>();
-    final subscription = backend.events('s1', after: initial.seq).listen((event) {
+    final subscription = backend.events('s1', after: initial.seq).listen((
+      event,
+    ) {
       events.add(event);
       if (event is RunWaiting && !done.isCompleted) done.complete();
     });
     addTearDown(subscription.cancel);
     await peer.waitFor((call) => call.method == 'events.after');
-    peer.notify({'method': 'events.gap', 'params': {'after': 5, 'skipped': 2}});
+    peer.notify({
+      'method': 'events.gap',
+      'params': {'after': 5, 'skipped': 2},
+    });
     await snapshotRequested.future;
     // Source notifications can arrive while session.state is in flight. Both
     // these tool events are also replayed, and must be delivered exactly once.
@@ -438,11 +443,16 @@ void main() {
     peer.notify({'method': 'event', 'params': _waitEvent(13)});
     releaseSnapshot.complete();
     await done.future;
-    expect(events.whereType<ToolStarted>().map((event) => event.callId), ['call-1']);
-    expect(events.whereType<ToolFinished>().map((event) => event.callId), ['call-1']);
+    expect(events.whereType<ToolStarted>().map((event) => event.callId), [
+      'call-1',
+    ]);
+    expect(events.whereType<ToolFinished>().map((event) => event.callId), [
+      'call-1',
+    ]);
     expect(events.whereType<GapEvent>(), hasLength(1));
     expect(
-      peer.calls.where((call) => call.method == 'events.after')
+      peer.calls
+          .where((call) => call.method == 'events.after')
           .map((call) => call.params['after']),
       [5, 5, 12],
     );
@@ -456,8 +466,14 @@ void main() {
     var accepted = false;
     var replayCount = 0;
     final source = [
-      {'sequence': 6, 'durable': true, 'session_id': 's1', 'run_id': 'r1',
-        'type': 'steering_accepted', 'text': 'Keep going'},
+      {
+        'sequence': 6,
+        'durable': true,
+        'session_id': 's1',
+        'run_id': 'r1',
+        'type': 'steering_accepted',
+        'text': 'Keep going',
+      },
       _recoveryTools().first,
     ];
     peer.handler = (method, params) {
@@ -470,8 +486,13 @@ void main() {
         return {
           ...peer.state(seq: accepted ? 9 : 5),
           'inputs': [
-            if (accepted) {'id': 'input-1', 'text': 'Keep going',
-              'kind': 'steer', 'state': 'pending'},
+            if (accepted)
+              {
+                'id': 'input-1',
+                'text': 'Keep going',
+                'kind': 'steer',
+                'state': 'pending',
+              },
           ],
         };
       }
@@ -487,7 +508,9 @@ void main() {
     final backend = await peer.connect();
     addTearDown(() => peer.close(backend));
     final initial = await backend.loadChat('s1');
-    final subscription = backend.events('s1', after: initial.seq).listen((event) {
+    final subscription = backend.events('s1', after: initial.seq).listen((
+      event,
+    ) {
       events.add(event);
       if (event is QueueAdded && !done.isCompleted) done.complete();
       if (event is RunWaiting && !drained.isCompleted) drained.complete();
@@ -513,14 +536,21 @@ void main() {
     var totals = 100;
     var context = 40;
     final completion = <String, Object?>{
-      'sequence': 8, 'durable': true, 'session_id': 's1', 'run_id': 'r1',
-      'type': 'run_finished', 'status': 'completed', 'text': 'Finished',
+      'sequence': 8,
+      'durable': true,
+      'session_id': 's1',
+      'run_id': 'r1',
+      'type': 'run_finished',
+      'status': 'completed',
+      'text': 'Finished',
       'usage': {'input_tokens': 50, 'output_tokens': 10},
     };
     peer.handler = (method, params) {
       if (method == 'session.state') {
-        return {...peer.state(seq: totals == 100 ? 5 : 8),
-          'usage': _sessionUsage(totals, context)};
+        return {
+          ...peer.state(seq: totals == 100 ? 5 : 8),
+          'usage': _sessionUsage(totals, context),
+        };
       }
       if (method == 'events.after' && totals == 150) {
         return _page((params['after']! as int) < 8 ? [completion] : []);
@@ -530,7 +560,9 @@ void main() {
     final backend = await peer.connect();
     addTearDown(() => peer.close(backend));
     var snapshot = await backend.loadChat('s1');
-    final subscription = backend.events('s1', after: snapshot.seq).listen((event) {
+    final subscription = backend.events('s1', after: snapshot.seq).listen((
+      event,
+    ) {
       events.add(event);
       snapshot = reduce(snapshot, event);
       if (event is UsageUpdated && !finished.isCompleted) finished.complete();
@@ -540,12 +572,22 @@ void main() {
     await peer.waitFor((call) => call.method == 'events.after');
     totals = 150;
     context = 30;
-    peer.notify({'method': 'event', 'params': {
-      'sequence': 7, 'durable': true, 'session_id': 's1', 'run_id': 'r1',
-      'type': 'host_state_changed', 'key': 'usage.last_request',
-      'value': {'model': 'example', 'input_tokens': 30,
-        'observed_at': '2026-01-01T00:00:00Z'},
-    }});
+    peer.notify({
+      'method': 'event',
+      'params': {
+        'sequence': 7,
+        'durable': true,
+        'session_id': 's1',
+        'run_id': 'r1',
+        'type': 'host_state_changed',
+        'key': 'usage.last_request',
+        'value': {
+          'model': 'example',
+          'input_tokens': 30,
+          'observed_at': '2026-01-01T00:00:00Z',
+        },
+      },
+    });
     peer.notify({'method': 'event', 'params': completion});
     await finished.future;
     // A marker behind completion verifies that queued duplicates and refreshes
@@ -560,6 +602,68 @@ void main() {
     expect(snapshot.usage?.contextTokens, 30);
     expect(snapshot.usage?.outputTokens, 15);
   });
+
+  test(
+    'gap recovery emits changed snapshot usage once after retained tools',
+    () async {
+      final peer = _BackendPeer()..features = ['sessions', 'events'];
+      var loads = 0;
+      var replays = 0;
+      peer.handler = (method, params) {
+        if (method == 'session.state') {
+          final initial = ++loads == 1;
+          return {
+            ...peer.state(seq: initial ? 5 : 12),
+            'usage': _sessionUsage(initial ? 100 : 150, 30),
+          };
+        }
+        if (method == 'events.after') {
+          if (++replays == 1) return _page([]);
+          return _page([
+            for (final event in _recoveryTools())
+              if ((event['sequence']! as int) > (params['after']! as int))
+                event,
+          ]);
+        }
+        return peer.defaultResponse(method, params);
+      };
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      final snapshot = await backend.loadChat('s1');
+      final changed = Completer<void>();
+      final drained = Completer<void>();
+      final events = <KitEvent>[];
+      final subscription = backend.events('s1', after: snapshot.seq).listen((
+        event,
+      ) {
+        events.add(event);
+        if (event is UsageUpdated && !changed.isCompleted) changed.complete();
+        if (event is RunWaiting && !drained.isCompleted) drained.complete();
+      });
+      addTearDown(subscription.cancel);
+      await peer.waitFor((call) => call.method == 'events.after');
+      peer.notify({
+        'method': 'events.gap',
+        'params': {'after': 5, 'skipped': 2},
+      });
+      await changed.future;
+      // Repeat the same canonical totals, then drain both recoveries through a
+      // later live event. Repeated snapshots cannot add or re-emit those totals.
+      peer.notify({
+        'method': 'events.gap',
+        'params': {'after': 12, 'skipped': 1},
+      });
+      peer.notify({'method': 'event', 'params': _waitEvent(13)});
+      await drained.future;
+      expect(events.whereType<GapEvent>(), hasLength(2));
+      expect(events.whereType<UsageUpdated>(), hasLength(1));
+      expect(events.whereType<UsageUpdated>().single.usage.inputTokens, 150);
+      expect(
+        events.where((event) => event is! GapEvent).map((event) => event.seq),
+        [144, 192, 193, 208],
+      );
+    },
+  );
 
   test('retention resync delivers retained tools and arrivals during snapshot load', () async {
     final peer = _BackendPeer()..features = ['sessions', 'events'];
@@ -577,8 +681,11 @@ void main() {
       if (method == 'events.after') {
         final after = params['after']! as int;
         return {
-          ..._page(source.where((event) =>
-            (event['sequence']! as int) > after).toList()),
+          ..._page(
+            source
+                .where((event) => (event['sequence']! as int) > after)
+                .toList(),
+          ),
           'resync': after < 9,
         };
       }
@@ -589,7 +696,9 @@ void main() {
     final snapshot = await backend.loadChat('s1');
     final events = <KitEvent>[];
     final done = Completer<void>();
-    final subscription = backend.events('s1', after: snapshot.seq).listen((event) {
+    final subscription = backend.events('s1', after: snapshot.seq).listen((
+      event,
+    ) {
       events.add(event);
       if (event is RunWaiting && !done.isCompleted) done.complete();
     });
@@ -606,49 +715,70 @@ void main() {
     expect(events.whereType<ToolFinished>(), hasLength(1));
     expect(events.whereType<RunWaiting>(), hasLength(1));
     expect(events.whereType<GapEvent>(), hasLength(1));
-    expect(peer.calls.where((call) => call.method == 'events.after')
-      .map((call) => call.params['after']), [5, 9, 12]);
+    expect(
+      peer.calls
+          .where((call) => call.method == 'events.after')
+          .map((call) => call.params['after']),
+      [5, 9, 12],
+    );
   });
 
-  test('snapshot diffs precede durable replay beyond their source barrier', () async {
-    final peer = _BackendPeer()..features = ['sessions', 'events'];
-    final done = Completer<void>();
-    var changed = false;
-    var replayCount = 0;
-    final tools = _recoveryTools();
-    peer.handler = (method, params) {
-      if (method == 'session.rename') { changed = true; return {}; }
-      if (method == 'session.state') {
-        return {...peer.state(seq: changed ? 9 : 5),
-          'session': {'id': 's1', 'title': changed ? 'Changed' : 'Synthetic chat'}};
-      }
-      if (method == 'events.after') {
-        if (++replayCount == 1) return _page([]);
-        return _page([
-          for (final event in tools)
-            if ((event['sequence']! as int) > (params['after']! as int)) event,
-        ]);
-      }
-      return peer.defaultResponse(method, params);
-    };
-    final backend = await peer.connect();
-    addTearDown(() => peer.close(backend));
-    var snapshot = await backend.loadChat('s1');
-    final events = <KitEvent>[];
-    final subscription = backend.events('s1', after: snapshot.seq).listen((event) {
-      events.add(event);
-      snapshot = reduce(snapshot, event);
-      if (event is ToolFinished && !done.isCompleted) done.complete();
-    });
-    addTearDown(subscription.cancel);
-    await peer.waitFor((call) => call.method == 'events.after');
-    await backend.rename('s1', 'Changed');
-    await done.future;
-    expect(events.map((event) => event.runtimeType),
-      [ToolStarted, ChatRenamed, ToolFinished]);
-    expect(events.map((event) => event.seq), orderedEquals([144, 145, 192]));
-    expect(snapshot.title, 'Changed');
-  });
+  test(
+    'snapshot diffs precede durable replay beyond their source barrier',
+    () async {
+      final peer = _BackendPeer()..features = ['sessions', 'events'];
+      final done = Completer<void>();
+      var changed = false;
+      var replayCount = 0;
+      final tools = _recoveryTools();
+      peer.handler = (method, params) {
+        if (method == 'session.rename') {
+          changed = true;
+          return {};
+        }
+        if (method == 'session.state') {
+          return {
+            ...peer.state(seq: changed ? 9 : 5),
+            'session': {
+              'id': 's1',
+              'title': changed ? 'Changed' : 'Synthetic chat',
+            },
+          };
+        }
+        if (method == 'events.after') {
+          if (++replayCount == 1) return _page([]);
+          return _page([
+            for (final event in tools)
+              if ((event['sequence']! as int) > (params['after']! as int))
+                event,
+          ]);
+        }
+        return peer.defaultResponse(method, params);
+      };
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      var snapshot = await backend.loadChat('s1');
+      final events = <KitEvent>[];
+      final subscription = backend.events('s1', after: snapshot.seq).listen((
+        event,
+      ) {
+        events.add(event);
+        snapshot = reduce(snapshot, event);
+        if (event is ToolFinished && !done.isCompleted) done.complete();
+      });
+      addTearDown(subscription.cancel);
+      await peer.waitFor((call) => call.method == 'events.after');
+      await backend.rename('s1', 'Changed');
+      await done.future;
+      expect(events.map((event) => event.runtimeType), [
+        ToolStarted,
+        ChatRenamed,
+        ToolFinished,
+      ]);
+      expect(events.map((event) => event.seq), orderedEquals([144, 145, 192]));
+      expect(snapshot.title, 'Changed');
+    },
+  );
 
   test('gap recovery pages through every missing durable event before adopting state', () async {
     final peer = _BackendPeer()..features = ['sessions', 'events'];
@@ -659,11 +789,19 @@ void main() {
       {..._recoveryTools().first, 'sequence': 1006},
     ];
     peer.handler = (method, params) {
-      if (method == 'session.state') return peer.state(seq: ++loads == 1 ? 5 : 1006);
+      if (method == 'session.state')
+        return peer.state(seq: ++loads == 1 ? 5 : 1006);
       if (method == 'events.after') {
         if (++replayCount == 1) return _page([]);
-        return _page(source.where((event) =>
-          (event['sequence']! as int) > (params['after']! as int)).take(1000).toList());
+        return _page(
+          source
+              .where(
+                (event) =>
+                    (event['sequence']! as int) > (params['after']! as int),
+              )
+              .take(1000)
+              .toList(),
+        );
       }
       return peer.defaultResponse(method, params);
     };
@@ -673,80 +811,120 @@ void main() {
     final tool = Completer<void>();
     final drained = Completer<void>();
     final events = <KitEvent>[];
-    final subscription = backend.events('s1', after: snapshot.seq).listen((event) {
+    final subscription = backend.events('s1', after: snapshot.seq).listen((
+      event,
+    ) {
       events.add(event);
       if (event is ToolStarted && !tool.isCompleted) tool.complete();
-      if (event is RunWaiting && event.seq == 1007 * 16 && !drained.isCompleted) drained.complete();
+      if (event is RunWaiting && event.seq == 1007 * 16 && !drained.isCompleted)
+        drained.complete();
     });
     addTearDown(subscription.cancel);
     await peer.waitFor((call) => call.method == 'events.after');
-    peer.notify({'method': 'events.gap', 'params': {'after': 5, 'skipped': 1001}});
+    peer.notify({
+      'method': 'events.gap',
+      'params': {'after': 5, 'skipped': 1001},
+    });
     await tool.future;
     peer.notify({'method': 'event', 'params': _waitEvent(1007)});
     await drained.future;
     expect(events.whereType<ToolStarted>(), hasLength(1));
     expect(events.whereType<RunWaiting>(), hasLength(1001));
     expect(events.whereType<GapEvent>(), hasLength(1));
-    expect(peer.calls.where((call) => call.method == 'events.after')
-      .map((call) => call.params['after']), [5, 5, 1005, 1006]);
+    expect(
+      peer.calls
+          .where((call) => call.method == 'events.after')
+          .map((call) => call.params['after']),
+      [5, 5, 1005, 1006],
+    );
   });
 
-  test('a metadata mutation at a fully loaded cursor explicitly resyncs', () async {
-    final peer = _BackendPeer()..features = ['sessions', 'events'];
-    var changed = false;
-    peer.handler = (method, params) {
-      if (method == 'session.rename') { changed = true; return {}; }
-      if (method == 'session.state') {
-        return {...peer.state(seq: 5),
-          'session': {'id': 's1', 'title': changed ? 'Changed' : 'Synthetic chat'}};
-      }
-      return peer.defaultResponse(method, params);
-    };
-    final backend = await peer.connect();
-    addTearDown(() => peer.close(backend));
-    final snapshot = await backend.loadChat('s1');
-    final gap = backend.events('s1', after: snapshot.seq).firstWhere((event) => event is GapEvent);
-    await peer.waitFor((call) => call.method == 'events.after');
-    await backend.rename('s1', 'Changed');
-    expect(await gap, isA<GapEvent>());
-    expect((await backend.loadChat('s1')).title, 'Changed');
-  });
+  test(
+    'a metadata mutation at a fully loaded cursor explicitly resyncs',
+    () async {
+      final peer = _BackendPeer()..features = ['sessions', 'events'];
+      var changed = false;
+      peer.handler = (method, params) {
+        if (method == 'session.rename') {
+          changed = true;
+          return {};
+        }
+        if (method == 'session.state') {
+          return {
+            ...peer.state(seq: 5),
+            'session': {
+              'id': 's1',
+              'title': changed ? 'Changed' : 'Synthetic chat',
+            },
+          };
+        }
+        return peer.defaultResponse(method, params);
+      };
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      final snapshot = await backend.loadChat('s1');
+      final gap = backend
+          .events('s1', after: snapshot.seq)
+          .firstWhere((event) => event is GapEvent);
+      await peer.waitFor((call) => call.method == 'events.after');
+      await backend.rename('s1', 'Changed');
+      expect(await gap, isA<GapEvent>());
+      expect((await backend.loadChat('s1')).title, 'Changed');
+    },
+  );
 
-  test('an unrepresentable snapshot diff resyncs only after replay delivery', () async {
-    final peer = _BackendPeer()..features = ['sessions', 'events'];
-    var accepted = false;
-    var replayCount = 0;
-    peer.handler = (method, params) {
-      if (method == 'session.rename') { accepted = true; return {}; }
-      if (method == 'session.state') {
-        return {...peer.state(seq: accepted ? 9 : 5), 'inputs': [
-          if (accepted)
-            for (var index = 0; index < 20; index++)
-              {'id': 'i$index', 'text': 'Queued $index',
-                'kind': 'follow_up', 'state': 'pending'},
-        ]};
-      }
-      if (method == 'events.after') {
-        if (++replayCount == 1) return _page([]);
-        return _page((params['after']! as int) < 9 ? [_recoveryTools().first] : []);
-      }
-      return peer.defaultResponse(method, params);
-    };
-    final backend = await peer.connect();
-    addTearDown(() => peer.close(backend));
-    final snapshot = await backend.loadChat('s1');
-    final events = <KitEvent>[];
-    final gap = Completer<void>();
-    final subscription = backend.events('s1', after: snapshot.seq).listen((event) {
-      events.add(event);
-      if (event is GapEvent && !gap.isCompleted) gap.complete();
-    });
-    addTearDown(subscription.cancel);
-    await peer.waitFor((call) => call.method == 'events.after');
-    await backend.rename('s1', 'Changed');
-    await gap.future;
-    expect(events.map((event) => event.runtimeType), [ToolStarted, GapEvent]);
-  });
+  test(
+    'an unrepresentable snapshot diff resyncs only after replay delivery',
+    () async {
+      final peer = _BackendPeer()..features = ['sessions', 'events'];
+      var accepted = false;
+      var replayCount = 0;
+      peer.handler = (method, params) {
+        if (method == 'session.rename') {
+          accepted = true;
+          return {};
+        }
+        if (method == 'session.state') {
+          return {
+            ...peer.state(seq: accepted ? 9 : 5),
+            'inputs': [
+              if (accepted)
+                for (var index = 0; index < 20; index++)
+                  {
+                    'id': 'i$index',
+                    'text': 'Queued $index',
+                    'kind': 'follow_up',
+                    'state': 'pending',
+                  },
+            ],
+          };
+        }
+        if (method == 'events.after') {
+          if (++replayCount == 1) return _page([]);
+          return _page(
+            (params['after']! as int) < 9 ? [_recoveryTools().first] : [],
+          );
+        }
+        return peer.defaultResponse(method, params);
+      };
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      final snapshot = await backend.loadChat('s1');
+      final events = <KitEvent>[];
+      final gap = Completer<void>();
+      final subscription = backend.events('s1', after: snapshot.seq).listen((
+        event,
+      ) {
+        events.add(event);
+        if (event is GapEvent && !gap.isCompleted) gap.complete();
+      });
+      addTearDown(subscription.cancel);
+      await peer.waitFor((call) => call.method == 'events.after');
+      await backend.rename('s1', 'Changed');
+      await gap.future;
+      expect(events.map((event) => event.runtimeType), [ToolStarted, GapEvent]);
+    },
+  );
 
   for (final useCoreMethod in [false, true]) {
     final method = useCoreMethod ? 'rewind' : 'rewindToNewChat';
@@ -870,12 +1048,24 @@ List<Json> _recoveryTools() => (File(
   'test/fixtures/transport/durable-tools.jsonl',
 ).readAsLinesSync()).map((line) => jsonDecode(line) as Json).toList();
 
-Json _page(List<Json> events) => {'events': events, 'last_seq': 12, 'resync': false};
+Json _page(List<Json> events) => {
+  'events': events,
+  'last_seq': 12,
+  'resync': false,
+};
 
 Json _sessionUsage(int input, int context) => {
   'context': {'last_request_input_tokens': context, 'window_tokens': 1000},
-  'own': {'tokens': {'input_tokens': input, 'output_tokens': 15, 'cache_read_tokens': 5}},
-  'total': {'tokens': {'input_tokens': input + 1000, 'output_tokens': 999}},
+  'own': {
+    'tokens': {
+      'input_tokens': input,
+      'output_tokens': 15,
+      'cache_read_tokens': 5,
+    },
+  },
+  'total': {
+    'tokens': {'input_tokens': input + 1000, 'output_tokens': 999},
+  },
 };
 
 Json _question() => {
@@ -990,8 +1180,9 @@ class _BackendPeer {
       unawaited(exit(0));
       return;
     }
-    final response = await (handler?.call(method, params) ??
-        defaultResponse(method, params));
+    final response =
+        await (handler?.call(method, params) ??
+            defaultResponse(method, params));
     notify({
       'jsonrpc': '2.0',
       'id': request['id'],
