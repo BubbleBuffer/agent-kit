@@ -317,6 +317,29 @@ void main() {
       expect(undo, 1);
     });
 
+    testWidgets('shows the last two segments of a Windows or a slash path', (
+      tester,
+    ) async {
+      for (final path in [
+        r'C:\repo\src\usage\mod.rs',
+        r'C:\repo/src\usage/mod.rs',
+        '/repo/src/usage/mod.rs',
+      ]) {
+        await pumpTranscript(
+          tester,
+          SingleChildScrollView(
+            child: FileEditRow(
+              FileEdit(
+                id: 'w',
+                diff: FileDiff(path: path),
+              ),
+            ),
+          ),
+        );
+        expect(find.text('Edited usage/mod.rs'), findsOneWidget, reason: path);
+      }
+    });
+
     testWidgets('a created file offers Open; an undone edit no Undo', (
       tester,
     ) async {

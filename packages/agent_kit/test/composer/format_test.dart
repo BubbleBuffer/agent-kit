@@ -18,5 +18,6 @@ void main() {
       '…/usage/mod.rs',
     );
     expect(shortenPath('mod.rs'), 'mod.rs');
+    expect(shortenPath(r'C:\repo\src\usage\mod.rs'), '…/usage/mod.rs');
   });
 }
