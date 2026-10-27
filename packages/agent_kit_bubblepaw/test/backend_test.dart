@@ -297,8 +297,9 @@ void main() {
           .listen(
             (event) {
               events.add(event);
-              if (event is RunWaiting && !recovered.isCompleted)
+              if (event is RunWaiting && !recovered.isCompleted) {
                 recovered.complete();
+              }
             },
             onError: (Object error) {
               if (!crash.isCompleted) crash.complete(error);

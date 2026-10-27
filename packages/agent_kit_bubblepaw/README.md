@@ -99,7 +99,11 @@ The canonical completion remains authoritative.
 
 Tool starts/results, approvals, run/quota changes, questions and todos map to kit
 events. Queue notifications lack input IDs, so steering/follow-up events cause a
-canonical queue reload. Output and settled notifications also request a snapshot.
+canonical queue reload. Explicit `text` output publications map to stable-ID
+plain system lines; nontext file/image/execution outputs have no kit renderer.
+Settled notifications request a snapshot. Source snapshots contain only pending
+questions, so resolved prompts observed live disappear on reload; their canonical
+generated answer messages remain in history.
 Nested transient tool boundaries request reloads: the current core has only
 durable tool events, so those live-only inner rows cannot be faithfully retained.
 Pending approvals are obtained separately because stdio state omits them.

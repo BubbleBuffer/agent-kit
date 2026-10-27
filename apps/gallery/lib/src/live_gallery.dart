@@ -3,6 +3,7 @@ import 'dart:ui' show AppExitResponse;
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_bubblepaw/agent_kit_bubblepaw.dart';
+import 'package:agent_kit_core/agent_kit_core.dart' show ChatSummary;
 import 'package:bb_ui/bb_ui.dart' show AppColors;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
@@ -78,6 +79,8 @@ class _LiveGalleryState extends State<_LiveGallery> {
   late final Future<BubblePawBackend?> _starting;
   late final AppLifecycleListener _lifecycle;
   BubblePawBackend? _backend;
+  StreamSubscription<ChatSummary>? _createdChats;
+  String? _initialChatId;
   Future<void>? _closing;
   bool _failed = false;
 
@@ -102,6 +105,11 @@ class _LiveGalleryState extends State<_LiveGallery> {
         dataDirectory: widget.dataDirectory,
       );
       if (mounted && _closing == null) {
+        _createdChats = backend.createdChats.listen((chat) {
+          if (mounted && _closing == null) {
+            setState(() => _initialChatId = chat.id);
+          }
+        });
         setState(() => _backend = backend);
       }
       return backend;
@@ -117,6 +125,7 @@ class _LiveGalleryState extends State<_LiveGallery> {
   Future<void> _disposeBackend() async {
     final backend = await _starting;
     try {
+      await _createdChats?.cancel();
       await backend?.dispose();
     } catch (_) {
       // Closing the window must not expose local host diagnostics.
@@ -135,7 +144,14 @@ class _LiveGalleryState extends State<_LiveGallery> {
     final backend = _backend;
     return _LiveShell(
       child: backend != null
-          ? AgentWorkbench(backend: backend, workspaceName: 'BubblePaw')
+          ? AgentWorkbench(
+              // A new rewind result needs both selection and a fresh rail list.
+              // didUpdateWidget selects an ID but does not reload the rail.
+              key: ValueKey(_initialChatId),
+              backend: backend,
+              initialChatId: _initialChatId,
+              workspaceName: 'BubblePaw',
+            )
           : _ConnectionStatus(
               title: _failed
                   ? 'Could not start BubblePaw'

@@ -109,8 +109,9 @@ void main() {
         expect(snapshot.run?.isWaiting, isTrue);
         expect(snapshot.run?.waitingUntil, DateTime.utc(2026, 1, 2, 4));
       }
-      if (source['type'] == 'run_quota_resumed')
+      if (source['type'] == 'run_quota_resumed') {
         expect(snapshot.run?.isWaiting, isFalse);
+      }
     }
     expect(snapshot.run?.outcome, RunOutcome.completed);
     expect(snapshot.status, ChatStatus.done);
@@ -367,6 +368,27 @@ void main() {
       WorkState.running,
     );
     expect(projection.event(wire('future_event', 3)), isEmpty);
+  });
+
+  test('explicit text outputs survive events, replay and canonical reload once', () {
+    final projection = BubblePawProjection();
+    var snapshot = projection.snapshot(state(), workspaceDirectory: '/example');
+    final records = fixture('outputs');
+    final projected = records.expand(projection.event).toList();
+    expect(projected.single, isA<SystemLineAdded>());
+    snapshot = reduceAll(snapshot, projected);
+    expect(snapshot.items.whereType<SystemLine>().single.id, 'output-text');
+    expect(snapshot.items.whereType<SystemLine>().single.text, 'Published **result**');
+    expect(identical(reduceAll(snapshot, projected), snapshot), isTrue);
+    expect(records.expand(projection.event), isEmpty);
+
+    final input = fixture('snapshot').single;
+    final output = records.first['record'] as Map<String, Object?>;
+    input['outputs'] = [output, output, records.last['record']];
+    snapshot = projection.snapshot(input, workspaceDirectory: '/example');
+    expect(snapshot.items.whereType<SystemLine>().single.id, 'output-text');
+    expect(snapshot.items.map((item) => item.id).toList().indexOf('output-text'), 1);
+    expect(snapshot.items.any((item) => item.id == 'output-execution'), isFalse);
   });
 
   test('snapshot errors never expose the host provider cause chain', () {

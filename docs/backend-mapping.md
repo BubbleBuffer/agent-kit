@@ -46,7 +46,7 @@ verification levels and the complete list of desired port changes.
 | `message.user` | Canonical user IDs/text are recovered from `session.state.messages`; run events omit them. | Reload after run start/steering. |
 | `message.delta` | `text_delta` is provisional, `paragraph` confirms it. Matching prefixes emit only the missing suffix. Mismatch/retry requests resnapshot. | `paragraph`. |
 | `message.assistant` | `run_finished.text` completes provisional reply, followed by a canonical reload to recover real message IDs. | `run_finished.text` or reload. |
-| `message.system` | Canonical system messages/tool orphan results come from state; `output` requests a snapshot. | `output` or reload. |
+| `message.system` | Canonical system messages/tool orphan results come from state; `output.record` text publications map to stable-ID plain system lines. File/image/execution publications have no kit renderer. | `output` or reload. |
 | Thinking | No reasoning-text capability; model-request boundaries reset/reconcile provisional text. | No reasoning text. |
 | `tool.started`, `tool.finished` | Durable `tool_started.call` and `tool_finished {call_id,result}` map directly; canonical calls/results are reconstructed on reload. No exit code is invented. | Tool started/finished, summaries in activity. |
 | Nested transient tools | Kit tool events are durable; nested `durable:false` boundaries request snapshot recovery rather than consume a sequence or invent stored rows. | Nested tool progress is also transient. |
@@ -54,7 +54,7 @@ verification levels and the complete list of desired port changes.
 | `plan.updated` | `host_state_changed {key:"todo",value}`; pending/in_progress/done map to todo/now/done. | Plan missing. |
 | `approval.requested` | `approval_requested.approval`; pending records also from `approval.list`. | Same kind. |
 | `approval.resolved` | `approval_resolved {approval_id,state,reason}`; approved_session maps to approvedForSession. | Same kind. |
-| `question.asked`, `question.resolved` | **Built:** `host_state_changed {key:"question",value}`. One root question with free text and optional suggestions. A cleared question triggers state reload. Child questions are not root prompts. | Questions missing. |
+| `question.asked`, `question.resolved` | **Built:** `host_state_changed {key:"question",value}`. One root question with free text and optional suggestions. A cleared question triggers state reload; snapshots retain only pending questions, so resolved prompt history disappears on reload. Child questions are not root prompts. | Questions missing. |
 | Queue changes | `steering_accepted` / `followup_queued` omit input IDs, so reload real `session.state.inputs`; response IDs are retained by commands. No edit/remove methods. | Follow-up kind exists; IDs require reload. |
 | Child/job events | Not advertised: initialization has no complete child feature, and `process.list` does not supply individual cancellation or streamed output. | Children/jobs missing. |
 | `usage.updated` | Authoritative own-session totals/context in `session.state.usage`; changes/finish request snapshot, never add per-run totals twice. | Run token counts; context meter missing. |

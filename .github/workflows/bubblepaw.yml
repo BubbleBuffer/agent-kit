@@ -27,9 +27,12 @@ jobs:
         working-directory: packages/agent_kit_bubblepaw
         run: dart analyze --fatal-infos
       - name: Adapter unit tests (local-host test skips without opt-in)
+        if: ${{ !cancelled() }}
         working-directory: packages/agent_kit_bubblepaw
         run: dart test
       - name: Download and verify the pinned public host
+        id: host
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
@@ -49,15 +52,19 @@ jobs:
           chmod +x "$binary"
           printf 'BP_TEST_BIN=%s\n' "$binary" >> "$GITHUB_ENV"
       - name: Real stdio demo and injected-gap recovery (offline provider)
+        if: ${{ !cancelled() && steps.host.outcome == 'success' }}
         working-directory: packages/agent_kit_bubblepaw
         run: dart test test/local_transport_test.dart --reporter expanded
       - name: Gallery tests (scripted mode preserved)
+        if: ${{ !cancelled() }}
         working-directory: apps/gallery
         run: flutter test --exclude-tags golden
       - name: Build the gallery for web
+        if: ${{ !cancelled() }}
         working-directory: apps/gallery
         run: flutter build web
       - name: Build the live gallery for Linux
+        if: ${{ !cancelled() && steps.host.outcome == 'success' }}
         shell: bash
         working-directory: apps/gallery
         run: |

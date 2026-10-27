@@ -238,9 +238,7 @@ final class BubblePawBackend implements AgentBackend {
     if (workspace != null && workspace != workspaceDirectory) {
       throw const KitInvalid('This host is bound to one workspace.');
     }
-    final session = _object(
-      await _request('session.open', {'title': ?title}),
-    );
+    final session = _object(await _request('session.open', {'title': ?title}));
     return _projection('${session['id']}').summary(session);
   }
 
@@ -318,8 +316,9 @@ final class BubblePawBackend implements AgentBackend {
     final result = _object(
       await _request(method, {'session_id': chatId, 'text': text}),
     );
-    if (result['id'] is! String)
+    if (result['id'] is! String) {
       throw const KitInvalid('A queued input was not created.');
+    }
     await _refreshWatches(chatId);
     return result['id'] as String;
   }
@@ -416,8 +415,9 @@ final class BubblePawBackend implements AgentBackend {
       }),
     );
     final id = result['session_id'];
-    if (id is! String)
+    if (id is! String) {
       throw const KitFailed('The host returned no rewound chat.');
+    }
     final snap = await loadChat(id);
     final summary = ChatSummary.of(snap);
     if (!_created.isClosed) _created.add(summary);
@@ -562,8 +562,9 @@ final class _Watch {
       if (events.length < 1000) return;
       final next = events.last['sequence'] as int? ?? cursor;
       if (next <= cursor &&
-          events.every((e) => (e['sequence'] as int? ?? 0) < cursor))
+          events.every((e) => (e['sequence'] as int? ?? 0) < cursor)) {
         return;
+      }
       if (next <= after) return;
       after = next;
       cursor = next;

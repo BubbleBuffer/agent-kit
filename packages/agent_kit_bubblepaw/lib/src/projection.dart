@@ -13,6 +13,8 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 /// Canonical message IDs are only available in session.state. Run completion
 /// and queue changes finish with a [GapEvent], requesting a reload.
 /// Provisional reply IDs disappear when that snapshot replaces the old one.
+/// Explicit `text` publications are preserved as system lines; file, image,
+/// archived table and execution outputs have no matching kit renderer.
 final class BubblePawProjection {
   final Map<String, _Session> _sessions = {};
 
@@ -109,6 +111,15 @@ final class BubblePawProjection {
           items.add(SystemLine(id: id, text: content, at: at));
       }
     }
+    for (final record in _maps(state['outputs'])) {
+      final line = _outputLine(record);
+      if (line == null || items.any((item) => item.id == line.id)) continue;
+      final at = line.at;
+      final next = at == null
+          ? -1
+          : items.indexWhere((item) => item.at?.isAfter(at) == true);
+      items.insert(next < 0 ? items.length : next, line);
+    }
     final stream = _Session(
       rawSeq,
       snapshotSequence: rawSeq,
@@ -151,7 +162,9 @@ final class BubblePawProjection {
       run: run,
       items: items,
       approvals: [for (final a in _maps(state['approvals'])) approval(a)],
-      // Root answer endpoints cannot answer child questions.
+      // Root answer endpoints cannot answer child questions. The source state
+      // endpoint returns pending questions only, so resolved history disappears
+      // on reload even when resolution was observed in the live event stream.
       questions:
           questionWire is Map<String, Object?> &&
               session['parent_session_id'] == null
@@ -257,8 +270,9 @@ final class BubblePawProjection {
       state.sequence = rawSeq;
       state.live.clear();
     } else {
-      if (rawSeq < state.sequence || rawSeq <= state.snapshotSequence)
+      if (rawSeq < state.sequence || rawSeq <= state.snapshotSequence) {
         return const [];
+      }
       // A repeated notification must keep the same offset, even when it follows
       // other fragments. Source timestamps retain their original precision.
       final fingerprint = jsonEncode(wire);
@@ -461,10 +475,21 @@ final class BubblePawProjection {
           // following snapshot reload obtains the authoritative session usage.
           gap(),
         ];
+      case 'output':
+        final line = _outputLine(_map(wire['record']));
+        if (line == null) return const [];
+        return [
+          SystemLineAdded(
+            seq: seq,
+            chat: chat,
+            at: line.at,
+            itemId: line.id,
+            text: line.text,
+          ),
+        ];
       case 'steering_accepted':
       case 'followup_queued':
       case 'session_settled':
-      case 'output':
         // Input notifications omit queue/message IDs; never manufacture them.
         return [gap()];
       default:
@@ -496,6 +521,16 @@ int _integer(Map<String, Object?> value, String key) => value[key] as int? ?? 0;
 DateTime? _time(Object? value) =>
     value is String ? DateTime.tryParse(value) : null;
 String _arguments(Object? value) => jsonEncode(value);
+SystemLine? _outputLine(Map<String, Object?> record) {
+  final output = _map(record['output']);
+  final text = output['text'];
+  final id = record['id'];
+  if (output['type'] != 'text' || text is! String || id is! String || id.isEmpty) {
+    return null;
+  }
+  return SystemLine(id: id, text: text, at: _time(record['created_at']));
+}
+
 String _replyId(String run) => 'bubblepaw:reply:$run';
 String _join(String first, String second) => first.isEmpty
     ? second
@@ -525,9 +560,8 @@ RunInfo _run(Map<String, Object?> run) => RunInfo(
 
 // Host errors contain unrestricted anyhow cause chains and may include raw
 // provider responses. Keep diagnostics out of the presentation model.
-String? _safeRunError(Object? value) => value == null
-    ? null
-    : 'The BubblePaw run ended before completing.';
+String? _safeRunError(Object? value) =>
+    value == null ? null : 'The BubblePaw run ended before completing.';
 
 ApprovalState _approvalState(Object? value) => switch (value) {
   'approved' => ApprovalState.approved,
