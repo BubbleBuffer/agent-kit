@@ -151,7 +151,11 @@ composer folder.
 
 ## Backend port
 
-`AgentBackend` declares `KitCapabilities`; widgets hide what a backend lacks.
+`ChatReader` supplies snapshots, events and capabilities to `ChatFeed` without
+requiring commands. `AgentBackend` adds commands. `KitCapabilities` declares
+supported operations; absent command capabilities fail with `KitUnsupported`.
+`BackendConstraints` describes reference, question-answer and running follow-up
+limits, with defaults preserving existing backend behavior.
 Commands return futures and fail with a `KitError` subclass whose `message`
 is safe to show: `KitUnsupported`, `KitNotFound`, `KitBusy`, `KitConflict`,
 `KitInvalid`, `KitUnavailable`, `KitDenied`, `KitFailed`.

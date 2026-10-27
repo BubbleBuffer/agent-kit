@@ -7,7 +7,7 @@ The root `pubspec.yaml` lists four Dart pub workspace members, each with
 
 ```
 packages/
-  agent_kit_core/      pure Dart models, AgentBackend port, reducer, fake backend
+  agent_kit_core/      pure Dart models, ChatReader and AgentBackend ports, capabilities, reducer, fake backend
   agent_kit_bubblepaw/ pure Dart BubblePaw stdio JSON-RPC adapter
   agent_kit/           Flutter agent widgets and compositions
 apps/

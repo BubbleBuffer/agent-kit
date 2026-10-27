@@ -226,14 +226,18 @@ void main() {
     test('unsupported capability fails with a typed error', () async {
       final limited = ScriptedBackend(
         clock: clock,
-        capabilities: KitCapabilities({KitCapability.rename}),
+        capabilities: KitCapabilities({
+          KitCapability.createChat,
+          KitCapability.send,
+          KitCapability.rename,
+        }),
       );
       final id = (await limited.createChat()).id;
       await limited.send(id, 'go');
       final error = await limited
           .followup(id, 'x')
           .then<Object?>((_) => null, onError: (Object e) => e);
-      // A follow-up is core; queue editing is not.
+      // Follow-ups use send; queue editing has its own capability.
       expect(error, isNull);
       final queued = limited.stateOf(id)!.queue.single.id;
       await expectLater(

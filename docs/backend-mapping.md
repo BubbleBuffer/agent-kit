@@ -16,9 +16,31 @@ BubblePaw calls and fields were checked against the tagged source:
 
 A method available through HTTP, core Rust or a model-facing JS tool is not
 necessarily a stdio RPC. The stdio mapping below is deliberately transport-specific.
-Missing optional capabilities are off, so widgets hide those actions. See the
+Missing capabilities are off: commands requiring them fail with `KitUnsupported`.
+Pane send, cancel and approval controls default to the corresponding
+capabilities. See the
 [adapter README](../packages/agent_kit_bubblepaw/README.md) for lifecycle, errors,
 verification levels and the complete list of desired port changes.
+
+## Capabilities and constraints
+
+`ChatReader` is the read-only port used by `ChatFeed`; `AgentBackend` also
+provides commands. A reader declares its capabilities. A backend can expose
+`BackendConstraints` for finer input limits; the default accepts references,
+all question answer shapes and follow-ups while running.
+
+| Capability | BubblePaw | Scratch read-only adapter |
+|---|---|---|
+| `createChat`, `send`, `cancel` | Yes | No |
+| `approve` | When `approvals` is negotiated | No |
+| `steer`, `questions`, `plan`, `rewind` | When the respective protocol feature is negotiated | No |
+| `rename`, `resume`, `usage` | Yes | No |
+| Other optional capabilities | Not advertised | No |
+
+BubblePaw rejects references, supports a single choice or free-text question
+answer, and supports follow-up while running when `follow_up` is negotiated.
+Scratch's adapter declares no write capabilities. The Scratch command column
+below describes gateway operations, not permissions granted by that adapter.
 
 ## Reads and sequence numbers
 
@@ -103,12 +125,18 @@ from also being kit errors; this is a requested port change, not a core edit.
 Pending approvals and interrupted runs recovered by the host are reflected by
 fresh snapshots, even where recovery itself emits no durable event.
 
+## Open rewind semantics
+
+Core describes an in-place rewind to before the selected item and returns void.
+BubblePaw instead creates a new chat including that item; its adapter exposes
+the resulting chat separately. This disagreement remains open; neither behavior
+is changed by the capability and read-port work.
+
 ## Remaining port gaps
 
 `loadHistoryRange` remains an absent capability, pending a paging RPC in
 BubblePaw stdio. Snapshot-backed message ordinals are not introduced and the
 core contract is unchanged. The core also groups all
 context operations behind one capability, seals error subtypes, returns void
-from rewind, treats all tool boundaries as durable, and has no question-shape,
-attachment or unknown-timestamp capability. These limits are recorded in the
-adapter README. Core and BubblePaw source remain read-only in this change.
+from rewind and treats all tool boundaries as durable; unknown timestamps also
+remain a gap. These limits are recorded in the adapter README.

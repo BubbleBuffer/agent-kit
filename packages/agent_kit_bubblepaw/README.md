@@ -54,7 +54,8 @@ in `backend.features` without inventing support for them.
 | `loadContext`, `loadSummary` | No method | Missing |
 | `loadHistoryRange` | No stdio paging method or integer message sequence | Missing: see the port gap below |
 
-Capabilities enabled: rename, resume, usage; steer with `steer`, questions with
+Capabilities enabled: createChat, send, cancel, rename, resume, usage; approve
+with `approvals`, steer with `steer`, questions with
 `question`, plan with `todo`, and rewind with `rewind`. Capabilities for queue
 editing/send-now, children, child answers, jobs, archive, edit undo, fork, models,
 profiles, reasoning text, worktrees and context are absent. Widgets hide those
@@ -67,7 +68,8 @@ Questions have one item with ID `answer`. Suggested answers become pick-one
 options with an Other input; without suggestions the item is free text. Skips,
 multiple items, multiple choices, and choosing both a suggestion and text are
 rejected without calling `question.answer`. This does not advertise multi-select
-or multi-question support.
+or multi-question support. `BackendConstraints` exposes reference rejection,
+the supported question kinds, and whether `follow_up` was negotiated.
 
 `rewindToNewChat(chatId, messageId)` returns the new chat summary, and
 `createdChats` also emits it. The core's `rewind` delegates to this operation;
@@ -237,9 +239,8 @@ Requested core changes, kept outside this implementation's scope:
 - Split context details, summary loading and history paging capabilities; use
   canonical message-ID cursors for history. The HTTP `/messages` endpoint does
   not exist in v0.2.2 stdio, and message IDs have no integer event sequence.
-- Distinguish single-question/text support from multi-item/multi-select support.
+- Express the single-item and no-skip limits beyond the supported question kinds.
 - Carry transient tool boundaries and text replacement/reset explicitly.
-- Advertise reference attachments, follow-up admission and approvals separately.
 - Allow unknown question/queue timestamps and unknown session-list status.
 
 The internal transport interface is deliberately small. HTTP/SSE is not built.

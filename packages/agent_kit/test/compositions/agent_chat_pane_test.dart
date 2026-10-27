@@ -18,11 +18,13 @@ Widget _pane(
   ScriptedBackend backend,
   ManualClock clock, {
   String chatId = quotaChatId,
+  AgentPaneActions? paneActions,
 }) => AgentChatPane(
   backend: backend,
   chatId: chatId,
   now: clock.now(),
   onReviewApproval: (_) {},
+  paneActions: paneActions,
 );
 
 Future<void> _settle(WidgetTester tester) async {
@@ -231,9 +233,204 @@ void main() {
       expect(find.text('Steer'), findsNothing);
       expect(find.text('deepseek-v4.1-flash'), findsNothing);
       expect(find.byKey(const ValueKey('header-menu')), findsNothing);
-      // The approval and the composer still work.
+      // The approval and composer stay visible, with their actions disabled.
       expect(find.text('Approve'), findsOneWidget);
       expect(find.text('Send'), findsOneWidget);
+      expect(
+        tester.widget<ApprovalBar>(find.byType(ApprovalBar)).enabled,
+        isFalse,
+      );
+      final composer = tester.widget<AgentComposer>(find.byType(AgentComposer));
+      expect(composer.canSend, isFalse);
+      expect(composer.onStop, isNull);
+    });
+
+    testWidgets('missing action capabilities block every input path', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      final s = await playedBackend(
+        tester,
+        capabilities: KitCapabilities.none(),
+      );
+      await pumpApp(tester, _pane(s.backend, s.clock));
+      s.backend.commands.clear();
+
+      for (final label in ['Send', 'Stop', 'Approve', 'For session', 'Deny']) {
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)),
+          isSemantics(isButton: true, hasEnabledState: true, isEnabled: false),
+          reason: label,
+        );
+        await tester.tap(find.text(label));
+        await _settle(tester);
+      }
+      await tester.tap(find.byType(EditableText).last);
+      for (final key in [
+        LogicalKeyboardKey.enter,
+        LogicalKeyboardKey.digit1,
+        LogicalKeyboardKey.digit2,
+        LogicalKeyboardKey.digit3,
+      ]) {
+        await tester.sendKeyEvent(key);
+        await _settle(tester);
+      }
+
+      // The pane also rejects direct child callbacks, including steer/queue.
+      final composer = tester.widget<AgentComposer>(find.byType(AgentComposer));
+      for (final delivery in ComposerDelivery.values) {
+        composer.onSubmit(
+          ComposerSubmission(text: 'blocked', delivery: delivery),
+        );
+      }
+      tester
+          .widget<ApprovalBar>(find.byType(ApprovalBar))
+          .onDecide(ApprovalDecision.approve);
+      await _settle(tester);
+      expect(commandNames(s.backend), isEmpty);
+      expect(find.text('Needs approval'), findsOneWidget);
+      expect(find.text('Reason for the agent (optional)'), findsNothing);
+      handle.dispose();
+    });
+
+    for (final capability in [
+      KitCapability.send,
+      KitCapability.cancel,
+      KitCapability.approve,
+    ]) {
+      testWidgets('${capability.name} enables only its own action', (
+        tester,
+      ) async {
+        final s = await playedBackend(
+          tester,
+          capabilities: KitCapabilities([capability]),
+        );
+        await pumpApp(tester, _pane(s.backend, s.clock));
+        final composer = tester.widget<AgentComposer>(
+          find.byType(AgentComposer),
+        );
+        expect(composer.canSend, capability == KitCapability.send);
+        expect(composer.onStop != null, capability == KitCapability.cancel);
+        expect(
+          tester.widget<ApprovalBar>(find.byType(ApprovalBar)).enabled,
+          capability == KitCapability.approve,
+        );
+        s.backend.commands.clear();
+        switch (capability) {
+          case KitCapability.send:
+            await tester.enterText(find.byType(EditableText).last, 'then docs');
+            await tester.pump();
+            await tester.tap(find.text('Send'));
+            await _settle(tester);
+            expect(lastArgs(s.backend, 'followup')[1], 'then docs');
+          case KitCapability.cancel:
+            await tester.tap(find.text('Stop'));
+            await _settle(tester);
+            expect(lastArgs(s.backend, 'cancel')[0], quotaChatId);
+          case KitCapability.approve:
+            await tester.tap(find.text('Approve'));
+            await _settle(tester);
+            expect(lastArgs(s.backend, 'decideApproval')[1], 'ap1');
+          default:
+            fail('Unexpected capability: $capability');
+        }
+      });
+    }
+
+    testWidgets('explicit all enables actions without capabilities', (
+      tester,
+    ) async {
+      final s = await playedBackend(
+        tester,
+        capabilities: KitCapabilities.none(),
+      );
+      await pumpApp(
+        tester,
+        _pane(s.backend, s.clock, paneActions: AgentPaneActions.all),
+      );
+      await tester.enterText(find.byType(EditableText).last, 'then docs');
+      await tester.pump();
+      await tester.tap(find.text('Send'));
+      await _settle(tester);
+      expect(lastArgs(s.backend, 'followup')[1], 'then docs');
+      await tester.tap(find.text('Approve'));
+      await _settle(tester);
+      expect(lastArgs(s.backend, 'decideApproval')[1], 'ap1');
+      await tester.tap(find.text('Stop'));
+      await _settle(tester);
+      expect(lastArgs(s.backend, 'cancel')[0], quotaChatId);
+    });
+
+    testWidgets('an explicit mixed override takes precedence per action', (
+      tester,
+    ) async {
+      final s = await playedBackend(
+        tester,
+        capabilities: KitCapabilities([
+          KitCapability.cancel,
+          KitCapability.approve,
+        ]),
+      );
+      await pumpApp(
+        tester,
+        _pane(
+          s.backend,
+          s.clock,
+          paneActions: const AgentPaneActions(
+            send: true,
+            stop: false,
+            decide: false,
+          ),
+        ),
+      );
+      final composer = tester.widget<AgentComposer>(find.byType(AgentComposer));
+      expect(composer.canSend, isTrue);
+      expect(composer.onStop, isNull);
+      expect(
+        tester.widget<ApprovalBar>(find.byType(ApprovalBar)).enabled,
+        isFalse,
+      );
+    });
+
+    testWidgets('rebuilds resolve current capabilities and overrides', (
+      tester,
+    ) async {
+      final s = await playedBackend(tester);
+      final backend = _SpyBackend(s.backend);
+      Widget pane({AgentPaneActions? actions}) => AgentChatPane(
+        key: const ValueKey('capability-pane'),
+        backend: backend,
+        chatId: quotaChatId,
+        now: s.clock.now(),
+        paneActions: actions,
+      );
+      void expectActions(bool enabled) {
+        final composer = tester.widget<AgentComposer>(
+          find.byType(AgentComposer),
+        );
+        expect(composer.canSend, enabled);
+        expect(composer.onStop != null, enabled);
+        expect(
+          tester.widget<ApprovalBar>(find.byType(ApprovalBar)).enabled,
+          enabled,
+        );
+      }
+
+      await pumpApp(tester, pane());
+      expectActions(true);
+      backend.capabilityOverride = KitCapabilities.none();
+      await pumpApp(tester, pane());
+      expectActions(false);
+      await pumpApp(tester, pane(actions: AgentPaneActions.all));
+      expectActions(true);
+      await pumpApp(tester, pane());
+      expectActions(false);
+      backend.capabilityOverride = null;
+      await pumpApp(tester, pane());
+      expectActions(true);
+      // Capability/action updates reuse the existing feed.
+      expect(backend.opened, [quotaChatId]);
+      expect(backend.closed, isEmpty);
     });
   });
 
@@ -394,9 +591,10 @@ class _SpyBackend implements AgentBackend {
   final ScriptedBackend inner;
   final opened = <String>[];
   final closed = <String>[];
+  KitCapabilities? capabilityOverride;
 
   @override
-  KitCapabilities get capabilities => inner.capabilities;
+  KitCapabilities get capabilities => capabilityOverride ?? inner.capabilities;
 
   @override
   Future<ChatPage> listChats({String? cursor, String? query}) =>

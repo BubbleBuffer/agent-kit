@@ -76,12 +76,14 @@ typedef FakeResponder = FutureOr<void> Function(
 /// Sequence numbers are global to the backend, as in BubblePaw's store.
 /// With a [ManualClock], playback is deterministic and stepped by
 /// `ManualClock.advance`.
-final class ScriptedBackend implements AgentBackend {
+final class ScriptedBackend
+    implements AgentBackend, BackendConstraintsProvider {
   /// Creates the backend with [scripts]' chats (empty until played).
   ScriptedBackend({
     List<ChatScript> scripts = const [],
     KitClock? clock,
     KitCapabilities? capabilities,
+    this.constraints = BackendConstraints.defaults,
     List<KitChoice> models = const [],
     List<KitChoice> profiles = const [],
     this.onSend,
@@ -102,6 +104,9 @@ final class ScriptedBackend implements AgentBackend {
 
   @override
   final KitCapabilities capabilities;
+
+  @override
+  final BackendConstraints constraints;
 
   /// Called after `send` started a run, to script a reply.
   final FakeResponder? onSend;
@@ -256,7 +261,7 @@ final class ScriptedBackend implements AgentBackend {
 
   @override
   Future<ChatSummary> createChat({String? title, String? workspace}) async {
-    _command('createChat', [title, workspace]);
+    _command('createChat', [title, workspace], needs: KitCapability.createChat);
     final id = _id('chat');
     final chat = _addChat(id, title ?? 'New chat');
     if (workspace != null) {
@@ -274,9 +279,16 @@ final class ScriptedBackend implements AgentBackend {
     String text, {
     List<KitRef> refs = const [],
   }) async {
-    final chat = _command('send', [chatId, text, refs], chatId: chatId);
+    final chat = _command(
+      'send',
+      [chatId, text, refs],
+      chatId: chatId,
+      needs: KitCapability.send,
+    );
+    _checkRefs(refs);
     if (text.trim().isEmpty) throw const KitInvalid('Type a message first.');
     if (chat.state.run?.isActive ?? false) {
+      if (!constraints.followUpWhileRunning) throw const KitBusy();
       final id = _queue(chatId, text, refs, QueueMode.followup);
       return SendResult(delivery: SendDelivery.queued, inputId: id);
     }
@@ -306,6 +318,12 @@ final class ScriptedBackend implements AgentBackend {
     return id;
   }
 
+  void _checkRefs(List<KitRef> refs) {
+    if (refs.isNotEmpty && !constraints.acceptsReferences) {
+      throw const KitInvalid('This backend does not accept references.');
+    }
+  }
+
   @override
   Future<String> steer(
     String chatId,
@@ -318,6 +336,7 @@ final class ScriptedBackend implements AgentBackend {
       chatId: chatId,
       needs: KitCapability.steer,
     );
+    _checkRefs(refs);
     return _queue(chatId, text, refs, QueueMode.steer);
   }
 
@@ -327,7 +346,17 @@ final class ScriptedBackend implements AgentBackend {
     String text, {
     List<KitRef> refs = const [],
   }) async {
-    _command('followup', [chatId, text, refs], chatId: chatId);
+    final chat = _command(
+      'followup',
+      [chatId, text, refs],
+      chatId: chatId,
+      needs: KitCapability.send,
+    );
+    _checkRefs(refs);
+    if ((chat.state.run?.isActive ?? false) &&
+        !constraints.followUpWhileRunning) {
+      throw const KitBusy();
+    }
     return _queue(chatId, text, refs, QueueMode.followup);
   }
 
@@ -382,7 +411,12 @@ final class ScriptedBackend implements AgentBackend {
 
   @override
   Future<void> cancel(String chatId) async {
-    final chat = _command('cancel', [chatId], chatId: chatId);
+    final chat = _command(
+      'cancel',
+      [chatId],
+      chatId: chatId,
+      needs: KitCapability.cancel,
+    );
     final run = chat.state.run;
     if (run == null || !run.isActive) return;
     emit(chatId, {
@@ -412,11 +446,12 @@ final class ScriptedBackend implements AgentBackend {
     String approvalId,
     ApprovalDecision decision,
   ) async {
-    final chat = _command('decideApproval', [
-      chatId,
-      approvalId,
-      decision,
-    ], chatId: chatId);
+    final chat = _command(
+      'decideApproval',
+      [chatId, approvalId, decision],
+      chatId: chatId,
+      needs: KitCapability.approve,
+    );
     final approval = chat.state.approvals
         .where((a) => a.id == approvalId)
         .firstOrNull;
@@ -452,6 +487,11 @@ final class ScriptedBackend implements AgentBackend {
     if (q == null) throw const KitNotFound('No such question.');
     if (!q.isPending) throw const KitConflict('That was already answered.');
     for (final item in q.items) {
+      if (!constraints.supportedQuestionKinds.contains(item.kind)) {
+        throw const KitInvalid(
+          'This backend cannot answer that question kind.',
+        );
+      }
       if (!answers.containsKey(item.id)) {
         throw KitInvalid('Missing an answer for "${item.id}".');
       }

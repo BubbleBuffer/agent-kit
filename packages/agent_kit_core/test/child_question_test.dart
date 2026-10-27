@@ -373,7 +373,10 @@ void main() {
     test('without the capability it is unsupported', () async {
       final limited = ScriptedBackend(
         clock: ManualClock(),
-        capabilities: KitCapabilities(const [KitCapability.children]),
+        capabilities: KitCapabilities(const [
+          KitCapability.createChat,
+          KitCapability.children,
+        ]),
       );
       final id = (await limited.createChat()).id;
       await expectLater(
