@@ -104,8 +104,9 @@ fresh snapshots, even where recovery itself emits no durable event.
 
 ## Remaining port gaps
 
-The adapter cannot faithfully implement integer-sequence history paging from
-string message IDs without defining new semantics. The core also groups all
+`loadHistoryRange` remains an absent capability, pending a paging RPC in
+BubblePaw stdio. Snapshot-backed message ordinals are not introduced and the
+core contract is unchanged. The core also groups all
 context operations behind one capability, seals error subtypes, returns void
 from rewind, treats all tool boundaries as durable, and has no question-shape,
 attachment or unknown-timestamp capability. These limits are recorded in the

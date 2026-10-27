@@ -141,6 +141,10 @@ BP_TEST_BIN=/path/to/bubblepaw dart test test/local_transport_test.dart
 
 ## Port gaps
 
+`loadHistoryRange` remains an absent capability, pending a paging RPC in
+BubblePaw stdio. The adapter does not assign snapshot-backed message ordinals
+or change the core contract.
+
 Requested core changes, kept outside this implementation's scope:
 
 - Return a new chat from rewind, with file restoration/conflict details.
