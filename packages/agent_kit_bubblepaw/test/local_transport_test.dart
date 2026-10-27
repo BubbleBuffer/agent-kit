@@ -92,6 +92,7 @@ void main() {
         diagnostics: diagnostics,
       );
       expect(events.whereType<RunStarted>(), isNotEmpty);
+      expect(events.whereType<GapEvent>(), isEmpty);
       expect(
         events.any(
           (event) =>
@@ -124,6 +125,25 @@ void main() {
         diagnostics: diagnostics,
       );
       expect(transport.droppedEvents, 1);
+      await _until(
+        () => events.whereType<RunFinished>().any(
+          (event) => event.runId == second.runId,
+        ),
+        stage: 'replayed second completion',
+        diagnostics: diagnostics,
+      );
+      expect(
+        events.whereType<RunStarted>().where(
+          (event) => event.runId == second.runId,
+        ),
+        hasLength(1),
+      );
+      expect(
+        events.whereType<RunFinished>().where(
+          (event) => event.runId == second.runId,
+        ),
+        hasLength(1),
+      );
       expect(
         feed.snapshot!.items.whereType<UserMessage>().any(
           (item) => item.text == 'Recover a dropped event',
@@ -150,6 +170,89 @@ void main() {
       );
       expect(errors, isEmpty);
       expect(feed.snapshot!.stale, isFalse);
+    },
+    skip: binary == null || binary.trim().isEmpty
+        ? 'Set BP_TEST_BIN to opt in to the released local stdio host.'
+        : false,
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'released host preserves approved tool boundaries across steer and gap',
+    () async {
+      final root = await Directory.systemTemp.createTemp('agent-kit-approval-');
+      addTearDown(() => root.delete(recursive: true));
+      final workspace = await Directory('${root.path}/workspace').create();
+      final data = await Directory('${root.path}/data').create();
+      final transport = _GapTransport(
+        await StdioBubblePawTransport.start(
+          binaryPath: binary!,
+          workspaceDirectory: workspace.path,
+          dataDirectory: data.path,
+          arguments: const [
+            '--provider', 'demo', '--no-auto-summarize',
+            '--set', "agent.execution_mode='native'",
+            '--set', "approvals.tools.exec='ask'",
+          ],
+        ),
+      );
+      addTearDown(transport.dispose);
+      final backend = await BubblePawBackend.connect(
+        transport,
+        workspaceDirectory: workspace.path,
+      );
+      addTearDown(backend.dispose);
+      final chat = await backend.createChat(title: 'Offline approval recovery');
+      final initial = await backend.loadChat(chat.id);
+      final events = <KitEvent>[];
+      final errors = <Object>[];
+      final subscription = backend.events(chat.id, after: initial.seq).listen(
+        events.add,
+        onError: errors.add,
+      );
+      addTearDown(subscription.cancel);
+      String diagnostics() =>
+          'kinds=${events.map((event) => event.kind).toList()}; '
+          'errors=${errors.map((error) => error.runtimeType).toList()}; '
+          'hostShapes=${transport.notificationShapes}';
+      final run = await backend.send(chat.id, 'Run the offline demo');
+      await _until(
+        () => events.whereType<ApprovalRequested>().isNotEmpty,
+        stage: 'exec approval', diagnostics: diagnostics,
+      );
+      final approval = events.whereType<ApprovalRequested>().single.approval;
+      expect(approval.tool, 'exec');
+      // An approval keeps the real run active while steering is admitted.
+      await backend.steer(chat.id, 'Complete the offline demo');
+      // Drop the actual durable exec start after approval; the real host log
+      // must replay it even if session.state has already advanced past it.
+      transport.dropNextDurableEvent(chat.id, type: 'tool_started');
+      await backend.decideApproval(
+        chat.id, approval.id,
+        ApprovalDecision.approve,
+      );
+      await _until(
+        () => events.whereType<RunFinished>().any(
+          (event) => event.runId == run.runId,
+        ),
+        stage: 'approved run completion', diagnostics: diagnostics,
+      );
+      expect(transport.injectedGaps, 1);
+      expect(events.whereType<GapEvent>(), hasLength(1));
+      final starts = events.whereType<ToolStarted>().where(
+        (event) => event.name == 'exec',
+      ).toList();
+      expect(starts, hasLength(1));
+      expect(events.whereType<ToolFinished>().where(
+        (event) => event.callId == starts.single.callId,
+      ), hasLength(1));
+      expect(events.whereType<ApprovalResolved>().where(
+        (event) => event.approvalId == approval.id,
+      ), hasLength(1));
+      expect(events.whereType<RunFinished>().where(
+        (event) => event.runId == run.runId,
+      ), hasLength(1));
+      expect(errors, isEmpty);
     },
     skip: binary == null || binary.trim().isEmpty
         ? 'Set BP_TEST_BIN to opt in to the released local stdio host.'
@@ -190,6 +293,7 @@ class _GapTransport implements BubblePawTransport {
   final _notifications = StreamController<Map<String, Object?>>.broadcast();
   late final StreamSubscription<Map<String, Object?>> _subscription;
   String? _dropFor;
+  String? _dropType;
   int _lastForwarded = 0;
   int stateReads = 0;
   int replayReads = 0;
@@ -199,7 +303,10 @@ class _GapTransport implements BubblePawTransport {
   final requestCounts = <String, int>{};
   final notificationShapes = <Map<String, Object?>>[];
 
-  void dropNextDurableEvent(String chatId) => _dropFor = chatId;
+  void dropNextDurableEvent(String chatId, {String? type}) {
+    _dropFor = chatId;
+    _dropType = type;
+  }
 
   void _forward(Map<String, Object?> notification) {
     final params = notification['params'];
@@ -236,7 +343,8 @@ class _GapTransport implements BubblePawTransport {
         });
       }
       if (params['durable'] == true) {
-        if (_dropFor != null && params['session_id'] == _dropFor) {
+        if (_dropFor != null && params['session_id'] == _dropFor &&
+            (_dropType == null || params['type'] == _dropType)) {
           _dropFor = null;
           droppedEvents++;
           injectedGaps++;

@@ -83,6 +83,12 @@ and pending approvals, then requests `events.after` using the new snapshot's
 host cursor. Notifications arriving during recovery wait behind it; durable
 duplicates are discarded. Replay is read in pages of 1000.
 
+Ordinary snapshot refreshes retain the last delivered durable cursor and replay
+from it before emitting snapshot-derived changes. Steering, `run_finished` and
+`session_settled` refresh state without routine kit gaps. Projection changes that
+exceed the 16 reserved positions, incompatible text and nested transient tool
+boundaries can still require a resync.
+
 One host event can map to several kit events. Native kit sequences reserve 16
 positions for each host sequence: durable subevents occupy the first positions,
 snapshots and transient fragments use the last. These adapter sequences are not
@@ -91,8 +97,10 @@ back before replay. The stdio adapter is for native Dart applications.
 
 `text_delta` is provisional; paragraphs confirm it. Matching prefixes produce
 only missing text. A retry or conflicting prefix requests a fresh snapshot
-instead of duplicating or committing provisional text. Completion reloads the
-canonical message IDs; transient notifications are never written to storage.
+instead of duplicating or committing provisional text. Streamed assistant IDs
+remain stable through completion and ordinary refreshes; an explicit `loadChat`
+returns canonical message IDs. Load that snapshot before rewinding: rewind
+requires a canonical message ID. Transient notifications are never written to storage.
 Stdio `session.state` omits `live_seen`, so fragments at exactly the snapshot
 cursor cannot be distinguished from already-included fragments and are skipped.
 The canonical completion remains authoritative.
@@ -104,6 +112,8 @@ plain system lines; nontext file/image/execution outputs have no kit renderer.
 Settled notifications request a snapshot. Source snapshots contain only pending
 questions, so resolved prompts observed live disappear on reload; their canonical
 generated answer messages remain in history.
+Usage updates compare authoritative session totals on `usage.last_request`, run
+completion and refresh; per-request usage is not treated as the session total.
 Nested transient tool boundaries request reloads: the current core has only
 durable tool events, so those live-only inner rows cannot be faithfully retained.
 Pending approvals are obtained separately because stdio state omits them.
@@ -131,13 +141,64 @@ All builds and tests run on GitHub-hosted CI.
    summaries disabled. It sends messages, sees kit run/text/completion, and
    survives dropped real notifications followed by an injected `events.gap`.
    Gap injection tests adapter recovery, not an actual host buffer overflow.
-3. **Live model:** not part of this package's acceptance run.
+3. **Live model:** the opt-in script below exercises a real configured provider.
+   It is never run in CI and has no live acceptance result until a user runs it.
 
 ```sh
 cd packages/agent_kit_bubblepaw
 dart test
 BP_TEST_BIN=/path/to/bubblepaw dart test test/local_transport_test.dart
 ```
+
+## Opt-in live model acceptance
+
+`tool/live_check.dart` makes real model calls and automatically **approves every
+approval request in the new acceptance session**, once per request. Invoking it
+authorizes that behavior. Use a trusted provider configuration and a disposable
+workspace. These approval decisions are not a sandbox: a model tool can affect
+resources outside its workspace. No live credentials belong in this repository
+or in command arguments.
+
+```sh
+cd packages/agent_kit_bubblepaw
+dart run tool/live_check.dart \
+  --binary /path/to/bubblepaw \
+  --config /path/to/private-provider.toml \
+  --trace /path/to/new-redacted-wire.jsonl
+```
+
+The provider, authentication references and model come from the private TOML
+configuration. Additional host arguments follow `--`, for example
+`-- --model MODEL`. The script forces native tools,
+`approvals.tools.exec="ask"`, and disables automatic summaries. Built-in tools
+do not declare approval requirements by default, so the explicit per-tool policy
+is necessary to observe an approval. It uses two separate exec calls, handles
+every approval (including later requests), steers while the first approved exec
+is active, awaits kit `run.finished`, and checks successful process results plus
+canonical steering delivery and the final reply. It also requires at least one
+`UsageUpdated` and zero kit gaps during this ordinary run. Choose a provider that
+reports usage; missing usage or a resync makes the check fail. The printed result
+includes approval, process, usage and gap counts without message contents.
+
+Workspace and data directories default to temporary directories that the script
+removes. Optional `--workspace` and `--data-dir` retain caller-supplied directories;
+the data directory must be empty and dedicated to this child. `--timeout-seconds`
+bounds the live send, completion, pending decisions and final snapshot together;
+it defaults to 180 (maximum 3600). Disposal shuts down only the process the script
+started. A failed check prints a fixed stage/reason without arbitrary provider,
+exception or path text. A provider may decline the requested tools; that is a
+failed live acceptance check, not evidence that the local transport is broken.
+
+`--trace` is optional and requires a new file. It tees actual stdin/stdout JSON
+lines at the byte pipes before transport parsing, rather than reconstructing
+notifications from kit events. Each JSONL entry records the observed line order,
+direction, byte count, completeness and structurally redacted record. Protocol
+constants are allowlisted and IDs are replaced with consistent aliases. Text,
+commands, arguments, paths, arbitrary values and unknown keys are removed;
+stderr and malformed/incomplete lines retain counts only. This is a **redacted
+wire capture**, not byte-exact raw output. Cross-pipe ordering is the order
+observed by Dart, not a claim about simultaneous writes in the host. The host's
+own private data directory remains separate from this capture.
 
 ## Port gaps
 

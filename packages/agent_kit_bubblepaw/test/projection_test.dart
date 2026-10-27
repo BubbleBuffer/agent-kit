@@ -84,6 +84,28 @@ void main() {
       wire('run_finished', 3, fields: {'status': 'completed', 'text': 'Reply'}),
     );
     expect(finished.whereType<RunFinished>(), hasLength(1));
+    expect(finished.whereType<GapEvent>(), isEmpty);
+  });
+
+  test('queue and settlement notifications request no synthetic projection gaps', () {
+    final projection = BubblePawProjection();
+    projection.snapshot(state(), workspaceDirectory: '/example');
+    for (final (index, type) in [
+      'steering_accepted', 'followup_queued', 'session_settled',
+    ].indexed) {
+      expect(projection.event(wire(type, index + 1)), isEmpty);
+    }
+  });
+
+  test('a cached newer snapshot does not suppress the requested durable replay', () {
+    final projection = BubblePawProjection();
+    projection.snapshot(state(seq: 10), workspaceDirectory: '/example');
+    projection.replayFrom('session-a', 5);
+    final event = wire('tool_started', 9, fields: {
+      'call': {'id': 'replayed-tool', 'name': 'js', 'arguments': {}},
+    });
+    expect(projection.event(event).single, isA<ToolStarted>());
+    expect(projection.event(event), isEmpty);
   });
 
   test('canonical snapshot projects messages, tool outcomes, queue, plan and pending approvals', () {
