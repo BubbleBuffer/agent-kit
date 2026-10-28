@@ -94,6 +94,7 @@ class AgentChatPane extends StatefulWidget {
     this.onOpenJob,
     this.onOpenContext,
     this.contentWidth = 720,
+    this.turnLayout = TurnLayout.chronological,
     AgentPaneActions? paneActions,
   }) : _paneActionsOverride = paneActions;
 
@@ -157,6 +158,9 @@ class AgentChatPane extends StatefulWidget {
 
   /// The width of the content column.
   final double contentWidth;
+
+  /// How a turn's items are ordered in the transcript.
+  final TurnLayout turnLayout;
 
   /// Overrides which actions work. When omitted, send, stop and approval
   /// decisions follow the backend's send, cancel and approve capabilities.
@@ -558,6 +562,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       inserts: _inserts(snap),
       actions: _actions(),
       controller: _transcript,
+      layout: widget.turnLayout,
       contentWidth: contentWidth,
       trailing: interrupted
           ? InterruptedNotice(
