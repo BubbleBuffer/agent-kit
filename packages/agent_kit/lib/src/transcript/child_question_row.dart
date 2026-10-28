@@ -343,7 +343,7 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                     _AnswerField(
                       controller: _text,
                       focusNode: _focus,
-                      hint: 'Answer ${task.split(' ').first} yourself…',
+                      hint: 'Your answer',
                     ),
                     const SizedBox(height: 6),
                     Row(

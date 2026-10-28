@@ -24,13 +24,13 @@ Duration? workElapsed(DateTime? start, DateTime? end, DateTime now) {
 String jobShortName(BackgroundJob job) =>
     job.command.trim().split(RegExp(r'\s+')).take(2).join(' ');
 
-/// The chip tag of an agent: the elapsed time while it runs, then `ready`.
+/// The chip tag of an agent: the elapsed time while it runs, then `Result ready`.
 String agentTag(ChildAgent agent, DateTime now) => switch (agent.state) {
   WorkState.running => _elapsedOr(
     workElapsed(agent.startedAt, agent.endedAt, now),
     'running',
   ),
-  WorkState.done => 'ready',
+  WorkState.done => 'Result ready',
   WorkState.failed => 'failed',
   WorkState.cancelled => 'cancelled',
   WorkState.waitingForAnswer => 'asking parent',

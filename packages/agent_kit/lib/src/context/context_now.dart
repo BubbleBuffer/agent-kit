@@ -455,15 +455,6 @@ class ContextDetail extends StatelessWidget {
                   child: _BackButton(onBack!),
                 ),
               glyphIcon(glyphLayers, size: 14, color: t.colors.iconSecondary),
-              const SizedBox(width: 6),
-              Text(
-                (chapter ? 'Chapter summary' : 'Episode summary').toUpperCase(),
-                style: ts(
-                  t.typeScale.uiSmall,
-                  t.muted,
-                  weight: 700,
-                ).copyWith(letterSpacing: .5),
-              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -534,7 +525,6 @@ class ContextDetail extends StatelessWidget {
             ),
           ),
           if (s.text.isNotEmpty || loading) ...[
-            const _H('Summary'),
             if (s.text.isEmpty)
               Text(
                 'Loading the summary…',
@@ -583,12 +573,8 @@ class _H extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 18, bottom: 6),
       child: Text(
-        text.toUpperCase(),
-        style: ts(
-          t.typeScale.uiSmall,
-          t.faint,
-          weight: 700,
-        ).copyWith(letterSpacing: .5),
+        text,
+        style: ts(t.typeScale.uiSmall, t.faint, weight: 700),
       ),
     );
   }
