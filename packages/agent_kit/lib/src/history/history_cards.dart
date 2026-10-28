@@ -545,7 +545,7 @@ class _ActionLog extends StatelessWidget {
         ),
         if (rest > 0)
           Padding(
-            padding: EdgeInsets.only(left: compact ? 38 : 46, top: 2),
+            padding: EdgeInsets.only(left: 48, top: 2),
             child: Align(
               alignment: Alignment.centerLeft,
               child: KitTextButton(
@@ -602,7 +602,7 @@ class _ActionRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: compact ? 46 : 54,
+              width: 56,
               child: Padding(
                 padding: const EdgeInsets.only(top: 1),
                 child: Text(
