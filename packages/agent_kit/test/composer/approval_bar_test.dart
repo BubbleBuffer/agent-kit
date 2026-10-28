@@ -322,4 +322,47 @@ void main() {
     await pumpComposer(tester, _bar([]));
     expect(find.text('Details'), findsNothing);
   });
+
+  testWidgets('with two panes only the focused pane\'s bar answers', (
+    tester,
+  ) async {
+    final a = <ApprovalDecision>[], b = <ApprovalDecision>[];
+    final focusA = FocusNode(), focusB = FocusNode();
+    addTearDown(focusA.dispose);
+    addTearDown(focusB.dispose);
+    Widget pane(List<ApprovalDecision> d, FocusNode f) => ApprovalKeyPane(
+      child: Column(
+        children: [
+          Focus(focusNode: f, child: const SizedBox(height: 10)),
+          _bar(d),
+        ],
+      ),
+    );
+    await pumpComposer(
+      tester,
+      Column(children: [pane(a, focusA), pane(b, focusB)]),
+    );
+
+    // No pane has had focus: exactly one bar answers, never both.
+    await _key(tester, LogicalKeyboardKey.digit1);
+    expect(a.length + b.length, 1);
+    a.clear();
+    b.clear();
+
+    focusB.requestFocus();
+    await tester.pump();
+    await _key(tester, LogicalKeyboardKey.digit1);
+    expect([a.length, b.length], [0, 1]);
+
+    focusA.requestFocus();
+    await tester.pump();
+    await _key(tester, LogicalKeyboardKey.digit2);
+    expect([a.length, b.length], [1, 1]);
+
+    // Focus leaves both panes: the one focused last keeps the keys.
+    focusA.unfocus();
+    await tester.pump();
+    await _key(tester, LogicalKeyboardKey.digit1);
+    expect([a.length, b.length], [2, 1]);
+  });
 }

@@ -45,6 +45,7 @@ class TranscriptActions {
     this.onViewContext,
     this.onAnswerChildQuestion,
     this.onResume,
+    this.summaryOf,
     this.now,
   });
 
@@ -84,6 +85,9 @@ class TranscriptActions {
   /// "Resume" on an interrupted notice.
   final VoidCallback? onResume;
 
+  /// Replaces the summary line of activity groups (default: verb counts).
+  final ActivitySummaryBuilder? summaryOf;
+
   /// Replaces the wall clock for waiting times (tests, the gallery).
   final DateTime? now;
 }
@@ -113,6 +117,7 @@ class TranscriptItemView extends StatelessWidget {
       g,
       onOpenOutput: actions.onOpenOutput,
       onOpenChild: actions.onOpenChild,
+      summaryOf: actions.summaryOf,
     ),
     final FileEdit e => FileEditRow(
       e,

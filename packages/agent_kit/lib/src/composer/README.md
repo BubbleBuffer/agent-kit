@@ -35,6 +35,9 @@ Mockup parts: `.approval`, `.queue`, `.composer`, `.cmp-chip`, `.seg` and the
 - Approval details: when an `Approval` carries `arguments`, the bar shows a
   "Details" button that opens them (JSON indented) under the action line; the
   tool and its target stay on one line with a tooltip.
+- Several chat panes on screen: wrap each in `ApprovalKeyPane` (`AgentChatPane`
+  does). 1, 2 and 3 then go only to the bar of the focused pane, else the pane
+  focused last, never to two bars.
 - Composer keys: Enter sends (while running: steers, or queues in Queue mode),
   Ctrl/Cmd+Enter while running does the other one, Shift+Enter adds a newline.
   With mention suggestions open: up/down move, Enter or Tab picks, Esc closes.

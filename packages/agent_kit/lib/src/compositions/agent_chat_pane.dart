@@ -404,7 +404,10 @@ class _AgentChatPaneState extends State<AgentChatPane> {
   // ---------------------------------------------------------------- build
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ApprovalKeyPane(child: Builder(builder: _buildPane));
+
+  Widget _buildPane(BuildContext context) {
     final snap = _snapshot;
     if (snap == null) return _placeholder(context);
     final running = snap.run?.isActive ?? false;
