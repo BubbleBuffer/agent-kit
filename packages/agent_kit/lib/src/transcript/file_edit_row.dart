@@ -108,10 +108,9 @@ class _FileEditRowState extends State<FileEditRow> {
             color: t.ink,
             onTap: widget.onReviewDiff,
           );
-    final primary = created ? [?openButton] : [
-      ?reviewButton,
-      if (widget.openEveryEdit) ?openButton,
-    ];
+    final primary = created
+        ? [?openButton]
+        : [?reviewButton, if (widget.openEveryEdit) ?openButton];
     final countStyle = ts(const TypeSpec(12, 16, 600), t.ink);
     final added = diff.added;
     final removed = diff.removed;
@@ -221,10 +220,7 @@ class _FileEditRowState extends State<FileEditRow> {
           if (_refusal != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: Text(
-                _refusal!,
-                style: ts(t.typeScale.uiSmall, t.faint),
-              ),
+              child: Text(_refusal!, style: ts(t.typeScale.uiSmall, t.faint)),
             ),
           if (open)
             Padding(
