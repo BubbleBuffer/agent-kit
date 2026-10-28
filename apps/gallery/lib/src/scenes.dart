@@ -138,6 +138,9 @@ Widget buildScene(
 
 /// A scene that is not built yet: names the composition and shows the live
 /// state of the fake backend's chat, so the plumbing is visible.
+// A scene without a composition yet. Developer notes, not shown: the scene's
+// `contents` list says what it will contain, and `mockupShot` names the
+// mockup shot (shots/<name>) to compare it with.
 class ScenePlaceholder extends StatelessWidget {
   const ScenePlaceholder({super.key, required this.scene, this.snapshot});
 
@@ -192,16 +195,6 @@ class ScenePlaceholder extends StatelessWidget {
                   ],
                   SizedBox(height: t.spacing.lg),
                   const _AreaLine(),
-                  SizedBox(height: t.spacing.lg),
-                  Text('Placeholder. It will contain:', style: small),
-                  SizedBox(height: t.spacing.xs),
-                  for (final line in scene.contents)
-                    Text(line, style: ts(t.typeScale.ui, t.ink, weight: 400)),
-                  SizedBox(height: t.spacing.lg),
-                  Text(
-                    'Compare with shots/${scene.mockupShot} in the mockup.',
-                    style: small,
-                  ),
                 ],
               ),
             ),

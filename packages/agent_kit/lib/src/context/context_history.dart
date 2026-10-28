@@ -117,8 +117,7 @@ class _ContextHistoryState extends State<ContextHistory> {
       _Entry(
         null,
         (_) => const CxNote(
-          'The whole conversation as it happened. Nothing here is changed or '
-          'deleted. Dimmed messages are replaced by a summary in what the '
+          'Nothing here is changed or deleted. Dimmed messages are replaced by a summary in what the '
           'model sees.',
         ),
       ),
