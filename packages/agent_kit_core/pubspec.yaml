@@ -1,6 +1,6 @@
 name: agent_kit_core
 description: Pure Dart agent UI core for the BubbleBuffer agent kit (view models, the AgentBackend port, the event reducer and a scripted fake backend). No Flutter.
-version: 0.12.0
+version: 0.13.0
 publish_to: none
 resolution: workspace
 
