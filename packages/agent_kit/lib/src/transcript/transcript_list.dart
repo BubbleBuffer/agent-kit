@@ -554,7 +554,12 @@ class _TranscriptListState extends State<TranscriptList> {
                   final entry = entries[i];
                   final insert = entry.insert;
                   if (insert != null) {
-                    return column(insert.id, index, widget.rowGap, insert.child);
+                    return column(
+                      insert.id,
+                      index,
+                      widget.rowGap,
+                      insert.child,
+                    );
                   }
                   final item = entry.item!;
                   final before = i > 0 ? entries[i - 1] : null;
