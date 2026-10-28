@@ -1,8 +1,8 @@
 // Compacted history as the kit draws it: closed chapters, the open chapter's
 // episodes and legacy summaries, as plain immutable view models. A host maps
 // its own history to them (no backend or bridge type is imported here).
-// Fields the store does not have yet (decisions, sections) are not modelled;
-// add them as plain fields when they exist.
+// A chapter carries its decisions and sections when the host has them; both
+// stay empty for a chapter summarized without them.
 
 import 'package:flutter/foundation.dart';
 
@@ -84,6 +84,20 @@ class HistoryEpisode {
   bool get hasActions => actions.isNotEmpty;
 }
 
+/// A named stretch of a chapter: a name (data, not a label) and the one-based
+/// ordinals of its first and last episode.
+@immutable
+class HistorySection {
+  const HistorySection({
+    required this.name,
+    this.firstEpisode,
+    this.lastEpisode,
+  });
+
+  final String name;
+  final int? firstEpisode, lastEpisode;
+}
+
 /// A chapter, or one part of a split chapter. A closed chapter is a card; an
 /// open one is a plain group header over its episodes.
 @immutable
@@ -100,6 +114,8 @@ class HistoryChapter {
     this.messageCount,
     this.episodeCount,
     this.episodes = const [],
+    this.decisions = const [],
+    this.sections = const [],
     this.colorIndex = 0,
   });
 
@@ -118,6 +134,14 @@ class HistoryChapter {
   /// shows no footer counts.
   final int? messageCount, episodeCount;
   final List<HistoryEpisode> episodes;
+
+  /// One line each, shown under the summary; empty leaves the rows out. Set on
+  /// the last part of a split chapter only.
+  final List<String> decisions;
+
+  /// The sections, a coloured bar and a name each; empty leaves the row out.
+  /// Set on the last part of a split chapter only.
+  final List<HistorySection> sections;
 
   /// Picks the card's edge colour (see `outlineColor`).
   final int colorIndex;
