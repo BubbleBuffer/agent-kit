@@ -60,7 +60,7 @@ Widget _sheet() {
           onEdit: (_, _) {},
         ),
       ),
-      _gap(AgentComposer(onSubmit: (_) {})),
+      _gap(AgentComposer(onSubmit: (_) => true)),
       AgentComposer(
         running: true,
         refs: const [fixtureChip],
@@ -68,7 +68,7 @@ Widget _sheet() {
         modelId: 'flash',
         workspaces: fixtureWorkspaces,
         workspaceId: 'base',
-        onSubmit: (_) {},
+        onSubmit: (_) => true,
       ),
     ],
   );

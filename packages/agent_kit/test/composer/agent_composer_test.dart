@@ -1,3 +1,5 @@
+import 'dart:async' show Completer;
+
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart' show KitChoice, KitRef;
 import 'package:bb_ui/bb_ui.dart' show Hover;
@@ -24,7 +26,7 @@ Future<void> _enter(WidgetTester tester) async {
 
 void main() {
   testWidgets('shows the placeholder and no Stop while idle', (tester) async {
-    await pumpComposer(tester, AgentComposer(onSubmit: (_) {}));
+    await pumpComposer(tester, AgentComposer(onSubmit: (_) => true));
     expect(find.text('Steer the agent…'), findsOneWidget);
     expect(find.text('Stop'), findsNothing);
     expect(find.text('Steer'), findsNothing);
@@ -35,7 +37,15 @@ void main() {
     tester,
   ) async {
     ComposerSubmission? got;
-    await pumpComposer(tester, AgentComposer(onSubmit: (s) => got = s));
+    await pumpComposer(
+      tester,
+      AgentComposer(
+        onSubmit: (s) {
+          got = s;
+          return true;
+        },
+      ),
+    );
     await _type(tester, '  hello  ');
     await _enter(tester);
     expect(got?.text, 'hello');
@@ -45,7 +55,7 @@ void main() {
 
   testWidgets('Enter on an empty field sends nothing', (tester) async {
     var calls = 0;
-    await pumpComposer(tester, AgentComposer(onSubmit: (_) => calls++));
+    await pumpComposer(tester, AgentComposer(onSubmit: (_) => ++calls > 0));
     await _type(tester, '   ');
     await _enter(tester);
     expect(calls, 0);
@@ -53,7 +63,7 @@ void main() {
 
   testWidgets('Shift+Enter does not send', (tester) async {
     var calls = 0;
-    await pumpComposer(tester, AgentComposer(onSubmit: (_) => calls++));
+    await pumpComposer(tester, AgentComposer(onSubmit: (_) => ++calls > 0));
     await _type(tester, 'hello');
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -67,7 +77,15 @@ void main() {
     tester,
   ) async {
     final got = <ComposerSubmission>[];
-    await pumpComposer(tester, AgentComposer(onSubmit: got.add));
+    await pumpComposer(
+      tester,
+      AgentComposer(
+        onSubmit: (s) {
+          got.add(s);
+          return true;
+        },
+      ),
+    );
     await tester.tap(find.text('Send'));
     await tester.pump();
     expect(got, isEmpty);
@@ -81,7 +99,16 @@ void main() {
     tester,
   ) async {
     final got = <ComposerSubmission>[];
-    await pumpComposer(tester, AgentComposer(running: true, onSubmit: got.add));
+    await pumpComposer(
+      tester,
+      AgentComposer(
+        running: true,
+        onSubmit: (s) {
+          got.add(s);
+          return true;
+        },
+      ),
+    );
     await _type(tester, 'one');
     await _enter(tester);
     await _type(tester, 'two');
@@ -102,7 +129,14 @@ void main() {
     final modes = <ComposerMode>[];
     await pumpComposer(
       tester,
-      AgentComposer(running: true, onSubmit: got.add, onModeChanged: modes.add),
+      AgentComposer(
+        running: true,
+        onSubmit: (s) {
+          got.add(s);
+          return true;
+        },
+        onModeChanged: modes.add,
+      ),
     );
     await tester.tap(find.text('Queue'));
     await tester.pump();
@@ -124,7 +158,11 @@ void main() {
     var stops = 0;
     await pumpComposer(
       tester,
-      AgentComposer(running: true, onStop: () => stops++, onSubmit: (_) {}),
+      AgentComposer(
+        running: true,
+        onStop: () => stops++,
+        onSubmit: (_) => true,
+      ),
     );
     expect(find.text('Stop'), findsOneWidget);
     expect(find.text('Steer'), findsOneWidget);
@@ -143,7 +181,7 @@ void main() {
       modelId: 'flash',
       workspaces: fixtureWorkspaces,
       workspaceId: 'base',
-      onSubmit: (_) {},
+      onSubmit: (_) => true,
     );
     await pumpComposer(tester, composer(), width: 560);
     expect(find.text('Stop'), findsOneWidget);
@@ -164,7 +202,7 @@ void main() {
       AgentComposer(
         refs: const [fixtureChip],
         onRemoveRef: removed.add,
-        onSubmit: (_) {},
+        onSubmit: (_) => true,
       ),
     );
     expect(find.text('Approval expiry'), findsOneWidget);
@@ -180,7 +218,13 @@ void main() {
     ComposerSubmission? got;
     await pumpComposer(
       tester,
-      AgentComposer(refs: const [fixtureChip], onSubmit: (s) => got = s),
+      AgentComposer(
+        refs: const [fixtureChip],
+        onSubmit: (s) {
+          got = s;
+          return true;
+        },
+      ),
     );
     await _type(tester, 'hi');
     await _enter(tester);
@@ -197,7 +241,7 @@ void main() {
         models: fixtureModels,
         modelId: 'flash',
         onModelChanged: (c) => picked = c,
-        onSubmit: (_) {},
+        onSubmit: (_) => true,
       ),
     );
     await tester.tap(find.text('deepseek-v4.1-flash'));
@@ -219,7 +263,7 @@ void main() {
       await pumpComposer(
         tester,
         AgentComposer(
-          onSubmit: (_) => calls++,
+          onSubmit: (_) => ++calls > 0,
           controller: controller,
           canSend: false,
         ),
@@ -238,7 +282,7 @@ void main() {
       await pumpComposer(
         tester,
         AgentComposer(
-          onSubmit: (_) {},
+          onSubmit: (_) => true,
           running: true,
           canSend: false,
           onStop: () => stops++,
@@ -255,7 +299,13 @@ void main() {
       List<ComposerSubmission> got,
     ) => pumpComposer(
       tester,
-      AgentComposer(mentions: fixtureMentions, onSubmit: got.add),
+      AgentComposer(
+        mentions: fixtureMentions,
+        onSubmit: (s) {
+          got.add(s);
+          return true;
+        },
+      ),
     );
 
     testWidgets('typing @ lists candidates; arrows and Enter pick one', (
@@ -318,6 +368,89 @@ void main() {
       await _type(tester, 'never mind');
       await _enter(tester);
       expect(got.single.refs, isEmpty);
+    });
+  });
+
+  group('a submit the host takes later or refuses', () {
+    testWidgets('keeps text and mentions when onSubmit returns false', (
+      tester,
+    ) async {
+      var calls = 0;
+      await pumpComposer(
+        tester,
+        AgentComposer(
+          refs: const [fixtureChip],
+          onSubmit: (_) {
+            calls++;
+            return false;
+          },
+        ),
+      );
+      await _type(tester, 'keep me');
+      await _enter(tester);
+      expect(calls, 1);
+      expect(_text(tester), 'keep me');
+    });
+
+    testWidgets('keeps the text when the future throws, then sends again', (
+      tester,
+    ) async {
+      var fail = true;
+      final got = <ComposerSubmission>[];
+      await pumpComposer(
+        tester,
+        AgentComposer(
+          onSubmit: (s) async {
+            got.add(s);
+            if (fail) throw StateError('down');
+            return true;
+          },
+        ),
+      );
+      await _type(tester, 'hello');
+      await _enter(tester);
+      await tester.pump();
+      expect(_text(tester), 'hello');
+      fail = false;
+      await _enter(tester);
+      await tester.pump();
+      expect(got.map((s) => s.text), ['hello', 'hello']);
+      expect(_text(tester), isEmpty);
+    });
+
+    testWidgets('clears only after the future completes, and sends once', (
+      tester,
+    ) async {
+      final done = Completer<bool>();
+      var calls = 0;
+      await pumpComposer(
+        tester,
+        AgentComposer(
+          onSubmit: (_) {
+            calls++;
+            return done.future;
+          },
+        ),
+      );
+      await _type(tester, 'hello');
+      await _enter(tester);
+      await _enter(tester);
+      expect(calls, 1);
+      expect(_text(tester), 'hello');
+      done.complete(true);
+      await tester.pump();
+      expect(_text(tester), isEmpty);
+    });
+
+    testWidgets('text typed while it is pending is kept', (tester) async {
+      final done = Completer<bool>();
+      await pumpComposer(tester, AgentComposer(onSubmit: (_) => done.future));
+      await _type(tester, 'first');
+      await _enter(tester);
+      await _type(tester, 'first and more');
+      done.complete(true);
+      await tester.pump();
+      expect(_text(tester), 'first and more');
     });
   });
 }

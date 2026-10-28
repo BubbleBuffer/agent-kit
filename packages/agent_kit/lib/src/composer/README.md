@@ -23,6 +23,18 @@ Mockup parts: `.approval`, `.queue`, `.composer`, `.cmp-chip`, `.seg` and the
   `decideApproval`, `sendQueuedNow`, `editQueued`, `removeQueued`,
   `answerQuestion`, `cancel`, and `send`/`steer`/`followup` through
   `ComposerSubmission.delivery`. Nothing here calls the backend.
+- Submit result: `AgentComposer.onSubmit` may return a future. The composer
+  clears its text and picked mentions only when the result is anything but
+  `false` and the field still holds what was sent; `false` or a thrown error
+  keeps text, mentions and `refs`. Send does nothing while a future is pending.
+  `AgentChatPane` returns whether the backend command worked, so a failed send
+  keeps the draft.
+- Undo: `FileEditRow.onUndo` (and `TranscriptActions.onUndo`) may return a
+  future; the row reads "Undoing…" until it completes and "Undo failed" if it
+  throws.
+- Approval details: when an `Approval` carries `arguments`, the bar shows a
+  "Details" button that opens them (JSON indented) under the action line; the
+  tool and its target stay on one line with a tooltip.
 - Composer keys: Enter sends (while running: steers, or queues in Queue mode),
   Ctrl/Cmd+Enter while running does the other one, Shift+Enter adds a newline.
   With mention suggestions open: up/down move, Enter or Tab picks, Esc closes.

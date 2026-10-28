@@ -2,6 +2,8 @@
 // its host. Widgets take `agent_kit_core` items and callbacks; they never
 // reach a backend.
 
+import 'dart:async' show FutureOr;
+
 import 'package:agent_kit_core/agent_kit_core.dart'
     show
         ActivityGroup,
@@ -52,8 +54,9 @@ class TranscriptActions {
   /// "Review diff" on an edit row.
   final ValueChanged<FileEdit>? onReviewDiff;
 
-  /// "Undo" on an edit row.
-  final ValueChanged<FileEdit>? onUndo;
+  /// "Undo" on an edit row. The row shows "Undoing…" until the returned future
+  /// completes and "Undo failed" if it throws.
+  final FutureOr<void> Function(FileEdit)? onUndo;
 
   /// "Open" on a created file's row.
   final ValueChanged<FileEdit>? onOpenFile;

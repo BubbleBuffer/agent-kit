@@ -296,26 +296,29 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       error is KitError ? error.message : 'Something went wrong.';
 
   /// Runs a backend command. A failure becomes the dock's error line.
-  Future<void> _run(
+  /// Whether it worked.
+  Future<bool> _run(
     Future<void> Function() command, {
     VoidCallback? onFail,
   }) async {
     try {
       await command();
       if (mounted && _error != null) setState(() => _error = null);
+      return true;
     } catch (error) {
       onFail?.call();
       if (mounted) setState(() => _error = _describe(error));
+      return false;
     }
   }
 
   // ------------------------------------------------------------- commands
 
-  void _submit(ComposerSubmission s) {
-    if (!_paneActions.send) return;
+  Future<bool> _submit(ComposerSubmission s) {
+    if (!_paneActions.send) return Future.value(false);
     final backend = widget.backend;
     final id = widget.chatId;
-    _run(
+    return _run(
       () async {
         switch (s.delivery) {
           case ComposerDelivery.send:
@@ -344,7 +347,12 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       markdown: a.markdown,
       onReviewDiff: a.onReviewDiff,
       onUndo: _caps.has(KitCapability.editUndo)
-          ? (edit) => _run(() => backend.undoEdit(widget.chatId, edit.id))
+          ? (edit) async {
+              final worked = await _run(
+                () => backend.undoEdit(widget.chatId, edit.id),
+              );
+              if (!worked) throw StateError('Undo failed');
+            }
           : null,
       onOpenFile: a.onOpenFile,
       onOpenOutput: a.onOpenOutput,
