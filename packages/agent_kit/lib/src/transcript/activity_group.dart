@@ -95,6 +95,7 @@ class ActivityGroupView extends StatefulWidget {
     this.onOpenOutput,
     this.onOpenChild,
     this.summaryOf,
+    this.footer,
   });
 
   final ActivityGroup group;
@@ -113,6 +114,10 @@ class ActivityGroupView extends StatefulWidget {
 
   /// Replaces the summary line (see [activitySummary], the default).
   final ActivitySummaryBuilder? summaryOf;
+
+  /// Shown under the rows while the group is open (a host's own disclosure,
+  /// such as "Show code").
+  final Widget? footer;
 
   @override
   State<ActivityGroupView> createState() => _ActivityGroupViewState();
@@ -195,6 +200,11 @@ class _ActivityGroupViewState extends State<ActivityGroupView> {
                 ),
               ),
             ),
+          ),
+        if (_open && widget.footer != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2, left: 18),
+            child: widget.footer,
           ),
       ],
     );

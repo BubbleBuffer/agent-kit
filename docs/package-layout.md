@@ -23,7 +23,7 @@ view models (`Outline`, `OutlineChapter`, `OutlineSection`) and host-supplied
 `OutlineAction`s, needs nothing in `agent_kit_core`, and is exported through the
 `agent_kit` barrel (README: `packages/agent_kit/lib/src/outline/README.md`).
 
-The three library packages share version `0.9.0`; the gallery remains an
+The three library packages share version `0.10.0`; the gallery remains an
 unpublished app. Local members use relative `path:` dependencies. The pure Dart
 packages have their own strict analysis options; the root Flutter lint rules
 cover the widget package and gallery. See [core](agent-kit-core.md),
@@ -64,7 +64,7 @@ resolved within the same Git checkout:
   agent_kit:
     git:
       url: https://github.com/BubbleBuffer/agent-kit.git
-      ref: v0.9.0
+      ref: v0.10.0
       path: packages/agent_kit
 ```
 
@@ -95,8 +95,8 @@ all existing golden PNGs stay here; neutral-gallery goldens live in bb-ui.
 1. Release the required bb-ui tag before updating its Git pin here. This split
    requires `bb-ui` tag `v0.6.0` to exist before dependency resolution can pass.
 2. Merge the agent-kit change with hosted CI green. Bump the three library
-   versions together; the current release is `0.9.0`.
-3. Tag the green commit on `main` as `v0.9.0` and push the tag.
+   versions together; the current release is `0.10.0`.
+3. Tag the green commit on `main` as `v0.10.0` and push the tag.
 
 Applications update their pins and lockfiles when adopting a release. This
 workspace ignores its generated `pubspec.lock`.

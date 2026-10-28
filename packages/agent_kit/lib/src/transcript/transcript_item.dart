@@ -46,6 +46,8 @@ class TranscriptActions {
     this.onAnswerChildQuestion,
     this.onResume,
     this.summaryOf,
+    this.activityFooter,
+    this.openEveryEdit = false,
     this.now,
   });
 
@@ -88,6 +90,12 @@ class TranscriptActions {
   /// Replaces the summary line of activity groups (default: verb counts).
   final ActivitySummaryBuilder? summaryOf;
 
+  /// A host disclosure under an open activity group (Scratch's "Show code").
+  final Widget? Function(ActivityGroup)? activityFooter;
+
+  /// Shows "Open" ([onOpenFile]) on every edit row, not only a created file's.
+  final bool openEveryEdit;
+
   /// Replaces the wall clock for waiting times (tests, the gallery).
   final DateTime? now;
 }
@@ -118,6 +126,7 @@ class TranscriptItemView extends StatelessWidget {
       onOpenOutput: actions.onOpenOutput,
       onOpenChild: actions.onOpenChild,
       summaryOf: actions.summaryOf,
+      footer: actions.activityFooter?.call(g),
     ),
     final FileEdit e => FileEditRow(
       e,
@@ -126,6 +135,7 @@ class TranscriptItemView extends StatelessWidget {
           : () => actions.onReviewDiff!(e),
       onUndo: actions.onUndo == null ? null : () => actions.onUndo!(e),
       onOpen: actions.onOpenFile == null ? null : () => actions.onOpenFile!(e),
+      openEveryEdit: actions.openEveryEdit,
     ),
     final ChildResult r => ReturnLine(r, onOpen: actions.onOpenChild),
     final CompactionItem c => CompactionMarker(
