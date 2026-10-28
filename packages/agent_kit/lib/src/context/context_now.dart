@@ -571,10 +571,7 @@ class _H extends StatelessWidget {
     final t = context.bb;
     return Padding(
       padding: const EdgeInsets.only(top: 18, bottom: 6),
-      child: Text(
-        text,
-        style: ts(t.typeScale.uiSmall, t.faint, weight: 700),
-      ),
+      child: Text(text, style: ts(t.typeScale.uiSmall, t.faint, weight: 700)),
     );
   }
 }
