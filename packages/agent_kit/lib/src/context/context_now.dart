@@ -414,7 +414,6 @@ class ContextDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     final s = summary;
-    final chapter = s.kind == ContextSummaryKind.chapter;
     final episodes = [for (final id in s.episodeIds) ?details.episode(id)];
     final ordinals = episodes.map(episodeTag).join(', ');
     final done = t.statusStyle(ChatStatus.done).ink;
