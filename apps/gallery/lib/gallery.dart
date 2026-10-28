@@ -4,6 +4,7 @@ library;
 export 'src/components_scene.dart';
 export 'src/gallery_app.dart';
 export 'src/gallery_controller.dart';
+export 'src/history_scene.dart';
 export 'src/outline_scene.dart';
 export 'src/scene_frame.dart';
 export 'src/scenes.dart';

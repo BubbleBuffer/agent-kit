@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import '../components/workspace.dart';
 import 'components_scene.dart';
 import 'gallery_controller.dart';
+import 'history_scene.dart';
 import 'outline_scene.dart';
 
 enum GalleryScene {
@@ -58,6 +59,17 @@ enum GalleryScene {
     'A chat in chapters: closed cards, an open heading, section dividers.',
     'The strip names where you are; its Contents jump to a chapter or section.',
   ]),
+  history(
+    'H',
+    'Compacted history',
+    'History cards + TranscriptList',
+    1600,
+    '',
+    [
+      'Older history as chapter, episode and legacy cards above a hairline.',
+      'The live end of the chat below it, in full.',
+    ],
+  ),
   components('+', 'Components', 'Every widget, every state', 1000, '', []);
 
   const GalleryScene(
@@ -93,6 +105,7 @@ enum GalleryScene {
     workspace => 'd_workspace',
     context => 'f_context',
     outline => 'g_outline',
+    history => 'h_history',
     components => 'components',
   };
 }
@@ -106,6 +119,7 @@ Widget buildScene(
 }) {
   if (scene == GalleryScene.components) return ComponentsScene(tall: tall);
   if (scene == GalleryScene.outline) return const OutlineScene();
+  if (scene == GalleryScene.history) return const HistoryScene();
   final backend = controller.backend;
   if (backend == null || scene == GalleryScene.scratchPane) {
     return ScenePlaceholder(scene: scene, snapshot: controller.snapshot);

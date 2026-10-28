@@ -19,6 +19,7 @@ const _shots = <GalleryScene, List<(int, double)>>{
   GalleryScene.workspace: [(1600, 900), (1000, 800)],
   GalleryScene.context: [(1600, 900), (390, 844)],
   GalleryScene.outline: [(1600, 900), (390, 844)],
+  GalleryScene.history: [(1600, 2600), (390, 3400)],
   GalleryScene.components: [(1000, 800)],
 };
 
