@@ -231,6 +231,15 @@ final _chapters = <Object>[
       _mini('c1a', 'Find the cause', 'The reset is in on_close.', 26),
       _mini('c1b', 'Survey Codex and Claude Code', 'Codex marks it stale.', 26),
     ],
+    decisions: const ['Follow Codex: keep the figure and mark it stale.'],
+    sections: const [
+      HistorySection(name: 'Find the cause', firstEpisode: 1, lastEpisode: 1),
+      HistorySection(
+        name: 'Survey Codex and Claude Code',
+        firstEpisode: 2,
+        lastEpisode: 2,
+      ),
+    ],
     colorIndex: 1,
   ),
   HistoryChapter(
@@ -266,6 +275,7 @@ final _chapters = <Object>[
     parts: 2,
     messageCount: 34,
     episodeCount: 3,
+    decisions: const ['Back off from one second to a minute, with jitter.'],
     colorIndex: 3,
   ),
   HistoryChapter(

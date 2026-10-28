@@ -189,6 +189,59 @@ void main() {
       expect(find.text('Title a'), findsNothing);
     });
 
+    testWidgets('decisions and sections are rows of the face; empty ones '
+        'leave no row', (tester) async {
+      final controller = HistoryController();
+      addTearDown(controller.dispose);
+      await _pump(
+        tester,
+        Column(
+          children: [
+            HistoryChapterCard(
+              chapter: HistoryChapter(
+                id: 'full',
+                title: 'With rows',
+                summary: 'A summary.',
+                messageCount: 58,
+                episodeCount: 2,
+                decisions: const ['Follow Codex.', 'Keep the figure.'],
+                sections: const [
+                  HistorySection(name: 'Find the cause'),
+                  HistorySection(name: 'Survey Codex'),
+                ],
+              ),
+              controller: controller,
+            ),
+            HistoryChapterCard(
+              chapter: HistoryChapter(
+                id: 'bare',
+                title: 'Without rows',
+                summary: 'A summary.',
+                messageCount: 10,
+                episodeCount: 1,
+              ),
+              controller: controller,
+            ),
+          ],
+        ),
+      );
+      // The closed card reads alone: both rows are on its face.
+      expect(find.text('Follow Codex.'), findsOneWidget);
+      expect(find.text('Keep the figure.'), findsOneWidget);
+      expect(find.text('Find the cause'), findsOneWidget);
+      expect(find.text('Survey Codex'), findsOneWidget);
+      expect(
+        find.text('58 messages · 2 episodes · 2 sections'),
+        findsOneWidget,
+      );
+      // The chapter without them has neither row, and no sections count.
+      expect(find.text('10 messages · 1 episode'), findsOneWidget);
+      expect(_key('history-chapter-bare-decision-0'), findsNothing);
+      expect(_key('history-chapter-bare-section-0'), findsNothing);
+      expect(_key('history-chapter-full-decision-1'), findsOneWidget);
+      expect(_key('history-chapter-full-section-1'), findsOneWidget);
+    });
+
     testWidgets('a chapter without a summary shows the title only', (
       tester,
     ) async {

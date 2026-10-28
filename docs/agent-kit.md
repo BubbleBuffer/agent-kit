@@ -189,9 +189,7 @@ widgets take plain view models and import no backend or bridge type.
 | `HistoryLegacyCard` | A summary from before chapters and episodes: title when there is one, the summary, the times and the message count. Nothing opens. |
 | `HistoryBoundary` | The hairline `Full messages from here · message N` (the number is left out when compact). |
 
-Decisions and sections are not modelled because the store has none; add them as
-plain fields on `HistoryChapter` when it does. The `◆` decision marker is not
-drawn for the same reason. The gallery's H scene (`HistoryScene`) shows a legacy
+A chapter card also shows its `decisions` (one `◆` line each, in `ink`) and `sections` (a coloured bar and a name each, colours from `outlineColor`) under the summary, and `N sections` in the counts. Both are plain fields on `HistoryChapter`, set on the last part of a split chapter only; an empty list leaves its row out, so a chapter without them looks as before. Section names and decisions are data: the card adds no label. The gallery's H scene (`HistoryScene`) shows a legacy
 card, a folded chapter, an opened one with a v2 episode, a log with `+N more`
 and the originals, a split chapter and the current chapter, opened on the
 boundary.

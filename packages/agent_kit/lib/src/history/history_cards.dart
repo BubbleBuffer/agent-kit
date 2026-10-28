@@ -35,10 +35,11 @@ const historyActionsShown = 6;
 
 String _plural(int n, String one) => '$n $one${n == 1 ? '' : 's'}';
 
-/// "58 messages · 2 episodes"; the parts that are null are left out.
+/// "58 messages · 2 episodes · 2 sections"; the parts that are null are left out.
 String historyChapterCounts(HistoryChapter chapter) => [
   if (chapter.messageCount != null) _plural(chapter.messageCount!, 'message'),
   if (chapter.episodeCount != null) _plural(chapter.episodeCount!, 'episode'),
+  if (chapter.sections.isNotEmpty) _plural(chapter.sections.length, 'section'),
 ].join(' · ');
 
 // ---------------------------------------------------------------- chapter
@@ -73,9 +74,11 @@ class HistoryChapterCard extends StatelessWidget {
       if (when.isNotEmpty) when,
       if (chapter.closed) 'closed',
     ].join(' · ');
-    final summaryText = hasSummary
-        ? Text(summary, style: ts(ty.body, c.textPrimary))
-        : null;
+    final face = _ChapterFace(chapter: chapter);
+    final hasFace =
+        hasSummary ||
+        chapter.decisions.isNotEmpty ||
+        chapter.sections.isNotEmpty;
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
@@ -90,16 +93,16 @@ class HistoryChapterCard extends StatelessWidget {
             stacked: !open,
             open: open,
             onOpenChanged: (v) => controller.setChapterOpen(key, v),
-            peek: summaryText,
+            peek: hasFace ? face : null,
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ?summaryText,
+                if (hasFace) face,
                 if (chapter.episodes.isNotEmpty)
                   Container(
-                    margin: EdgeInsets.only(top: hasSummary ? 14 : 0),
+                    margin: EdgeInsets.only(top: hasFace ? 14 : 0),
                     padding: const EdgeInsets.only(top: 14),
-                    decoration: hasSummary
+                    decoration: hasFace
                         ? BoxDecoration(
                             border: Border(
                               top: BorderSide(color: c.borderSubtle),
@@ -138,6 +141,57 @@ class HistoryChapterCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The face of a chapter card: the summary paragraph, one `◆` line per
+/// decision and the section list. A part that is empty leaves its row out.
+class _ChapterFace extends StatelessWidget {
+  const _ChapterFace({required this.chapter});
+
+  final HistoryChapter chapter;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.bb;
+    final c = t.colors;
+    final ty = t.typeScale;
+    final summary = chapter.summary;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (summary != null && summary.isNotEmpty)
+          Text(summary, style: ts(ty.body, c.textPrimary)),
+        for (final (i, d) in chapter.decisions.indexed)
+          Padding(
+            key: ValueKey('history-chapter-${chapter.key}-decision-$i'),
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ExcludeSemantics(
+                  child: Text('◆ ', style: ts(ty.uiSmall, t.ink)),
+                ),
+                Expanded(child: Text(d, style: ts(ty.uiSmall, c.textPrimary))),
+              ],
+            ),
+          ),
+        if (chapter.sections.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: MarkedList(
+              rows: [
+                for (final (i, s) in chapter.sections.indexed)
+                  MarkedRow(
+                    key: ValueKey('history-chapter-${chapter.key}-section-$i'),
+                    label: s.name,
+                    colour: outlineColor(context, chapter.colorIndex + 1 + i),
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

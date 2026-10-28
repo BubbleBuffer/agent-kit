@@ -41,7 +41,9 @@ void main() {
     expect(find.text('How usage figures flow'), findsOneWidget);
     expect(find.text('Sketch the quota bar'), findsOneWidget);
     expect(find.text('Backoff and retries'), findsNWidgets(2));
-    expect(find.text('Find the cause'), findsNothing);
+    // The folded chapter's face already lists its sections.
+    expect(find.text('Find the cause'), findsOneWidget);
+    expect(find.text('The reset is in on_close.'), findsNothing);
     expect(
       find.text('Sketch the quota bar states'),
       findsOneWidget,
@@ -52,7 +54,8 @@ void main() {
 
     await tester.tap(_key('history-chapter-c1-toggle'));
     await tester.pump();
-    expect(find.text('Find the cause'), findsOneWidget);
+    expect(find.text('Find the cause'), findsNWidgets(2));
+    expect(find.text('The reset is in on_close.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
