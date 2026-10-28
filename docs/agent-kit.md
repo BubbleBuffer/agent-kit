@@ -34,6 +34,7 @@ there and which mockup parts it covers.
 | `chrome/` | rail, header, crew strip, ledger | built |
 | `context/` | Context pane, meter bar, compaction marker | built |
 | `outline/` | chapter cards, headings, dividers, where-am-I strip, contents, `OutlineController` | built |
+| `history/` | compacted history: chapter, episode and legacy cards, the boundary hairline, `HistoryController` | built |
 | `workspace/` | split tree, panes, docking, edge tabs | built |
 | `compositions/` | `AgentWorkbench`, `AgentChatPane` | built |
 | `shared/` | internal helpers: path segments, the one icon drawing (`kit_icon.dart`) | built |
@@ -173,12 +174,35 @@ reduces motion. `StatusMark.work(WorkState)` maps child agents and jobs.
 
 Only "needs you" fills a pill and only it is warm.
 
+## Compacted history
+
+`history/` draws older chat history as cards (scene H of the scratch-skin
+mockup, approved 2026-10-27). The host feeds them through
+`TranscriptList(entries:)` and keeps what is open in a `HistoryController`; the
+widgets take plain view models and import no backend or bridge type.
+
+| Widget | Shows |
+|---|---|
+| `HistoryChapterCard` | A closed chapter. Closed it reads alone: kicker (`Chapter · Oct 26 – 27 · closed`), title, summary paragraph, counts (`58 messages · 2 episodes`). Layered top edge while closed, edge colour from `colorIndex` (`outlineColor`), "Show episodes" / "Hide episodes" in the foot. A part of a split chapter is a card with the same title; only the last part has counts (`messageCount` and `episodeCount` are null on the others). |
+| `HistoryCurrentChapter` | The open chapter: a plain group header (`Current chapter · since Oct 27 · 3 episodes`) over its episode cards, which are always listed. |
+| `HistoryEpisodeCard` | A mono header line (`Episode · 13:41–13:56 · 38 messages`, then `N actions · N flagged · N errors` at the right, left out when compact), the title and a gist. The header opens the action log; "Show messages" opens the originals (the host's `HistoryMessagesBuilder`) and "Show action log" goes back. Log rows are verb, a chip for the target, a change marker (`+12 −3`, `created`, `failed · 2 tests`, `passed · 14`, coloured by its words) and an optional point-of-interest line. Rows past six fold behind `+N more`. An episode without actions (summarized before logs) has no counts and goes straight to the messages. |
+| `HistoryLegacyCard` | A summary from before chapters and episodes: title when there is one, the summary, the times and the message count. Nothing opens. |
+| `HistoryBoundary` | The hairline `Full messages from here · message N` (the number is left out when compact). |
+
+Decisions and sections are not modelled because the store has none; add them as
+plain fields on `HistoryChapter` when it does. The `◆` decision marker is not
+drawn for the same reason. The gallery's H scene (`HistoryScene`) shows a legacy
+card, a folded chapter, an opened one with a v2 episode, a log with `+N more`
+and the originals, a split chapter and the current chapter, opened on the
+boundary.
+
 ## Gallery
 
 `apps/gallery` (`flutter run -d chrome` in that folder). The toolbar switches
 scene (the mockup's A workbench, C phone, D workspace and F context as
 `AgentWorkbench` on the fake backend, B Scratch pane still a placeholder, G Outline
-as a hand-built chat in chapters on an `OutlineController`, plus Components, which
+as a hand-built chat in chapters on an `OutlineController`, H Compacted history as the
+cards over a boundary, plus Components, which
 lists each widget in each state), light or
 dark, and the width (a 360 to 1600 px slider that constrains the content, so
 size classes follow it). The chat is the "Quota bar flickers on reconnect"
