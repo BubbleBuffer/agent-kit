@@ -10,7 +10,7 @@ callbacks, never a backend.
 | `transcript_item.dart` | `TranscriptItemView` (dispatch on the item), `TranscriptActions` (the host's callbacks and markdown renderer) | |
 | `messages.dart` | `UserBubble`, `AssistantProse`, `SystemLineView`, `NoticeLineView` | `.turn-user`, `.bubble`, `.prose` |
 | `markdown.dart`, `code_block.dart` | `MarkdownRenderer` (interface), `LeanMarkdownRenderer` (default), `MarkdownText`, `CodeBlock` | `.prose`, `pre.code` |
-| `activity_group.dart` | `ActivityGroupView`, `EvidenceRow`, `activitySummary` | `.activity`, `.ev-*` |
+| `activity_group.dart` | `ActivityGroupView`, `EvidenceRow`, `activitySummary`, `ActivitySummaryBuilder` | `.activity`, `.ev-*` |
 | `exec_output.dart` | `ExecOutput` (12-line clamp with fade, footer, callbacks) | `pre.out`, `.ev-foot` |
 | `file_edit_row.dart`, `diff_view.dart` | `FileEditRow`, `DiffView` | `.edit-row`, `.diff`, `.fl` (Scene D) |
 | `plan_checklist.dart` | `PlanChecklist` | `.plan` |
@@ -31,6 +31,10 @@ callbacks, never a backend.
 - **One evidence row open at a time** in an activity group. An exec row opens
   into its output, a thinking row into its reasoning text (only when the
   backend sent it), a spawn row calls `onOpenChild`.
+- **The summary line is verb counts** ("Searched 2× · Read 3 files · Ran 1
+  command · 1 failed", by `ToolKind`). "Worked 48s" and "thought 6s" are
+  appended only when the backend sent durations. A host replaces the line with
+  `summaryOf` (`ActivityGroupView`, or `TranscriptActions`).
 - **Layout by `SizeClass`** of the list's own width: item gaps 28 (22
   compact), evidence indent 58 (0 compact), edit rows drop the verb when
   compact.

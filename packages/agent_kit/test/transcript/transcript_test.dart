@@ -199,7 +199,8 @@ void main() {
 
     testWidgets('opens into rows, one at a time', (tester) async {
       await pumpTranscript(tester, ActivityGroupView(activityGroup()));
-      const summary = 'Searched 1× · Read 2 files · Ran 1 command · Started 1 agent · 1 failed · Worked 48s · thought 6s';
+      const summary =
+          'Searched 1× · Read 2 files · Ran 1 command · Started 1 agent · 1 failed · Worked 48s · thought 6s';
       expect(find.text(summary), findsOneWidget);
       expect(find.text('exec'), findsNothing);
 
