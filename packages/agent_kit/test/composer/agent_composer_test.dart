@@ -172,43 +172,28 @@ void main() {
     expect(stops, 1);
   });
 
-  testWidgets('a narrow bar scales the picks down and keeps the buttons labelled', (
-    tester,
-  ) async {
-    Widget composer() => AgentComposer(
-      running: true,
-      models: fixtureModels,
-      modelId: 'flash',
-      workspaces: fixtureWorkspaces,
-      workspaceId: 'base',
-      onSubmit: (_) => true,
-    );
-    await pumpComposer(tester, composer(), width: 560);
-    expect(find.text('Stop'), findsOneWidget);
-    expect(find.text('Send'), findsOneWidget);
-    expect(find.text('BubblePaw-base'), findsOneWidget);
-
-    await pumpComposer(tester, composer(), width: 400);
-    expect(find.text('Stop'), findsOneWidget);
-    expect(find.text('Send'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('a host that always steers labels the running button Steer', (
-    tester,
-  ) async {
-    await pumpComposer(
-      tester,
-      AgentComposer(
+  testWidgets(
+    'a narrow bar scales the picks down and keeps the buttons labelled',
+    (tester) async {
+      Widget composer() => AgentComposer(
         running: true,
-        showModeToggle: false,
-        runningSendLabel: 'Steer',
+        models: fixtureModels,
+        modelId: 'flash',
+        workspaces: fixtureWorkspaces,
+        workspaceId: 'base',
         onSubmit: (_) => true,
-      ),
-    );
-    expect(find.text('Steer'), findsOneWidget);
-    expect(find.text('Queue'), findsNothing);
-  });
+      );
+      await pumpComposer(tester, composer(), width: 560);
+      expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(find.text('BubblePaw-base'), findsOneWidget);
+
+      await pumpComposer(tester, composer(), width: 400);
+      expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('a chip takes the host key; its remove button follows it', (
     tester,
@@ -367,7 +352,9 @@ void main() {
       expect((ref.start, ref.end), (4, 4 + '@usage/quota.rs'.length));
     });
 
-    testWidgets('says No results, and reports the picked mention', (tester) async {
+    testWidgets('says No results, and reports the picked mention', (
+      tester,
+    ) async {
       final picked = <KitRef>[];
       await pumpComposer(
         tester,

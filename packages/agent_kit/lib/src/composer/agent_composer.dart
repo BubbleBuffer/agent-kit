@@ -820,7 +820,6 @@ class ComposerModeToggle extends StatelessWidget {
   }
 }
 
-
 /// A reference chip above the field: an icon for the kind (`selection` a
 /// text mark, `chat` a bubble, anything else a page), the label and a ×
 /// that removes it.
