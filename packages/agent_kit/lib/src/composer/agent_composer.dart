@@ -12,6 +12,7 @@
 // Send drop their labels and the workspace pick hides; the model name then
 // truncates first, so the buttons keep their size.
 
+import 'dart:async' show FutureOr;
 import 'dart:math' as math;
 
 import 'package:agent_kit_core/agent_kit_core.dart' show KitChoice, KitRef;
@@ -93,8 +94,13 @@ class AgentComposer extends StatefulWidget {
     this.placeholder = 'Steer the agent…',
   });
 
-  /// Called with each submitted message. The composer clears its text.
-  final ValueChanged<ComposerSubmission> onSubmit;
+  /// Called with each submitted message. The composer clears its text, its
+  /// picked mentions and nothing else once the host has taken the message:
+  /// when [onSubmit] returns (or its future completes with) `true`.
+  /// Return `false`, or throw, when the message was not sent: the
+  /// text, the mentions and [refs] stay as they were. While a returned future
+  /// is pending Send does nothing, and text typed meanwhile is kept.
+  final FutureOr<bool> Function(ComposerSubmission) onSubmit;
 
   /// Whether sending is available. Off, Send is drawn disabled, Enter does
   /// not submit and the field is read-only ([onSubmit] is never called). Stop
@@ -298,10 +304,13 @@ class _AgentComposerState extends State<AgentComposer> {
 
   // ---- sending -----------------------------------------------------------
 
-  bool get _canSend => widget.canSend && _controller.text.trim().isNotEmpty;
+  bool get _canSend =>
+      widget.canSend && !_sending && _controller.text.trim().isNotEmpty;
 
-  void _submit({bool invert = false}) {
-    if (!widget.canSend) return;
+  bool _sending = false;
+
+  Future<void> _submit({bool invert = false}) async {
+    if (!widget.canSend || _sending) return;
     final raw = _controller.text;
     final text = raw.trim();
     if (text.isEmpty) return;
@@ -313,11 +322,25 @@ class _AgentComposerState extends State<AgentComposer> {
       delivery = steer ? ComposerDelivery.steer : ComposerDelivery.followup;
     }
     final refs = [...widget.refs, ..._mentionSpans(text)];
-    _picked.clear();
-    _controller.clear();
-    widget.onSubmit(
+    final result = widget.onSubmit(
       ComposerSubmission(text: text, delivery: delivery, refs: refs),
     );
+    var taken = result == true;
+    if (result is Future<bool>) {
+      setState(() => _sending = true);
+      try {
+        taken = await result;
+      } on Object {
+        taken = false;
+      }
+      if (!mounted) return;
+      setState(() => _sending = false);
+    }
+    // Text typed while the host was busy belongs to the next message.
+    if (taken && _controller.text == raw) {
+      _picked.clear();
+      _controller.clear();
+    }
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {

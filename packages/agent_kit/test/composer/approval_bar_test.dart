@@ -192,7 +192,7 @@ void main() {
         mainAxisSize: MainAxisSize.min,
         children: [
           _bar(decisions, composerEmpty: () => controller.text.isEmpty),
-          AgentComposer(controller: controller, onSubmit: (_) {}),
+          AgentComposer(controller: controller, onSubmit: (_) => true),
         ],
       ),
     );
@@ -217,7 +217,7 @@ void main() {
         mainAxisSize: MainAxisSize.min,
         children: [
           _bar(decisions),
-          AgentComposer(onSubmit: (_) {}),
+          AgentComposer(onSubmit: (_) => true),
         ],
       ),
     );
@@ -294,5 +294,32 @@ void main() {
     expect(find.text('Reason for the agent (optional)'), findsNothing);
     await tester.tap(find.text('Review diff'));
     expect(reviewed, 1);
+  });
+
+  testWidgets('Details shows the full arguments only when it is pressed', (
+    tester,
+  ) async {
+    final approval = Approval(
+      id: 'a1',
+      tool: 'exec',
+      kind: ToolKind.exec,
+      target: 'cargo test -p usage',
+      requestedAt: fixtureNow,
+      arguments: '{"command":"cargo test -p usage","cwd":"/work"}',
+    );
+    await pumpComposer(tester, _bar([], approval: approval));
+    expect(find.text('cargo test -p usage'), findsOneWidget);
+    expect(find.textContaining('"cwd"'), findsNothing);
+    await tester.tap(find.text('Details'));
+    await tester.pump();
+    expect(find.textContaining('"cwd": "/work"'), findsOneWidget);
+    await tester.tap(find.text('Hide details'));
+    await tester.pump();
+    expect(find.textContaining('"cwd"'), findsNothing);
+  });
+
+  testWidgets('no Details link without arguments', (tester) async {
+    await pumpComposer(tester, _bar([]));
+    expect(find.text('Details'), findsNothing);
   });
 }

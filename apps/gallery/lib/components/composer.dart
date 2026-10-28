@@ -219,7 +219,10 @@ class _ComposerSpecimensState extends State<ComposerSpecimens> {
     onWorkspaceChanged: (c) => _log('workspace ${c.id}'),
     onRemoveRef: (r) => _log('remove chip ${r.label}'),
     onStop: () => _log('stop'),
-    onSubmit: (s) => _log('${s.delivery.name}: ${s.text}'),
+    onSubmit: (s) {
+      _log('${s.delivery.name}: ${s.text}');
+      return true;
+    },
   );
 
   Widget _approvalBar({bool denying = false, bool keys = false}) => ApprovalBar(

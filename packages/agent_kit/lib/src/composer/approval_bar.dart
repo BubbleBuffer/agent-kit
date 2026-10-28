@@ -15,6 +15,8 @@
 // wide, the actions under the request when it is narrower, and three equal
 // buttons across a compact (< 600 px) bar. Key hints hide on touch.
 
+import 'dart:convert' show JsonEncoder, jsonDecode;
+
 import 'package:agent_kit_core/agent_kit_core.dart'
     show Approval, ApprovalDecision, ChatStatus, FileDiff, ToolKind;
 import 'package:bb_ui/bb_ui.dart';
@@ -383,12 +385,23 @@ class _Stretch extends StatelessWidget {
 }
 
 /// The two lines on the left: pill and age, then the action.
-class _What extends StatelessWidget {
+class _What extends StatefulWidget {
   const _What({required this.approval, this.now, this.onReview});
 
   final Approval approval;
   final DateTime? now;
   final VoidCallback? onReview;
+
+  @override
+  State<_What> createState() => _WhatState();
+}
+
+class _WhatState extends State<_What> {
+  bool _details = false;
+
+  Approval get approval => widget.approval;
+  VoidCallback? get onReview => widget.onReview;
+  DateTime? get now => widget.now;
 
   static LucideGlyph _glyph(ToolKind kind) => switch (kind) {
     ToolKind.edit || ToolKind.write => ComposerGlyphs.filePen,
@@ -404,6 +417,7 @@ class _What extends StatelessWidget {
     final t = context.bb;
     final diff = approval.diff;
     final subject = approval.target ?? diff?.path ?? approval.summary;
+    final args = _prettyArguments(approval.arguments);
     final isPath =
         approval.kind == ToolKind.edit ||
         approval.kind == ToolKind.write ||
@@ -455,8 +469,34 @@ class _What extends StatelessWidget {
                 onTap: onReview,
               ),
             ],
+            if (args != null) ...[
+              const SizedBox(width: 2),
+              KitButton(
+                label: _details ? 'Hide details' : 'Details',
+                kind: KitButtonKind.quiet,
+                onTap: () => setState(() => _details = !_details),
+              ),
+            ],
           ],
         ),
+        if (args != null && _details) ...[
+          const SizedBox(height: 6),
+          Semantics(
+            label: 'Request arguments',
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: t.radii.field,
+                border: Border.all(color: t.colors.borderSubtle),
+              ),
+              child: Text(
+                args,
+                style: ts(const TypeSpec(12, 18, 400), t.ink, mono: true),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -589,3 +629,14 @@ class _RenderWrapActs extends RenderBox
 }
 
 class _ActsParentData extends ContainerBoxParentData<RenderBox> {}
+
+/// The arguments for the details view: JSON indented, anything else as it is;
+/// null when the request carries none.
+String? _prettyArguments(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return null;
+  try {
+    return const JsonEncoder.withIndent('  ').convert(jsonDecode(raw));
+  } on FormatException {
+    return raw;
+  }
+}

@@ -2,6 +2,8 @@
 // "Edited usage/mod.rs +8 −3" with Review diff and Undo, opening into the
 // diff.
 
+import 'dart:async' show FutureOr;
+
 import 'package:agent_kit_core/agent_kit_core.dart' show FileChange, FileEdit;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -28,8 +30,10 @@ class FileEditRow extends StatefulWidget {
   /// "Review diff" (a modified or deleted file).
   final VoidCallback? onReviewDiff;
 
-  /// "Undo"; shown while the edit is undoable and not yet undone.
-  final VoidCallback? onUndo;
+  /// "Undo"; shown while the edit is undoable and not yet undone. The row
+  /// reads "Undoing…" until the returned future completes (a second press does
+  /// nothing meanwhile) and "Undo failed" next to Undo if it throws.
+  final FutureOr<void> Function()? onUndo;
 
   /// "Open" (a created file).
   final VoidCallback? onOpen;
@@ -40,6 +44,28 @@ class FileEditRow extends StatefulWidget {
 
 class _FileEditRowState extends State<FileEditRow> {
   late bool _open = widget.initiallyOpen;
+  bool _undoing = false, _undoFailed = false;
+
+  Future<void> _undo() async {
+    final undo = widget.onUndo;
+    if (undo == null || _undoing) return;
+    setState(() {
+      _undoing = true;
+      _undoFailed = false;
+    });
+    var failed = false;
+    try {
+      await undo();
+    } on Object {
+      failed = true;
+    }
+    if (mounted) {
+      setState(() {
+        _undoing = false;
+        _undoFailed = failed;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,8 +188,18 @@ class _FileEditRowState extends State<FileEditRow> {
                     )
                   else ...[
                     ?primary,
-                    if (edit.undoable && widget.onUndo != null)
-                      KitTextButton('Undo', color: t.ink, onTap: widget.onUndo),
+                    if (edit.undoable && widget.onUndo != null) ...[
+                      if (_undoFailed)
+                        Text(
+                          'Undo failed',
+                          style: ts(t.typeScale.uiSmall, t.dangerInk),
+                        ),
+                      KitTextButton(
+                        _undoing ? 'Undoing…' : 'Undo',
+                        color: t.ink,
+                        onTap: _undoing ? null : _undo,
+                      ),
+                    ],
                   ],
                 ],
               ),

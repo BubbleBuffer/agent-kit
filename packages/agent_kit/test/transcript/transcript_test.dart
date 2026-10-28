@@ -2,6 +2,8 @@
 // rows, output clamp, edit rows, diff, plan, return lines and the list's
 // follow-tail and anchor restore.
 
+import 'dart:async' show Completer;
+
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:flutter/services.dart';
@@ -552,6 +554,59 @@ void main() {
       final end = tester.getTopLeft(find.text('at the end')).dy;
       expect(ins, lessThan(sys));
       expect(end, greaterThan(sys));
+    });
+  });
+
+  group('undo that finishes later', () {
+    testWidgets('reads Undoing… until the future completes', (tester) async {
+      final done = Completer<void>();
+      var undo = 0;
+      await pumpTranscript(
+        tester,
+        SingleChildScrollView(
+          child: FileEditRow(
+            modifiedEdit(),
+            onUndo: () {
+              undo++;
+              return done.future;
+            },
+          ),
+        ),
+      );
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      expect(find.text('Undoing…'), findsOneWidget);
+      await tester.tap(find.text('Undoing…'));
+      await tester.pump();
+      expect(undo, 1);
+      done.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Undo'), findsOneWidget);
+      expect(find.text('Undo failed'), findsNothing);
+    });
+
+    testWidgets('says Undo failed and allows another try', (tester) async {
+      var undo = 0;
+      await pumpTranscript(
+        tester,
+        SingleChildScrollView(
+          child: FileEditRow(
+            modifiedEdit(),
+            onUndo: () async {
+              undo++;
+              throw StateError('no');
+            },
+          ),
+        ),
+      );
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Undo failed'), findsOneWidget);
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      expect(undo, 2);
     });
   });
 }
