@@ -163,6 +163,19 @@ void main() {
       );
     });
 
+    testWidgets('a footer shows under the rows only while open', (
+      tester,
+    ) async {
+      await pumpTranscript(
+        tester,
+        ActivityGroupView(activityGroup(), footer: const Text('Show code')),
+      );
+      expect(find.text('Show code'), findsNothing);
+      await tester.tap(find.textContaining('Searched 1×'));
+      await tester.pump();
+      expect(find.text('Show code'), findsOneWidget);
+    });
+
     testWidgets('a host can replace the summary line', (tester) async {
       await pumpTranscript(
         tester,
@@ -643,6 +656,47 @@ void main() {
       await tester.tap(find.text('Undo'));
       await tester.pump();
       expect(undo, 2);
+    });
+
+    testWidgets('a refusal shows its message instead of Undo failed', (
+      tester,
+    ) async {
+      await pumpTranscript(
+        tester,
+        SingleChildScrollView(
+          child: FileEditRow(
+            modifiedEdit(),
+            onUndo: () async => throw const UndoRefused('The page changed.'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Undo'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('The page changed.'), findsOneWidget);
+      expect(find.text('Undo failed'), findsNothing);
+    });
+
+    testWidgets('a host label, and Open on every edit when asked', (
+      tester,
+    ) async {
+      final base = modifiedEdit();
+      await pumpTranscript(
+        tester,
+        SingleChildScrollView(
+          child: FileEditRow(
+            FileEdit(
+              id: base.id,
+              diff: base.diff,
+              label: 'Moved Garden plan to trash',
+            ),
+            onOpen: () {},
+            openEveryEdit: true,
+          ),
+        ),
+      );
+      expect(find.text('Moved Garden plan to trash'), findsOneWidget);
+      expect(find.text('Open'), findsOneWidget);
     });
   });
 }

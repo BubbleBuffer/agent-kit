@@ -20,6 +20,7 @@ class FileEditRow extends StatefulWidget {
     this.onReviewDiff,
     this.onUndo,
     this.onOpen,
+    this.openEveryEdit = false,
   });
 
   final FileEdit edit;
@@ -35,8 +36,11 @@ class FileEditRow extends StatefulWidget {
   /// nothing meanwhile) and "Undo failed" next to Undo if it throws.
   final FutureOr<void> Function()? onUndo;
 
-  /// "Open" (a created file).
+  /// "Open" (a created file; every edit with [openEveryEdit]).
   final VoidCallback? onOpen;
+
+  /// Show "Open" on modified and deleted files too, beside Review diff.
+  final bool openEveryEdit;
 
   @override
   State<FileEditRow> createState() => _FileEditRowState();
@@ -45,6 +49,7 @@ class FileEditRow extends StatefulWidget {
 class _FileEditRowState extends State<FileEditRow> {
   late bool _open = widget.initiallyOpen;
   bool _undoing = false, _undoFailed = false;
+  String? _refusal;
 
   Future<void> _undo() async {
     final undo = widget.onUndo;
@@ -52,10 +57,14 @@ class _FileEditRowState extends State<FileEditRow> {
     setState(() {
       _undoing = true;
       _undoFailed = false;
+      _refusal = null;
     });
     var failed = false;
+    String? refusal;
     try {
       await undo();
+    } on UndoRefused catch (e) {
+      refusal = e.message;
     } on Object {
       failed = true;
     }
@@ -63,6 +72,7 @@ class _FileEditRowState extends State<FileEditRow> {
       setState(() {
         _undoing = false;
         _undoFailed = failed;
+        _refusal = refusal;
       });
     }
   }
@@ -82,23 +92,25 @@ class _FileEditRowState extends State<FileEditRow> {
       FileChange.deleted => 'Deleted',
     };
     final path = tailPath(diff.path);
-    final name = compact ? path : '$verb $path';
+    final name = edit.label ?? (compact ? path : '$verb $path');
     final nameStyle =
         ts(const TypeSpec(13, 16, 600), edit.undone ? t.faint : t.ink).copyWith(
           decoration: edit.undone ? TextDecoration.lineThrough : null,
           decorationColor: t.faint,
         );
+    final openButton = widget.onOpen == null
+        ? null
+        : KitTextButton('Open', color: t.ink, onTap: widget.onOpen);
+    final reviewButton = widget.onReviewDiff == null
+        ? null
+        : KitTextButton(
+            'Review diff',
+            color: t.ink,
+            onTap: widget.onReviewDiff,
+          );
     final primary = created
-        ? (widget.onOpen == null
-              ? null
-              : KitTextButton('Open', color: t.ink, onTap: widget.onOpen))
-        : (widget.onReviewDiff == null
-              ? null
-              : KitTextButton(
-                  'Review diff',
-                  color: t.ink,
-                  onTap: widget.onReviewDiff,
-                ));
+        ? [?openButton]
+        : [?reviewButton, if (widget.openEveryEdit) ?openButton];
     final countStyle = ts(const TypeSpec(12, 16, 600), t.ink);
     final added = diff.added;
     final removed = diff.removed;
@@ -187,7 +199,7 @@ class _FileEditRowState extends State<FileEditRow> {
                       ),
                     )
                   else ...[
-                    ?primary,
+                    ...primary,
                     if (edit.undoable && widget.onUndo != null) ...[
                       if (_undoFailed)
                         Text(
@@ -205,6 +217,11 @@ class _FileEditRowState extends State<FileEditRow> {
               ),
             ),
           ),
+          if (_refusal != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Text(_refusal!, style: ts(t.typeScale.uiSmall, t.faint)),
+            ),
           if (open)
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
@@ -214,4 +231,17 @@ class _FileEditRowState extends State<FileEditRow> {
       ),
     );
   }
+}
+
+/// Thrown by an undo callback that the host refused on purpose (the page
+/// changed since): the row shows [message] under it instead of "Undo failed".
+class UndoRefused implements Exception {
+  /// Creates the refusal.
+  const UndoRefused(this.message);
+
+  /// What to tell the user.
+  final String message;
+
+  @override
+  String toString() => message;
 }

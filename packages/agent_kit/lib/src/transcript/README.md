@@ -31,6 +31,10 @@ callbacks, never a backend.
 - **One evidence row open at a time** in an activity group. An exec row opens
   into its output, a thinking row into its reasoning text (only when the
   backend sent it), a spawn row calls `onOpenChild`.
+- **Host hooks.** `ActivityGroupView.footer` (`TranscriptActions.activityFooter`) sits under
+  an open group; `FileEdit.label` replaces the row's wording; `openEveryEdit`
+  shows Open on every edit; an undo callback that throws `UndoRefused(message)`
+  shows the message under the row.
 - **The summary line is verb counts** ("Searched 2× · Read 3 files · Ran 1
   command · 1 failed", by `ToolKind`). "Worked 48s" and "thought 6s" are
   appended only when the backend sent durations. A host replaces the line with

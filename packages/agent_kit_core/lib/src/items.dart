@@ -234,6 +234,7 @@ final class FileEdit extends TranscriptItem {
     this.callId,
     this.undoable = true,
     this.undone = false,
+    this.label,
   });
 
   /// Reads an edit from JSON.
@@ -244,6 +245,7 @@ final class FileEdit extends TranscriptItem {
     callId: j.strOpt('callId'),
     undoable: j.boolean('undoable', fallback: true),
     undone: j.boolean('undone'),
+    label: j.strOpt('label'),
   );
 
   /// The change.
@@ -258,6 +260,10 @@ final class FileEdit extends TranscriptItem {
   /// Whether it was undone.
   final bool undone;
 
+  /// A host's own wording for the row ("Moved Garden to trash"), replacing
+  /// "Edited path". Null derives it from the change.
+  final String? label;
+
   @override
   String get type => 'edit';
 
@@ -267,6 +273,7 @@ final class FileEdit extends TranscriptItem {
     'callId': callId,
     'undoable': undoable,
     'undone': undone ? true : null,
+    if (label != null) 'label': label,
   });
 }
 
