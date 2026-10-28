@@ -8,9 +8,9 @@
 // message; Shift+Enter adds a newline. With mention suggestions open, the up
 // and down arrows move, Enter or Tab picks, Esc closes them.
 //
-// The composer fits its own width: below `KitLayout.fitComposer` Stop and
-// Send drop their labels and the workspace pick hides; the model name then
-// truncates first, so the buttons keep their size.
+// Look: Scratch's. The box is bb_ui's FieldFrame; Send, Stop, the picks and
+// the mention menu are bb_ui's buttons, SelectButton and menu parts. The
+// picks scale down in a narrow bar so the buttons keep their size.
 
 import 'dart:async' show FutureOr;
 import 'dart:math' as math;
@@ -21,7 +21,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../theme/theme.dart';
-import 'composer_parts.dart';
 import 'composer_pick.dart';
 import 'mention_source.dart';
 
@@ -92,6 +91,17 @@ class AgentComposer extends StatefulWidget {
     this.autofocus = false,
     this.canSend = true,
     this.placeholder = 'Steer the agent…',
+    this.maxLines = 8,
+    this.maxMentions = 8,
+    this.chipMaxWidth = 280,
+    this.chipKeyOf,
+    this.onMentionPicked,
+    this.mentionLook,
+    this.mentionSectionOf,
+    this.runningSendLabel = 'Send',
+    this.workspaceTitle = 'Workspace',
+    this.workspaceLocked = false,
+    this.keys = const ComposerKeys(),
   });
 
   /// Called with each submitted message. The composer clears its text, its
@@ -118,7 +128,7 @@ class AgentComposer extends StatefulWidget {
   final String? modelId;
   final ValueChanged<KitChoice>? onModelChanged;
 
-  /// The workspaces the workspace pick lists; hidden when empty or tight.
+  /// The workspaces the workspace pick lists; hidden when empty.
   final List<KitChoice> workspaces;
   final String? workspaceId;
   final ValueChanged<KitChoice>? onWorkspaceChanged;
@@ -151,6 +161,45 @@ class AgentComposer extends StatefulWidget {
   final bool autofocus;
   final String placeholder;
 
+  /// The most lines the field grows to before it scrolls.
+  final int maxLines;
+
+  /// How many mention suggestions are listed.
+  final int maxMentions;
+
+  /// The widest a chip grows (its label truncates).
+  final double chipMaxWidth;
+
+  /// The key of a chip; its × gets that key plus `-remove`. The default is
+  /// `chip-<kind>-<id>`.
+  final Key Function(KitRef)? chipKeyOf;
+
+  /// A suggestion was picked (its `@label` is already in the text). A host
+  /// that keeps mentions as chips adds one to [refs] here.
+  final ValueChanged<KitRef>? onMentionPicked;
+
+  /// How a suggestion row looks beyond its label; null draws the kind's icon.
+  final MentionRowLook Function(BuildContext, KitRef)? mentionLook;
+
+  /// The heading a suggestion is listed under; the default names the kinds
+  /// `page`, `chat` and `date` and lists others without one.
+  final String? Function(KitRef)? mentionSectionOf;
+
+  /// The send button's label while the agent runs and the Steer/Queue switch
+  /// is hidden (a host that always steers says "Steer"). With the switch
+  /// shown it reads Send.
+  final String runningSendLabel;
+
+  /// What the workspace pick chooses (its menu header).
+  final String workspaceTitle;
+
+  /// The workspace is fixed (shown, not changeable), for example once the
+  /// chat has messages.
+  final bool workspaceLocked;
+
+  /// Keys for the parts a host's tests look up.
+  final ComposerKeys keys;
+
   @override
   State<AgentComposer> createState() => _AgentComposerState();
 }
@@ -158,7 +207,6 @@ class AgentComposer extends StatefulWidget {
 class _AgentComposerState extends State<AgentComposer> {
   TextEditingController? _ownController;
   FocusNode? _ownFocus;
-  bool _focused = false;
   ComposerMode? _localMode;
 
   // Mentions.
@@ -167,6 +215,7 @@ class _AgentComposerState extends State<AgentComposer> {
   int _active = 0;
   int _tokenStart = 0, _tokenEnd = 0;
   int? _dismissedAt;
+  bool _open = false;
   int _fetch = 0;
 
   TextEditingController get _controller =>
@@ -189,7 +238,7 @@ class _AgentComposerState extends State<AgentComposer> {
       _controller.addListener(_onText);
     }
     if (old.mode != widget.mode) _localMode = null;
-    if (widget.mentions == null && _suggestions.isNotEmpty) _clearSuggest();
+    if (widget.mentions == null && _open) _clearSuggest();
   }
 
   @override
@@ -210,6 +259,7 @@ class _AgentComposerState extends State<AgentComposer> {
   void _clearSuggest() {
     _fetch++;
     _suggestions = const [];
+    _open = false;
     _active = 0;
   }
 
@@ -250,7 +300,8 @@ class _AgentComposerState extends State<AgentComposer> {
     }
     if (!mounted || id != _fetch) return;
     setState(() {
-      _suggestions = found.take(8).toList();
+      _suggestions = found.take(widget.maxMentions).toList();
+      _open = true;
       _active = 0;
     });
   }
@@ -266,6 +317,7 @@ class _AgentComposerState extends State<AgentComposer> {
       text: text.replaceRange(_tokenStart, end, insert),
       selection: TextSelection.collapsed(offset: _tokenStart + insert.length),
     );
+    widget.onMentionPicked?.call(ref);
     _focus.requestFocus();
   }
 
@@ -303,9 +355,6 @@ class _AgentComposerState extends State<AgentComposer> {
   }
 
   // ---- sending -----------------------------------------------------------
-
-  bool get _canSend =>
-      widget.canSend && !_sending && _controller.text.trim().isNotEmpty;
 
   bool _sending = false;
 
@@ -350,6 +399,13 @@ class _AgentComposerState extends State<AgentComposer> {
     final isEnter =
         key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter;
+    if (_open && key == LogicalKeyboardKey.escape) {
+      setState(() {
+        _dismissedAt = _tokenStart;
+        _clearSuggest();
+      });
+      return KeyEventResult.handled;
+    }
     if (_suggestions.isNotEmpty) {
       if (key == LogicalKeyboardKey.arrowDown) {
         setState(() => _active = (_active + 1) % _suggestions.length);
@@ -364,13 +420,6 @@ class _AgentComposerState extends State<AgentComposer> {
       }
       if ((isEnter && !keys.isShiftPressed) || key == LogicalKeyboardKey.tab) {
         if (event is KeyDownEvent) _pick(_suggestions[_active]);
-        return KeyEventResult.handled;
-      }
-      if (key == LogicalKeyboardKey.escape) {
-        setState(() {
-          _dismissedAt = _tokenStart;
-          _clearSuggest();
-        });
         return KeyEventResult.handled;
       }
     }
@@ -397,210 +446,296 @@ class _AgentComposerState extends State<AgentComposer> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.bb;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final tight = constraints.maxWidth < t.layout.fitComposer;
-        return Focus(
-          canRequestFocus: false,
-          skipTraversal: true,
-          onFocusChange: (focused) => setState(() => _focused = focused),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: t.surface2,
-              borderRadius: t.radii.panel,
-              border: Border.all(
-                color: _focused ? t.colors.borderStrong : t.seam,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (widget.refs.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4, bottom: 6),
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          for (final r in widget.refs)
-                            ComposerRefChip(
-                              key: ValueKey('chip-${r.kind}-${r.id}'),
-                              ref: r,
-                              onRemove: widget.onRemoveRef == null
-                                  ? null
-                                  : () => widget.onRemoveRef!(r),
-                            ),
-                        ],
-                      ),
-                    ),
-                  if (_suggestions.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4, bottom: 6),
-                      child: _MentionList(
-                        refs: _suggestions,
-                        active: _active,
-                        onHover: (i) => setState(() => _active = i),
-                        onPick: _pick,
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, bottom: 10),
-                    child: _Field(
-                      controller: _controller,
-                      focusNode: _focus,
-                      placeholder: widget.placeholder,
-                      autofocus: widget.autofocus,
-                      readOnly: !widget.canSend,
-                      onKey: _onKey,
-                    ),
-                  ),
-                  _bar(context, t, tight),
-                ],
-              ),
+    final c = context.colors;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_open)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: _MentionMenu(
+              key: widget.keys.mentions,
+              refs: _suggestions,
+              active: _active,
+              look: widget.mentionLook,
+              sectionOf: widget.mentionSectionOf ?? _defaultSection,
+              onHover: (i) => setState(() => _active = i),
+              onPick: _pick,
             ),
           ),
-        );
-      },
+        GestureDetector(
+          onTap: _focus.requestFocus,
+          child: FieldFrame(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.refs.isNotEmpty) ...[
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      for (final r in widget.refs)
+                        ComposerRefChip(
+                          key:
+                              widget.chipKeyOf?.call(r) ??
+                              ValueKey('chip-${r.kind}-${r.id}'),
+                          ref: r,
+                          maxWidth: widget.chipMaxWidth,
+                          onRemove: widget.onRemoveRef == null
+                              ? null
+                              : () => widget.onRemoveRef!(r),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                ],
+                _Field(
+                  fieldKey: widget.keys.field,
+                  controller: _controller,
+                  focusNode: _focus,
+                  placeholder: widget.placeholder,
+                  autofocus: widget.autofocus,
+                  readOnly: !widget.canSend,
+                  maxLines: widget.maxLines,
+                  color: c.textPrimary,
+                  onKey: _onKey,
+                ),
+                const SizedBox(height: 8),
+                _bar(context),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _bar(BuildContext context, BbTheme t, bool tight) {
-    final h = controlHeight(t);
+  KitChoice? _choice(List<KitChoice> choices, String? id) {
+    for (final c in choices) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
+
+  Widget _pickFor({
+    required Key? key,
+    required String title,
+    required List<KitChoice> choices,
+    required String? selectedId,
+    required ValueChanged<KitChoice>? onSelected,
+  }) {
+    final current = _choice(choices, selectedId);
+    if (current == null) {
+      return ComposerPick(
+        key: key,
+        title: title,
+        choices: choices,
+        selectedId: selectedId,
+        placeholder: title,
+        onSelected: (c) => onSelected?.call(c),
+      );
+    }
+    return SelectButton<KitChoice>(
+      key: key,
+      title: title,
+      value: current,
+      options: choices,
+      labelOf: (c) => c.label,
+      onChanged: onSelected,
+    );
+  }
+
+  Widget _bar(BuildContext context) {
+    final showWorkspace = widget.workspaces.isNotEmpty;
+    final showModel = widget.showModelPick;
+    final label = widget.running && !widget.showModeToggle
+        ? widget.runningSendLabel
+        : 'Send';
+    Widget send = PrimaryButton(
+      key: widget.keys.send,
+      label: label,
+      height: 32,
+      icon: Ico.arrowUp,
+      onTap: _submit,
+    );
+    send = Semantics(
+      container: true,
+      excludeSemantics: true,
+      button: true,
+      enabled: widget.canSend,
+      label: label,
+      onTap: widget.canSend ? _submit : null,
+      child: widget.canSend
+          ? send
+          : IgnorePointer(child: Opacity(opacity: .5, child: send)),
+    );
     return Row(
       children: [
-        Expanded(
-          child: Row(
-            children: [
-              if (widget.showModelPick)
-                Flexible(
-                  child: ComposerPick(
-                    title: 'Model',
-                    choices: widget.models,
-                    selectedId: widget.modelId,
-                    placeholder: 'Model',
-                    onSelected: (c) => widget.onModelChanged?.call(c),
-                  ),
+        if (showWorkspace || showModel)
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showWorkspace)
+                      _pickFor(
+                        key: widget.keys.workspace,
+                        title: widget.workspaceTitle,
+                        choices: widget.workspaces,
+                        selectedId: widget.workspaceId,
+                        onSelected: widget.workspaceLocked
+                            ? null
+                            : widget.onWorkspaceChanged,
+                      ),
+                    if (showModel)
+                      _pickFor(
+                        key: widget.keys.model,
+                        title: 'Model',
+                        choices: widget.models,
+                        selectedId: widget.modelId,
+                        onSelected: widget.onModelChanged,
+                      ),
+                  ],
                 ),
-              if (!tight && widget.workspaces.isNotEmpty) ...[
-                if (widget.showModelPick) const SizedBox(width: 6),
-                ComposerPick(
-                  title: 'Workspace',
-                  choices: widget.workspaces,
-                  selectedId: widget.workspaceId,
-                  placeholder: 'Workspace',
-                  onSelected: (c) => widget.onWorkspaceChanged?.call(c),
-                ),
-              ],
-            ],
-          ),
-        ),
+              ),
+            ),
+          )
+        else
+          const Spacer(),
         if (widget.running) ...[
           if (widget.showModeToggle) ...[
             ComposerModeToggle(mode: _mode, onChanged: _setMode),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
           ],
-          KitButton(
+          Semantics(
+            container: true,
+            excludeSemantics: true,
+            button: true,
+            enabled: widget.onStop != null,
             label: 'Stop',
-            icon: ComposerGlyphs.square,
-            iconOnly: tight,
-            height: h,
             onTap: widget.onStop,
+            child: SecondaryButton(
+              key: widget.keys.stop,
+              label: 'Stop',
+              height: 32,
+              onTap: widget.onStop,
+            ),
           ),
+          const SizedBox(width: 8),
         ],
-        const SizedBox(width: 6),
-        KitButton(
-          label: 'Send',
-          kind: KitButtonKind.primary,
-          icon: ComposerGlyphs.arrowUp,
-          iconSize: 18,
-          iconOnly: tight,
-          height: h,
-          onTap: _canSend ? _submit : null,
-        ),
+        send,
       ],
     );
   }
 }
 
+String? _defaultSection(KitRef r) => switch (r.kind) {
+  'page' => 'Link to page',
+  'chat' => 'Link to chat',
+  'date' => 'Date',
+  _ => null,
+};
+
+/// Keys for the parts of the composer a host's tests look up. All optional.
+class ComposerKeys {
+  /// Creates the keys.
+  const ComposerKeys({
+    this.field,
+    this.send,
+    this.stop,
+    this.mentions,
+    this.model,
+    this.workspace,
+  });
+
+  /// The text field.
+  final Key? field;
+
+  /// The Send (or Steer) button.
+  final Key? send;
+
+  /// The Stop button.
+  final Key? stop;
+
+  /// The mention list.
+  final Key? mentions;
+
+  /// The model pick.
+  final Key? model;
+
+  /// The workspace pick.
+  final Key? workspace;
+}
+
 /// The multiline text field with its placeholder.
 class _Field extends StatelessWidget {
   const _Field({
+    required this.fieldKey,
     required this.controller,
     required this.focusNode,
     required this.placeholder,
     required this.autofocus,
+    required this.maxLines,
+    required this.color,
     required this.onKey,
     this.readOnly = false,
   });
 
+  final Key? fieldKey;
   final TextEditingController controller;
   final FocusNode focusNode;
   final String placeholder;
   final bool autofocus;
   final bool readOnly;
+  final int maxLines;
+  final Color color;
   final FocusOnKeyEventCallback onKey;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.bb;
-    final style = ts(t.typeScale.body, t.ink, weight: 400);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: focusNode.requestFocus,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: t.typeScale.body.line),
+    final c = context.colors;
+    return Semantics(
+      label: 'Message to the agent',
+      textField: true,
+      multiline: true,
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: onKey,
         child: Stack(
           children: [
-            SizedBox(
-              width: double.infinity,
-              child: Semantics(
-                label: 'Message to the agent',
-                textField: true,
-                multiline: true,
-                child: Focus(
-                  canRequestFocus: false,
-                  skipTraversal: true,
-                  onKeyEvent: onKey,
-                  child: EditableText(
-                    controller: controller,
-                    focusNode: focusNode,
-                    style: style,
-                    cursorColor: t.ink,
-                    backgroundCursorColor: t.faint,
-                    selectionColor: t.colors.textSelection,
-                    selectionControls: noteSelectionControls,
-                    cursorWidth: 1.5,
-                    autofocus: autofocus,
-                    readOnly: readOnly,
-                    minLines: 1,
-                    maxLines: 8,
-                    keyboardType: TextInputType.multiline,
-                    textInputAction: TextInputAction.newline,
+            if (controller.text.isEmpty)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Text(
+                    placeholder,
+                    style: ts(context.type.body, c.textTertiary),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 0,
-              top: 0,
-              right: 0,
-              child: ListenableBuilder(
-                listenable: controller,
-                builder: (context, _) => controller.text.isEmpty
-                    ? IgnorePointer(
-                        child: Text(
-                          placeholder,
-                          maxLines: 1,
-                          overflow: TextOverflow.clip,
-                          style: style.copyWith(color: t.faint),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
+            EditableText(
+              key: fieldKey,
+              controller: controller,
+              focusNode: focusNode,
+              style: ts(context.type.body, color),
+              cursorColor: color,
+              backgroundCursorColor: c.textTertiary,
+              selectionColor: c.textSelection,
+              cursorWidth: 1.5,
+              autofocus: autofocus,
+              readOnly: readOnly,
+              minLines: 1,
+              maxLines: maxLines,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              selectionControls: noteSelectionControls,
             ),
           ],
         ),
@@ -685,162 +820,142 @@ class ComposerModeToggle extends StatelessWidget {
   }
 }
 
-/// A reference chip above the field (`.cmp-chip`): an icon, the label and a
-/// × that removes it.
+/// A reference chip above the field: an icon for the kind (`selection` a
+/// text mark, `chat` a bubble, anything else a page), the label and a ×
+/// that removes it.
 class ComposerRefChip extends StatelessWidget {
   /// Creates a chip for [ref].
-  const ComposerRefChip({super.key, required this.ref, this.onRemove});
+  const ComposerRefChip({
+    super.key,
+    required this.ref,
+    this.onRemove,
+    this.maxWidth = 280,
+  });
 
   final KitRef ref;
   final VoidCallback? onRemove;
 
+  /// The widest the label grows.
+  final double maxWidth;
+
   @override
   Widget build(BuildContext context) {
-    final t = context.bb;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 190),
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: t.surface, borderRadius: t.radii.pill),
-        child: SizedBox(
-          height: 24,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8, right: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                KitIcon(ComposerGlyphs.fileText, size: 12, color: t.ink),
-                const SizedBox(width: 5),
-                Flexible(
-                  child: Text(
-                    ref.label,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: ts(t.typeScale.uiSmall, t.ink),
-                  ),
-                ),
-                if (onRemove != null) ...[
-                  const SizedBox(width: 2),
-                  Semantics(
-                    button: true,
-                    label: 'Remove ${ref.label}',
-                    excludeSemantics: true,
-                    onTap: onRemove,
-                    child: Hover(
-                      onTap: onRemove,
-                      borderRadius: t.radii.pill,
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: Center(
-                          child: KitIcon(
-                            ComposerGlyphs.x,
-                            size: 12,
-                            color: t.ink,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+    final c = context.colors;
+    final k = key;
+    return DecoratedBox(
+      decoration: BoxDecoration(color: c.bgSecondary, borderRadius: Radii.pill),
+      child: Padding(
+        padding: EdgeInsets.only(left: 6, right: onRemove == null ? 8 : 0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon20(
+              switch (ref.kind) {
+                'selection' => Ico.text,
+                'chat' => Ico.comment,
+                _ => Ico.page,
+              },
+              size: 12,
+              color: c.iconTertiary,
             ),
-          ),
+            const SizedBox(width: 4),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Text(
+                ref.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: ts(context.type.uiSmall, c.textSecondary),
+              ),
+            ),
+            if (onRemove != null)
+              IconBtn(
+                Ico.close,
+                key: k is ValueKey ? ValueKey('${k.value}-remove') : null,
+                size: 24,
+                glyph: 12,
+                semanticLabel: 'Remove context',
+                onTap: onRemove,
+              ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// The mention suggestions, listed above the field. Focus stays in the
-/// field; the active row is driven by the composer's keys.
-class _MentionList extends StatelessWidget {
-  const _MentionList({
+/// The mention suggestions, listed above the field under a heading per kind.
+/// Focus stays in the field; the active row is driven by the composer's keys.
+class _MentionMenu extends StatelessWidget {
+  const _MentionMenu({
+    super.key,
     required this.refs,
     required this.active,
+    required this.look,
+    required this.sectionOf,
     required this.onHover,
     required this.onPick,
   });
 
   final List<KitRef> refs;
   final int active;
+  final MentionRowLook Function(BuildContext, KitRef)? look;
+  final String? Function(KitRef) sectionOf;
   final ValueChanged<int> onHover;
   final ValueChanged<KitRef> onPick;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.bb;
-    final rowHeight = isTouch(t) ? 40.0 : 28.0;
+    final c = context.colors;
+    final m = context.mobile;
+    final rows = <Widget>[];
+    String? section;
+    for (var i = 0; i < refs.length; i++) {
+      final r = refs[i];
+      final s = sectionOf(r);
+      if (s != section) {
+        if (section != null) rows.add(const MenuSeparator());
+        if (s != null) rows.add(MenuHeader(s));
+        section = s;
+      }
+      final custom = look?.call(context, r);
+      rows.add(
+        MenuItem(
+          key: ValueKey('mention-${r.kind}-${r.id}'),
+          label: custom?.label ?? r.label,
+          firstLine: custom?.firstLine ?? false,
+          leading:
+              custom?.leading ??
+              Icon20(
+                switch (r.kind) {
+                  'chat' => Ico.comment,
+                  'date' => Ico.clock,
+                  _ => Ico.page,
+                },
+                size: m ? 22 : 20,
+                color: c.iconSecondary,
+              ),
+          selected: i == active,
+          onTap: () => onPick(r),
+          onHover: () => onHover(i),
+        ),
+      );
+    }
+    if (refs.isEmpty) rows.add(const MenuHeader('No results'));
     return Semantics(
       container: true,
       label: 'Mentions',
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: t.surface,
-          borderRadius: t.radii.field,
-          border: Border.all(color: t.seam),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < refs.length; i++)
-                MouseRegion(
-                  onEnter: (_) => onHover(i),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onPick(refs[i]),
-                    child: Semantics(
-                      button: true,
-                      selected: i == active,
-                      label: refs[i].label,
-                      excludeSemantics: true,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: i == active ? t.colors.bgSelectedBlock : null,
-                          borderRadius: BorderRadius.circular(t.radii.md),
-                        ),
-                        child: SizedBox(
-                          height: rowHeight,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Row(
-                              children: [
-                                KitIcon(
-                                  ComposerGlyphs.fileText,
-                                  size: 14,
-                                  color: t.muted,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    refs[i].label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: ts(
-                                      t.typeScale.ui,
-                                      t.ink,
-                                      weight: 400,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  refs[i].kind,
-                                  maxLines: 1,
-                                  style: ts(t.typeScale.uiSmall, t.faint),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+      child: MenuSurface(
+        width: m ? null : 324,
+        padding: const EdgeInsets.all(6),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 168),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: rows,
+            ),
           ),
         ),
       ),

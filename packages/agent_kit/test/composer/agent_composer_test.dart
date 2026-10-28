@@ -172,27 +172,46 @@ void main() {
     expect(stops, 1);
   });
 
-  testWidgets('below the fit width the buttons drop their labels', (
+  testWidgets(
+    'a narrow bar scales the picks down and keeps the buttons labelled',
+    (tester) async {
+      Widget composer() => AgentComposer(
+        running: true,
+        models: fixtureModels,
+        modelId: 'flash',
+        workspaces: fixtureWorkspaces,
+        workspaceId: 'base',
+        onSubmit: (_) => true,
+      );
+      await pumpComposer(tester, composer(), width: 560);
+      expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(find.text('BubblePaw-base'), findsOneWidget);
+
+      await pumpComposer(tester, composer(), width: 400);
+      expect(find.text('Stop'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('a chip takes the host key; its remove button follows it', (
     tester,
   ) async {
-    Widget composer() => AgentComposer(
-      running: true,
-      models: fixtureModels,
-      modelId: 'flash',
-      workspaces: fixtureWorkspaces,
-      workspaceId: 'base',
-      onSubmit: (_) => true,
+    var removed = 0;
+    await pumpComposer(
+      tester,
+      AgentComposer(
+        refs: const [fixtureChip],
+        chipKeyOf: (r) => ValueKey('ctx-${r.id}'),
+        onRemoveRef: (_) => removed++,
+        onSubmit: (_) => true,
+      ),
     );
-    await pumpComposer(tester, composer(), width: 560);
-    expect(find.text('Stop'), findsOneWidget);
-    expect(find.text('Send'), findsOneWidget);
-    expect(find.text('BubblePaw-base'), findsOneWidget);
-
-    await pumpComposer(tester, composer(), width: 400);
-    expect(find.text('Stop'), findsNothing);
-    expect(find.text('Send'), findsNothing);
-    expect(find.text('BubblePaw-base'), findsNothing);
-    expect(find.text('deepseek-v4.1-flash'), findsOneWidget);
+    expect(find.byKey(const ValueKey('ctx-p1')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('ctx-p1-remove')));
+    await tester.pump();
+    expect(removed, 1);
   });
 
   testWidgets('reference chips show and remove', (tester) async {
@@ -331,6 +350,31 @@ void main() {
       expect(got.single.text, 'see @usage/quota.rs');
       expect((ref.kind, ref.id), ('file', 'f2'));
       expect((ref.start, ref.end), (4, 4 + '@usage/quota.rs'.length));
+    });
+
+    testWidgets('says No results, and reports the picked mention', (
+      tester,
+    ) async {
+      final picked = <KitRef>[];
+      await pumpComposer(
+        tester,
+        AgentComposer(
+          mentions: fixtureMentions,
+          onMentionPicked: picked.add,
+          onSubmit: (_) => true,
+        ),
+      );
+      await _type(tester, '@zzzz');
+      await tester.pump();
+      expect(find.text('No results'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      expect(find.text('No results'), findsNothing);
+      await _type(tester, 'see @us');
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(picked.single.id, 'f1');
     });
 
     testWidgets('Esc closes the list and Enter then sends', (tester) async {

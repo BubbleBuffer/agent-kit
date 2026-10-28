@@ -2,6 +2,7 @@
 // never knows what a file, page or person is; the host answers with KitRefs.
 
 import 'package:agent_kit_core/agent_kit_core.dart' show KitRef;
+import 'package:flutter/widgets.dart' show Widget;
 
 /// Where the composer gets its `@` mentions from.
 ///
@@ -39,4 +40,20 @@ class StaticMentionSource implements MentionSource {
         if (r.label.toLowerCase().contains(q)) r,
     ];
   }
+}
+
+/// How a suggestion row looks beyond the defaults: a host with page icons or
+/// first-line titles returns its own.
+class MentionRowLook {
+  /// Creates a look.
+  const MentionRowLook({this.leading, this.label, this.firstLine = false});
+
+  /// Replaces the kind's icon.
+  final Widget? leading;
+
+  /// Replaces the ref's label.
+  final String? label;
+
+  /// The label stands in for a missing title: drawn muted and italic.
+  final bool firstLine;
 }

@@ -56,9 +56,10 @@ Mockup parts: `.approval`, `.queue`, `.composer`, `.cmp-chip`, `.seg` and the
   Next or Answer enables; Skip declines the question instead. A pick-any
   question may be answered with nothing ticked. Answer on the last step
   returns to a question left open before it sends.
-- The composer fits its own width: below `KitLayout.fitComposer` (460) Stop and
-  Send drop their labels and the workspace pick hides; the model name truncates
-  first. The queued row hides "Queued" below 600 px. The approval bar lays out
+- The composer takes Scratch's look: the box is `bb_ui`'s `FieldFrame`, the
+  buttons, picks and mention menu are `bb_ui`'s `PrimaryButton`,
+  `SecondaryButton`, `SelectButton` and menu parts. In a narrow bar the picks
+  scale down; the buttons keep their labels. The queued row hides "Queued" below 600 px. The approval bar lays out
   two lines at wide widths, the actions under the request when narrower and
   three equal buttons when compact. Key hints hide at the phone form factor.
 - The pick menus open as `bb_ui` popovers, so a `Navigator` must sit above them
