@@ -95,11 +95,13 @@ class _ApprovalBarState extends State<ApprovalBar> {
   @override
   void initState() {
     super.initState();
+    _bars.add(this);
     HardwareKeyboard.instance.addHandler(_onKey);
   }
 
   @override
   void dispose() {
+    _bars.remove(this);
     HardwareKeyboard.instance.removeHandler(_onKey);
     _barFocus.dispose();
     _denyAnchor.dispose();
@@ -115,15 +117,17 @@ class _ApprovalBarState extends State<ApprovalBar> {
         context.findAncestorWidgetOfExactType<EditableText>() != null;
   }
 
+  FocusNode? _pane;
+
+  bool get _live =>
+      mounted &&
+      widget.enabled &&
+      widget.captureKeys &&
+      !_denying &&
+      widget.approval.isPending;
+
   bool _onKey(KeyEvent event) {
-    if (event is! KeyDownEvent ||
-        !widget.enabled ||
-        !widget.captureKeys ||
-        _denying ||
-        !widget.approval.isPending ||
-        !mounted) {
-      return false;
-    }
+    if (event is! KeyDownEvent || !_live || !_elected(this)) return false;
     final keys = HardwareKeyboard.instance;
     if (keys.isControlPressed ||
         keys.isMetaPressed ||
@@ -188,6 +192,12 @@ class _ApprovalBarState extends State<ApprovalBar> {
           ? const ApprovalDecision.deny()
           : ApprovalDecision.deny(reason),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pane = ApprovalKeyPane.maybeOf(context);
   }
 
   @override
@@ -639,4 +649,87 @@ String? _prettyArguments(String? raw) {
   } on FormatException {
     return raw;
   }
+}
+
+// Which bar answers 1, 2 and 3 when several are on screen (two chat panes
+// side by side): the bar whose pane has focus, else the bar whose pane had it
+// last, else the first. Never more than one. A bar outside any
+// [ApprovalKeyPane] has no pane and only wins by being first.
+final _bars = <_ApprovalBarState>[];
+FocusNode? _recentPane;
+
+bool _elected(_ApprovalBarState bar) {
+  if (_bars.length < 2) return true;
+  // A focused pane owns the keys even when its own bar cannot take them
+  // (typing a reason): another pane's bar must not answer then.
+  for (final b in _bars) {
+    if (b._pane?.hasFocus == true) return identical(b, bar) && bar._live;
+  }
+  final live = [
+    for (final b in _bars)
+      if (b._live) b,
+  ];
+  if (live.isEmpty) return false;
+  for (final b in live) {
+    if (b._pane != null && identical(b._pane, _recentPane)) {
+      return identical(b, bar);
+    }
+  }
+  return identical(live.first, bar);
+}
+
+/// Marks a chat pane for [ApprovalBar]: with several panes on screen, 1, 2
+/// and 3 go to the bar of the pane that has focus, or failing that the pane
+/// focused last. Wrap each pane in one.
+class ApprovalKeyPane extends StatefulWidget {
+  /// Creates the marker around [child].
+  const ApprovalKeyPane({super.key, required this.child});
+
+  /// The pane.
+  final Widget child;
+
+  /// The marker's focus node above [context], if any.
+  static FocusNode? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_PaneScope>()?.node;
+
+  @override
+  State<ApprovalKeyPane> createState() => _ApprovalKeyPaneState();
+}
+
+class _ApprovalKeyPaneState extends State<ApprovalKeyPane> {
+  final _node = FocusNode(
+    debugLabel: 'approval key pane',
+    canRequestFocus: false,
+    skipTraversal: true,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _node.addListener(_changed);
+  }
+
+  void _changed() {
+    if (_node.hasFocus) _recentPane = _node;
+  }
+
+  @override
+  void dispose() {
+    if (identical(_recentPane, _node)) _recentPane = null;
+    _node.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _PaneScope(
+    node: _node,
+    child: Focus(focusNode: _node, child: widget.child),
+  );
+}
+
+class _PaneScope extends InheritedWidget {
+  const _PaneScope({required this.node, required super.child});
+  final FocusNode node;
+  @override
+  bool updateShouldNotify(_PaneScope old) => node != old.node;
 }
