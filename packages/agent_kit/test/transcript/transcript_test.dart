@@ -548,6 +548,37 @@ void main() {
       );
     });
 
+    testWidgets('grouped layout puts text, edits, then activity', (
+      tester,
+    ) async {
+      final items = <TranscriptItem>[
+        userMessage(),
+        activityGroup(),
+        modifiedEdit(),
+        assistantMessage(),
+      ];
+      Future<List<double>> tops(TurnLayout layout) async {
+        await pumpTranscript(
+          tester,
+          TranscriptList(items: items, layout: layout),
+          height: 3000,
+        );
+        await tester.pumpAndSettle();
+        return [
+          tester.getTopLeft(find.byType(AssistantProse)).dy,
+          tester.getTopLeft(find.byType(FileEditRow)).dy,
+          tester.getTopLeft(find.byType(ActivityGroupView)).dy,
+        ];
+      }
+
+      final chrono = await tops(TurnLayout.chronological);
+      expect(chrono[2], lessThan(chrono[1]));
+      expect(chrono[1], lessThan(chrono[0]));
+      final grouped = await tops(TurnLayout.grouped);
+      expect(grouped[0], lessThan(grouped[1]));
+      expect(grouped[1], lessThan(grouped[2]));
+    });
+
     testWidgets('renders every item kind', (tester) async {
       final items = <TranscriptItem>[
         userMessage(),

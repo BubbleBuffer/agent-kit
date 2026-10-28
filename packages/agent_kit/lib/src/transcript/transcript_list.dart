@@ -49,6 +49,16 @@ class TranscriptAnchor {
   String toString() => 'TranscriptAnchor($itemId, $offset)';
 }
 
+/// How the items of one turn (the run between two user messages) are ordered.
+enum TurnLayout {
+  /// As they happened: prose, edits and activity interleaved.
+  chronological,
+
+  /// The assistant's text first, then its file edits, then the activity
+  /// groups, then notices; the order within each kind is kept.
+  grouped,
+}
+
 /// Something other than a transcript item shown in the list, right after the
 /// item [afterItemId] (the end of the transcript when that is null or no longer
 /// there): a resolved question's answers, for one.
@@ -102,6 +112,7 @@ class TranscriptList extends StatefulWidget {
     this.trailing,
     this.contentWidth = 720,
     this.followThreshold = 24,
+    this.layout = TurnLayout.chronological,
   });
 
   /// The transcript, in order (`ChatSnapshot.items`).
@@ -132,6 +143,9 @@ class TranscriptList extends StatefulWidget {
 
   /// How near the bottom (px) still counts as at the bottom.
   final double followThreshold;
+
+  /// How the items of a turn are ordered.
+  final TurnLayout layout;
 
   @override
   State<TranscriptList> createState() => _TranscriptListState();
@@ -341,6 +355,43 @@ class _TranscriptListState extends State<TranscriptList> {
 
   // ---------------------------------------------------------------- build
 
+  static List<TranscriptItem> _ordered(
+    List<TranscriptItem> items,
+    TurnLayout layout,
+  ) {
+    if (layout == TurnLayout.chronological) return items;
+    int rank(TranscriptItem i) => switch (i) {
+      AssistantMessage() => 0,
+      FileEdit() => 1,
+      ActivityGroup() => 2,
+      NoticeLine() => 3,
+      _ => -1,
+    };
+    final out = <TranscriptItem>[];
+    var run = <TranscriptItem>[];
+    void flush() {
+      // List.sort is not stable, so the position breaks ties.
+      final idx = List<int>.generate(run.length, (i) => i)
+        ..sort((a, b) {
+          final c = rank(run[a]).compareTo(rank(run[b]));
+          return c != 0 ? c : a.compareTo(b);
+        });
+      out.addAll([for (final i in idx) run[i]]);
+      run = [];
+    }
+
+    for (final i in items) {
+      if (rank(i) < 0) {
+        flush();
+        out.add(i);
+      } else {
+        run.add(i);
+      }
+    }
+    flush();
+    return out;
+  }
+
   static int _kind(TranscriptItem i) => switch (i) {
     UserMessage() => 0,
     AssistantMessage() || ActivityGroup() || NoticeLine() => 1,
@@ -360,7 +411,7 @@ class _TranscriptListState extends State<TranscriptList> {
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    final items = widget.items;
+    final items = _ordered(widget.items, widget.layout);
     final Widget? leading = widget.plan.isEmpty
         ? widget.leading
         : widget.leading == null
