@@ -22,21 +22,53 @@ import '../theme/theme.dart';
 import 'exec_output.dart';
 import 'transcript_support.dart';
 
-/// The summary line of [group]: "Worked 48s · thought 6s · 7 tool calls".
-/// A running group reads "Working"; times that are not known are left out.
+/// Builds the summary line of a group; see [activitySummary].
+typedef ActivitySummaryBuilder = String Function(ActivityGroup group);
+
+/// The summary line of [group], from verb counts: "Searched 2× · Read 3
+/// files · Ran 1 command · 1 failed". Time parts are appended only when the
+/// backend sent durations: "· Worked 48s · thought 6s". A group with no calls
+/// reads "Working" while it runs, "Worked" (with its time) after. A host that
+/// wants other wording passes its own [ActivitySummaryBuilder].
 String activitySummary(ActivityGroup group) {
-  final parts = <String>[];
-  if (group.isRunning) {
-    parts.add('Working');
-  } else {
-    final ms = _elapsedMs(group);
-    parts.add(ms == null ? 'Worked' : 'Worked ${formatDuration(ms)}');
+  final tools = group.rows.whereType<ToolRow>().toList();
+  int count(bool Function(ToolRow) test) => tools.where(test).length;
+  String files(int n, String verb) => '$verb $n ${n == 1 ? 'file' : 'files'}';
+  final searched = count((r) => r.kind == ToolKind.search);
+  final read = count((r) => r.kind == ToolKind.read);
+  final edited = count(
+    (r) => r.kind == ToolKind.edit || r.kind == ToolKind.write,
+  );
+  final ran = count((r) => r.kind == ToolKind.exec);
+  final web = count((r) => r.kind == ToolKind.web);
+  final other = count((r) => r.kind == ToolKind.other);
+  final spawned = group.spawns;
+  final failed = count((r) => r.state == WorkState.failed);
+  final parts = <String>[
+    if (searched > 0) 'Searched $searched×',
+    if (read > 0) files(read, 'Read'),
+    if (edited > 0) files(edited, 'Edited'),
+    if (ran > 0) 'Ran $ran ${ran == 1 ? 'command' : 'commands'}',
+    if (web > 0) 'Looked up $web×',
+    if (spawned > 0) 'Started $spawned ${spawned == 1 ? 'agent' : 'agents'}',
+    if (other > 0) '$other other ${other == 1 ? 'call' : 'calls'}',
+    if (failed > 0) '$failed failed',
+  ];
+  final ms = group.isRunning ? null : _elapsedMs(group);
+  if (parts.isEmpty) {
+    parts.add(
+      group.isRunning
+          ? 'Working'
+          : ms == null
+          ? 'Worked'
+          : 'Worked ${formatDuration(ms)}',
+    );
+  } else if (ms != null) {
+    parts.add('Worked ${formatDuration(ms)}');
   }
   if (group.thinkingMs > 0) {
     parts.add('thought ${formatDuration(group.thinkingMs)}');
   }
-  final calls = group.toolCalls;
-  if (calls > 0) parts.add('$calls tool call${calls == 1 ? '' : 's'}');
   return parts.join(' · ');
 }
 
@@ -62,6 +94,7 @@ class ActivityGroupView extends StatefulWidget {
     this.initiallyOpenRow,
     this.onOpenOutput,
     this.onOpenChild,
+    this.summaryOf,
   });
 
   final ActivityGroup group;
@@ -78,6 +111,9 @@ class ActivityGroupView extends StatefulWidget {
   /// A spawn row was tapped; gets the child's id.
   final ValueChanged<String>? onOpenChild;
 
+  /// Replaces the summary line (see [activitySummary], the default).
+  final ActivitySummaryBuilder? summaryOf;
+
   @override
   State<ActivityGroupView> createState() => _ActivityGroupViewState();
 }
@@ -91,7 +127,7 @@ class _ActivityGroupViewState extends State<ActivityGroupView> {
     final t = context.bb;
     final group = widget.group;
     final compact = sizeClassOf(context).isCompact;
-    final summary = activitySummary(group);
+    final summary = (widget.summaryOf ?? activitySummary)(group);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,

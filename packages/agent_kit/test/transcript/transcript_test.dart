@@ -126,7 +126,7 @@ void main() {
     test('summary line', () {
       expect(
         activitySummary(activityGroup()),
-        'Worked 48s · thought 6s · 5 tool calls',
+        'Searched 1× · Read 2 files · Ran 1 command · Started 1 agent · 1 failed · Worked 48s · thought 6s',
       );
       expect(
         activitySummary(
@@ -135,8 +135,43 @@ void main() {
             rows: [const ToolRow(id: 't', name: 'x')],
           ),
         ),
-        'Working · 1 tool call',
+        '1 other call',
       );
+      expect(activitySummary(ActivityGroup(id: 'g')), 'Worked');
+      // No durations from the backend, no time parts.
+      expect(
+        activitySummary(
+          ActivityGroup(
+            id: 'g',
+            rows: [
+              const ToolRow(
+                id: 'a',
+                name: 'x',
+                kind: ToolKind.edit,
+                state: WorkState.done,
+              ),
+              const ToolRow(
+                id: 'b',
+                name: 'y',
+                kind: ToolKind.write,
+                state: WorkState.failed,
+              ),
+            ],
+          ),
+        ),
+        'Edited 2 files · 1 failed',
+      );
+    });
+
+    testWidgets('a host can replace the summary line', (tester) async {
+      await pumpTranscript(
+        tester,
+        ActivityGroupView(
+          activityGroup(),
+          summaryOf: (g) => 'Looked around (${g.toolCalls})',
+        ),
+      );
+      expect(find.text('Looked around (5)'), findsOneWidget);
     });
 
     testWidgets('Enter on the focused summary expands it', (tester) async {
@@ -164,7 +199,7 @@ void main() {
 
     testWidgets('opens into rows, one at a time', (tester) async {
       await pumpTranscript(tester, ActivityGroupView(activityGroup()));
-      const summary = 'Worked 48s · thought 6s · 5 tool calls';
+      const summary = 'Searched 1× · Read 2 files · Ran 1 command · Started 1 agent · 1 failed · Worked 48s · thought 6s';
       expect(find.text(summary), findsOneWidget);
       expect(find.text('exec'), findsNothing);
 
