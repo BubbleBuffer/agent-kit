@@ -1,7 +1,7 @@
 # agent-kit
 
 Agent chat widgets and backend ports for BubbleBuffer apps. The three library
-packages share version **0.13.0**; product-neutral Flutter primitives and design
+packages share version **0.14.0**; product-neutral Flutter primitives and design
 tokens live in [bb-ui](https://github.com/BubbleBuffer/bb-ui).
 
 | Package | What it is |
@@ -23,7 +23,7 @@ dependencies:
   agent_kit:
     git:
       url: https://github.com/BubbleBuffer/agent-kit.git
-      ref: v0.13.0
+      ref: v0.14.0
       path: packages/agent_kit
 ```
 

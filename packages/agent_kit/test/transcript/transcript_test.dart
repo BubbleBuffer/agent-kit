@@ -548,6 +548,59 @@ void main() {
       );
     });
 
+    testWidgets(
+      'host entries ride on the list: uniform gaps, a boundary below cards',
+      (tester) async {
+        final entries = [
+          TimelineEntry(id: 'c1', builder: (_) => const Text('Summary one')),
+          TimelineEntry(id: 'c2', builder: (_) => const Text('Summary two')),
+          TimelineEntry(
+            id: 'boundary',
+            builder: (_) => const Text('Full messages from here'),
+          ),
+          TimelineEntry(id: 'm1', builder: (_) => const Text('First message')),
+        ];
+        await pumpTranscript(
+          tester,
+          TranscriptList(
+            entries: entries,
+            gapBefore: (prev, id) => id == 'boundary' ? 30 : null,
+          ),
+          height: 3000,
+        );
+        await tester.pumpAndSettle();
+        double top(String t) => tester.getTopLeft(find.text(t)).dy;
+        double bottom(String t) => tester.getBottomLeft(find.text(t)).dy;
+        expect(top('Summary two') - bottom('Summary one'), 14);
+        expect(top('Full messages from here') - bottom('Summary two'), 30);
+        expect(top('First message') - bottom('Full messages from here'), 14);
+      },
+    );
+
+    testWidgets('the hosts scroll controller and viewport key are used', (
+      tester,
+    ) async {
+      final scroll = ScrollController();
+      addTearDown(scroll.dispose);
+      final viewport = GlobalKey();
+      await pumpTranscript(
+        tester,
+        TranscriptList(
+          entries: [
+            for (var i = 0; i < 40; i++)
+              TimelineEntry(id: 'e$i', builder: (_) => Text('Row $i')),
+          ],
+          scroll: scroll,
+          viewportKey: viewport,
+          gutter: 0,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(scroll.hasClients, isTrue);
+      expect(viewport.currentContext, isNotNull);
+      expect(scroll.position.extentAfter, lessThan(2)); // follows the tail
+    });
+
     testWidgets('grouped layout puts text, edits, then activity', (
       tester,
     ) async {

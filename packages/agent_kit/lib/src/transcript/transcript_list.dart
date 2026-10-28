@@ -16,8 +16,7 @@ import 'package:agent_kit_core/agent_kit_core.dart'
         FileEdit,
         NoticeLine,
         PlanItem,
-        TranscriptItem,
-        UserMessage;
+        TranscriptItem;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/scheduler.dart' show SchedulerPhase;
 import 'package:flutter/widgets.dart';
@@ -99,10 +98,24 @@ class TranscriptController extends ChangeNotifier {
   void _changed() => notifyListeners();
 }
 
+/// An entry a host draws itself in a [TranscriptList] (see
+/// [TranscriptList.entries]): a stable [id] and the widget.
+@immutable
+class TimelineEntry {
+  const TimelineEntry({required this.id, required this.builder});
+
+  /// Unique among the entries, stable while the entry lives (it keys the row
+  /// and anchors the scroll position).
+  final String id;
+
+  final WidgetBuilder builder;
+}
+
 class TranscriptList extends StatefulWidget {
   const TranscriptList({
     super.key,
-    required this.items,
+    this.items = const [],
+    this.entries,
     this.actions = const TranscriptActions(),
     this.controller,
     this.initialAnchor,
@@ -113,10 +126,22 @@ class TranscriptList extends StatefulWidget {
     this.contentWidth = 720,
     this.followThreshold = 24,
     this.layout = TurnLayout.chronological,
+    this.rowGap = 14,
+    this.gapBefore,
+    this.gutter = 16,
+    this.padding,
+    this.scroll,
+    this.viewportKey,
   });
 
   /// The transcript, in order (`ChatSnapshot.items`).
   final List<TranscriptItem> items;
+
+  /// Rows the host draws itself, in order, instead of [items] (Scratch's
+  /// reference cards and turns, a block of summary cards above a boundary).
+  /// The host's own pieces ride on the list's follow, anchor and gaps; when
+  /// set, [items], [actions] and [layout] are not used.
+  final List<TimelineEntry>? entries;
 
   final TranscriptActions actions;
 
@@ -147,13 +172,36 @@ class TranscriptList extends StatefulWidget {
   /// How the items of a turn are ordered.
   final TurnLayout layout;
 
+  /// The space above every row after the first, and above [trailing].
+  final double rowGap;
+
+  /// A different gap above the row [id] (after the row [previousId], null for
+  /// the first); null keeps [rowGap].
+  final double? Function(String? previousId, String id)? gapBefore;
+
+  /// The space left and right of the column, inside [contentWidth].
+  final double gutter;
+
+  /// The list's padding; the default is 20 / 28 above and 40 below.
+  final EdgeInsets? padding;
+
+  /// The scroll controller, when the host reads or drives the position
+  /// itself; the list makes its own otherwise and never disposes the host's.
+  final ScrollController? scroll;
+
+  /// The key of the scrolling viewport, for a host that measures rows.
+  final GlobalKey? viewportKey;
+
   @override
   State<TranscriptList> createState() => _TranscriptListState();
 }
 
 class _TranscriptListState extends State<TranscriptList> {
-  final ScrollController _scroll = ScrollController();
-  final GlobalKey _viewportKey = GlobalKey();
+  ScrollController? _ownScroll;
+  ScrollController get _scroll =>
+      widget.scroll ?? (_ownScroll ??= ScrollController());
+  final GlobalKey _ownViewportKey = GlobalKey();
+  GlobalKey get _viewportKey => widget.viewportKey ?? _ownViewportKey;
   bool _following = true;
   bool _programmatic = false;
   bool _stickScheduled = false;
@@ -188,7 +236,7 @@ class _TranscriptListState extends State<TranscriptList> {
   @override
   void dispose() {
     if (widget.controller?._state == this) widget.controller!._state = null;
-    _scroll.dispose();
+    _ownScroll?.dispose();
     super.dispose();
   }
 
@@ -392,26 +440,27 @@ class _TranscriptListState extends State<TranscriptList> {
     return out;
   }
 
-  static int _kind(TranscriptItem i) => switch (i) {
-    UserMessage() => 0,
-    AssistantMessage() || ActivityGroup() || NoticeLine() => 1,
-    FileEdit() => 2,
-    _ => 3,
-  };
-
-  double _gapBefore(TranscriptItem? prev, TranscriptItem cur, bool compact) {
+  double _gapBefore(_Row? prev, _Row cur) {
     if (prev == null) return 0;
-    final turn = compact ? 22.0 : 28.0;
-    final a = _kind(prev), b = _kind(cur);
-    if (a == 2 && b == 2) return 6;
-    if ((a == 1 || a == 2) && (b == 1 || b == 2)) return 12;
-    return turn;
+    return widget.gapBefore?.call(prev.id, cur.id) ?? widget.rowGap;
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    final items = _ordered(widget.items, widget.layout);
+    final items = widget.entries != null
+        ? [
+            for (final e in widget.entries!)
+              _Row(e.id, null, (context) => e.builder(context)),
+          ]
+        : [
+            for (final i in _ordered(widget.items, widget.layout))
+              _Row(
+                i.id,
+                i,
+                (context) => TranscriptItemView(i, actions: widget.actions),
+              ),
+          ];
     final Widget? leading = widget.plan.isEmpty
         ? widget.leading
         : widget.leading == null
@@ -433,7 +482,7 @@ class _TranscriptListState extends State<TranscriptList> {
       final key = known.contains(ins.afterItemId) ? ins.afterItemId : null;
       (after[key] ??= []).add(ins);
     }
-    final entries = <({TranscriptItem? item, TranscriptInsert? insert})>[
+    final entries = <({_Row? item, TranscriptInsert? insert})>[
       for (final item in items) ...[
         (item: item, insert: null),
         for (final ins in after[item.id] ?? const <TranscriptInsert>[])
@@ -458,9 +507,16 @@ class _TranscriptListState extends State<TranscriptList> {
           index: index,
           child: Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: widget.contentWidth + 32),
+              constraints: BoxConstraints(
+                maxWidth: widget.contentWidth + 2 * widget.gutter,
+              ),
               child: Padding(
-                padding: EdgeInsets.fromLTRB(16, gap, 16, 0),
+                padding: EdgeInsets.fromLTRB(
+                  widget.gutter,
+                  gap,
+                  widget.gutter,
+                  0,
+                ),
                 child: child,
               ),
             ),
@@ -474,7 +530,9 @@ class _TranscriptListState extends State<TranscriptList> {
               child: ListView.builder(
                 key: _viewportKey,
                 controller: _scroll,
-                padding: EdgeInsets.only(top: compact ? 20 : 28, bottom: 40),
+                padding:
+                    widget.padding ??
+                    EdgeInsets.only(top: compact ? 20 : 28, bottom: 40),
                 itemCount: count,
                 findChildIndexCallback: (key) {
                   if (key is ValueKey<String>) return _indexById[key.value];
@@ -488,7 +546,7 @@ class _TranscriptListState extends State<TranscriptList> {
                     return column(
                       '\u0000trailing',
                       index,
-                      compact ? 22 : 28,
+                      widget.rowGap,
                       widget.trailing!,
                     );
                   }
@@ -496,7 +554,12 @@ class _TranscriptListState extends State<TranscriptList> {
                   final entry = entries[i];
                   final insert = entry.insert;
                   if (insert != null) {
-                    return column(insert.id, index, 12, insert.child);
+                    return column(
+                      insert.id,
+                      index,
+                      widget.rowGap,
+                      insert.child,
+                    );
                   }
                   final item = entry.item!;
                   final before = i > 0 ? entries[i - 1] : null;
@@ -505,9 +568,9 @@ class _TranscriptListState extends State<TranscriptList> {
                     item.id,
                     index,
                     before != null && prev == null
-                        ? 12
-                        : _gapBefore(prev, item, compact),
-                    TranscriptItemView(item, actions: widget.actions),
+                        ? widget.rowGap
+                        : _gapBefore(prev, item),
+                    Builder(builder: item.build),
                   );
                 },
               ),
@@ -602,4 +665,13 @@ class JumpToLatestButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One row of the list: a kit item or a host entry.
+class _Row {
+  const _Row(this.id, this.item, this.build);
+
+  final String id;
+  final TranscriptItem? item;
+  final WidgetBuilder build;
 }
