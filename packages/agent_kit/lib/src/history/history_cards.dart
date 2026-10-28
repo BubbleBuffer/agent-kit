@@ -114,22 +114,27 @@ class HistoryChapterCard extends StatelessWidget {
                   ),
               ],
             ),
-            footer: (open) => Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(counts, style: ts(ty.uiSmall, c.textSecondary)),
-                  ),
-                  if (chapter.episodes.isNotEmpty)
-                    FooterAction(
-                      key: ValueKey('history-chapter-$key-toggle'),
-                      label: open ? 'Hide episodes' : 'Show episodes',
-                      onTap: () => controller.toggleChapter(key),
+            footer: (open) => counts.isEmpty && chapter.episodes.isEmpty
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            counts,
+                            style: ts(ty.uiSmall, c.textSecondary),
+                          ),
+                        ),
+                        if (chapter.episodes.isNotEmpty)
+                          FooterAction(
+                            key: ValueKey('history-chapter-$key-toggle'),
+                            label: open ? 'Hide episodes' : 'Show episodes',
+                            onTap: () => controller.toggleChapter(key),
+                          ),
+                      ],
                     ),
-                ],
-              ),
-            ),
+                  ),
           ),
         );
       },
