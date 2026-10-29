@@ -96,8 +96,7 @@ ContextBlockKind? _blockKind(Object? kind) => switch (kind) {
 /// The host's `threshold` is the input size at which a compaction is applied.
 /// It does not report the context window; that comes from the session's usage
 /// ([windowTokens]) and the response reserve is the window minus the
-/// threshold. Without a window the reserve is zero and the window equals the
-/// threshold. `pendingEpisodeIds` is not derivable from stdio and stays empty.
+/// threshold. Without a window both stay null. `pendingEpisodeIds` is not derivable from stdio and stays empty.
 /// [appliedAt] is the time of the latest `applied` fact.
 ContextView contextView(
   Wire view, {
@@ -108,11 +107,11 @@ ContextView contextView(
   final threshold = _int(view, 'threshold');
   final window = windowTokens != null && windowTokens >= threshold
       ? windowTokens
-      : threshold;
+      : null;
   return ContextView(
     window: window,
     applyCap: threshold,
-    responseReserve: window - threshold,
+    responseReserve: window == null ? null : window - threshold,
     appliedAt: appliedAt,
     blocks: [
       for (final block in _maps(view['blocks']))
@@ -210,9 +209,6 @@ ContextDetails contextDetails({
     for (final c in chapterWires) _string(c, 'id'),
     for (final c in legacyWires) _string(c, 'id'),
   };
-  final episodeSource = {
-    for (final e in episodeWires) _string(e, 'id'): _int(e, 'source_tokens'),
-  };
 
   DateTime? writtenAt(String id, ContextEventKind kind) {
     for (final event in events) {
@@ -259,7 +255,7 @@ ContextDetails contextDetails({
         chapterId: _stringOpt(e, 'chapter_id'),
         sourceTokens: _int(e, 'source_tokens'),
         summaryTokens: _int(e, 'summary_tokens'),
-        createdAt: writtenAt(id, ContextEventKind.episodeWritten) ?? _epoch,
+        createdAt: writtenAt(id, ContextEventKind.episodeWritten),
         applied: appliedIds.contains(id),
       ),
     );
@@ -301,7 +297,7 @@ ContextDetails contextDetails({
           ],
           sourceTokens: _int(c, 'source_tokens'),
           summaryTokens: _int(c, 'summary_tokens'),
-          createdAt: writtenAt(id, ContextEventKind.chapterClosed) ?? _epoch,
+          createdAt: writtenAt(id, ContextEventKind.chapterClosed),
           closed: true,
           applied: appliedIds.contains(id),
         ),
@@ -336,7 +332,6 @@ ContextDetails contextDetails({
         messageCount: last - first + 1,
         sourceTokens: 0,
         summaryTokens: _int(c, 'summary_tokens'),
-        createdAt: _epoch,
         closed: true,
         applied: appliedIds.contains(id),
       ),
@@ -364,10 +359,8 @@ ContextDetails contextDetails({
         firstSeq: first,
         lastSeq: last,
         episodeIds: episodeIds,
-        tokensBefore:
-            _intOpt(event, 'tokens_before') ??
-            episodeIds.fold<int>(0, (n, e) => n + (episodeSource[e] ?? 0)),
-        tokensAfter: _int(event, 'tokens_after'),
+        tokensBefore: _intOpt(event, 'tokens_before'),
+        tokensAfter: _intOpt(event, 'tokens_after'),
         inputBefore: _intOpt(event, 'input_before'),
         inputAfter: _intOpt(event, 'input_after'),
         summaryId: summary == null
@@ -485,7 +478,8 @@ ChildQuestion? childQuestion(String childId, Object? value) {
     options: (wire['options'] as List<Object?>? ?? const [])
         .whereType<String>()
         .toList(),
-    // An older question has no time; the epoch stands for unknown.
+    // An older question has no time; the epoch stands for unknown (the child
+    // question model requires one).
     askedAt: _time(wire['asked_at']) ?? _epoch,
     state: status == 'answered'
         ? ChildQuestionState.answered

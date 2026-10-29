@@ -129,12 +129,16 @@ class _EventRow extends StatelessWidget {
 
     final before = applied ? (e.inputBefore ?? e.tokensBefore) : e.tokensBefore;
     final after = applied ? (e.inputAfter ?? e.tokensAfter) : e.tokensAfter;
-    final inputKnown = applied && e.inputBefore != null && e.inputAfter != null;
-    final saved = before - after;
-    final pct = before <= 0 ? 0 : (saved * 100 / before).round();
-    final scale = applied && inputKnown
-        ? view.window.toDouble()
-        : before * 1.08;
+    // A host may not record the sizes; then the row shows no sizes or bars.
+    final sized = before != null && after != null;
+    final inputKnown =
+        applied &&
+        e.inputBefore != null &&
+        e.inputAfter != null &&
+        view.window != null;
+    final saved = sized ? before - after : 0;
+    final pct = !sized || before <= 0 ? 0 : (saved * 100 / before).round();
+    final scale = inputKnown ? view.window!.toDouble() : (before ?? 1) * 1.08;
     final saveText = applied
         ? 'saved ${ctxTokens(saved)} · −$pct%'
         : 'would save ${ctxTokens(saved)}';
@@ -147,8 +151,8 @@ class _EventRow extends StatelessWidget {
       container: true,
       label:
           '${clockText(e.at)}, $_title. ${why == null ? '' : 'Why: $why. '}'
-          '$_what. $label ${ctxTokens(before)} to ${ctxTokens(after)}, '
-          '$saveText.',
+          '$_what.'
+          '${sized ? ' $label ${ctxTokens(before)} to ${ctxTokens(after)}, $saveText.' : ''}',
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -220,55 +224,57 @@ class _EventRow extends StatelessWidget {
                     ),
                     if (why != null) Text('Why: $why', style: small),
                     Text(_what, style: small.copyWith(color: t.muted)),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Wrap(
-                        spacing: 12,
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '$label ',
-                                  style: TextStyle(color: t.faint),
-                                ),
-                                TextSpan(text: '${ctxTokens(before)} → '),
-                                TextSpan(
-                                  text: ctxTokens(after),
-                                  style: TextStyle(
-                                    color: t.ink,
-                                    fontWeight: fw(700),
+                    if (sized)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Wrap(
+                          spacing: 12,
+                          children: [
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '$label ',
+                                    style: TextStyle(color: t.faint),
                                   ),
-                                ),
-                              ],
+                                  TextSpan(text: '${ctxTokens(before)} → '),
+                                  TextSpan(
+                                    text: ctxTokens(after),
+                                    style: TextStyle(
+                                      color: t.ink,
+                                      fontWeight: fw(700),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              style: tabular(small.copyWith(color: t.muted)),
                             ),
-                            style: tabular(small.copyWith(color: t.muted)),
-                          ),
-                          Text(
-                            saveText,
-                            style: small.copyWith(
-                              color: applied ? done : t.muted,
-                              fontWeight: fw(applied ? 600 : 500),
+                            Text(
+                              saveText,
+                              style: small.copyWith(
+                                color: applied ? done : t.muted,
+                                fontWeight: fw(applied ? 600 : 500),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: applied ? 420 : 260,
-                        ),
-                        child: _EventBars(
-                          a: before / scale,
-                          b: after / scale,
-                          cap: applied && inputKnown && view.applyCap > 0
-                              ? view.applyCap / scale
-                              : null,
+                          ],
                         ),
                       ),
-                    ),
+                    if (sized)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: applied ? 420 : 260,
+                          ),
+                          child: _EventBars(
+                            a: before / scale,
+                            b: after / scale,
+                            cap: applied && inputKnown && view.applyCap > 0
+                                ? view.applyCap / scale
+                                : null,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

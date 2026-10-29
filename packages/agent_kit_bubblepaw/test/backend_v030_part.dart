@@ -353,8 +353,8 @@ void _contextAndChildTests() {
         expect(applied.kind, ContextEventKind.applied);
         expect(applied.trigger, ContextTrigger.pressure);
         expect(applied.triggerText, 'input reached 80k');
-        // The host did not record the size; the covered episode has 1200.
-        expect(applied.tokensBefore, 1200);
+        // The host did not record the size: the value stays absent.
+        expect(applied.tokensBefore, isNull);
         expect(applied.tokensAfter, 150);
         expect(applied.inputBefore, 80000);
         expect(applied.summaryId, 'episode:ep1');
@@ -470,10 +470,10 @@ void _contextAndChildTests() {
         addTearDown(() => peer.close(backend));
         final snapshot = await backend.loadChat('s1');
         final context = snapshot.context!;
-        // The usage window (1000) is below the cap: the window is the cap.
+        // The usage window (1000) is below the cap: no window is reported.
         expect(
           (context.window, context.applyCap, context.responseReserve),
-          (84000, 84000, 0),
+          (null, 84000, null),
         );
         expect(context.appliedAt, DateTime.utc(2026, 10, 27, 11));
         expect(context.blocks.map((b) => b.kind), [

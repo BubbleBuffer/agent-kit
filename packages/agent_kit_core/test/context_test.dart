@@ -206,6 +206,35 @@ void main() {
       expect(TranscriptItem.fromJson(marker.toJson()), marker);
     });
 
+    test('window, reserve, sizes and write time may be absent', () {
+      final view = ContextView.fromJson({'applyCap': 84000});
+      expect((view.window, view.responseReserve), (null, null));
+      expect(ContextView.fromJson(view.toJson()), view);
+      final event = ContextEvent.fromJson({
+        'id': 'ev',
+        'kind': 'applied',
+        'at': '2026-10-26T09:00:00Z',
+        'firstSeq': 1,
+        'lastSeq': 2,
+      });
+      expect((event.tokensBefore, event.tokensAfter), (null, null));
+      expect(ContextEvent.fromJson(event.toJson()), event);
+      final summary = ContextSummary.fromJson({
+        'id': 's',
+        'kind': 'episode',
+        'title': 'T',
+        'firstSeq': 1,
+        'lastSeq': 2,
+        'messageCount': 2,
+        'sourceTokens': 10,
+        'summaryTokens': 3,
+        'closed': false,
+        'applied': false,
+      });
+      expect(summary.createdAt, isNull);
+      expect(ContextSummary.fromJson(summary.toJson()), summary);
+    });
+
     test('a marker with no figures keeps them null', () {
       final s = fold([
         {'kind': 'compaction.updated', 'itemId': 'cm1', 'state': 'failed'},
