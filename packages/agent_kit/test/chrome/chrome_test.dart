@@ -1,5 +1,7 @@
 import 'package:agent_kit/agent_kit.dart';
+import 'package:agent_kit/src/chrome/command_key.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,6 +51,21 @@ Widget _railBox({
 );
 
 void main() {
+  group('command key hints', () {
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    test('Ctrl off macOS, Cmd on macOS and iOS', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      expect(commandKeyHint('Ctrl+B'), 'Ctrl+B');
+      expect(commandKeyHint('Ctrl K'), 'Ctrl K');
+      for (final p in [TargetPlatform.macOS, TargetPlatform.iOS]) {
+        debugDefaultTargetPlatformOverride = p;
+        expect(commandKeyHint('Ctrl+B'), '⌘B');
+        expect(commandKeyHint('Ctrl K'), '⌘K');
+      }
+    });
+  });
+
   group('formatting', () {
     test('elapsed times', () {
       expect(formatElapsed(const Duration(seconds: 41)), '41s');

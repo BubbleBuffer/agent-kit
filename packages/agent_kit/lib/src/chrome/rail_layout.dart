@@ -12,6 +12,7 @@ import 'package:flutter/widgets.dart';
 
 import '../theme/theme.dart';
 import 'chrome_button.dart';
+import 'command_key.dart';
 import 'chrome_icons.dart';
 import 'rail_model.dart';
 
@@ -198,7 +199,7 @@ class RailShowButton extends StatelessWidget {
         glyphPanelLeftOpen,
         key: const ValueKey('rail-show'),
         label: 'Show sidebar',
-        shortcut: 'Ctrl+B',
+        shortcut: commandKeyHint('Ctrl+B'),
         size: size,
         onTap: () => scope.controller.show(scope.sizeClass),
       );

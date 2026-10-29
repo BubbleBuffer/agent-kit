@@ -257,6 +257,11 @@ class _TranscriptListState extends State<TranscriptList> {
     widget.controller?._changed();
   }
 
+  /// The pill's distance from the bottom edge, and the length of the fade
+  /// above it.
+  static const _pillBottom = 12.0;
+  static const _pillFade = 28.0;
+
   bool get _atBottom {
     if (!_scroll.hasClients) return true;
     final p = _scroll.position;
@@ -522,64 +527,91 @@ class _TranscriptListState extends State<TranscriptList> {
             ),
           ),
         );
+        final pillZone = _pillBottom + (isTouch(context) ? 38.0 : 30.0);
+        final list = NotificationListener<Notification>(
+          onNotification: _onNotification,
+          child: ListView.builder(
+            key: _viewportKey,
+            controller: _scroll,
+            padding:
+                widget.padding ??
+                EdgeInsets.only(top: compact ? 20 : 28, bottom: 40),
+            itemCount: count,
+            findChildIndexCallback: (key) {
+              if (key is ValueKey<String>) return _indexById[key.value];
+              return null;
+            },
+            itemBuilder: (context, index) {
+              if (hasLeading && index == 0) {
+                return column('\u0000leading', index, 0, leading);
+              }
+              if (hasTrailing && index == count - 1) {
+                return column(
+                  '\u0000trailing',
+                  index,
+                  widget.rowGap,
+                  widget.trailing!,
+                );
+              }
+              final i = index - (hasLeading ? 1 : 0);
+              final entry = entries[i];
+              final insert = entry.insert;
+              if (insert != null) {
+                return column(
+                  insert.id,
+                  index,
+                  widget.rowGap,
+                  insert.child,
+                );
+              }
+              final item = entry.item!;
+              final before = i > 0 ? entries[i - 1] : null;
+              final prev = before?.item;
+              return column(
+                item.id,
+                index,
+                before != null && prev == null
+                    ? widget.rowGap
+                    : _gapBefore(prev, item),
+                Builder(builder: item.build),
+              );
+            },
+          ),
+        );
         return Stack(
           fit: StackFit.expand,
           children: [
-            NotificationListener<Notification>(
-              onNotification: _onNotification,
-              child: ListView.builder(
-                key: _viewportKey,
-                controller: _scroll,
-                padding:
-                    widget.padding ??
-                    EdgeInsets.only(top: compact ? 20 : 28, bottom: 40),
-                itemCount: count,
-                findChildIndexCallback: (key) {
-                  if (key is ValueKey<String>) return _indexById[key.value];
-                  return null;
+            // While the "Jump to latest" pill shows, the lines under it fade
+            // out above it, so it never sits on text meant to be read. The
+            // layout does not change.
+            if (_following)
+              list
+            else
+              ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (bounds) {
+                  final h = bounds.height;
+                  final end = ((h - pillZone) / h).clamp(0.0, 1.0);
+                  final start = (end - _pillFade / h).clamp(0.0, end);
+                  return LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: const [
+                      Color(0xFF000000),
+                      Color(0xFF000000),
+                      Color(0x00000000),
+                      Color(0x00000000),
+                    ],
+                    stops: [0, start, end, 1],
+                  ).createShader(bounds);
                 },
-                itemBuilder: (context, index) {
-                  if (hasLeading && index == 0) {
-                    return column('\u0000leading', index, 0, leading);
-                  }
-                  if (hasTrailing && index == count - 1) {
-                    return column(
-                      '\u0000trailing',
-                      index,
-                      widget.rowGap,
-                      widget.trailing!,
-                    );
-                  }
-                  final i = index - (hasLeading ? 1 : 0);
-                  final entry = entries[i];
-                  final insert = entry.insert;
-                  if (insert != null) {
-                    return column(
-                      insert.id,
-                      index,
-                      widget.rowGap,
-                      insert.child,
-                    );
-                  }
-                  final item = entry.item!;
-                  final before = i > 0 ? entries[i - 1] : null;
-                  final prev = before?.item;
-                  return column(
-                    item.id,
-                    index,
-                    before != null && prev == null
-                        ? widget.rowGap
-                        : _gapBefore(prev, item),
-                    Builder(builder: item.build),
-                  );
-                },
+                child: list,
               ),
-            ),
             if (!_following)
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 12,
+                bottom: _pillBottom,
                 child: Center(
                   child: JumpToLatestButton(
                     onTap: () => _jumpToLatest(),

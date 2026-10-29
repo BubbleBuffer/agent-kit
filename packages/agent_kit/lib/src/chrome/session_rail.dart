@@ -12,6 +12,7 @@ import '../theme/theme.dart';
 import 'chrome_button.dart';
 import 'chrome_format.dart';
 import 'chrome_icons.dart';
+import 'command_key.dart';
 import 'rail_model.dart';
 
 /// The rail, as wide as its parent makes it (240 px beside the sheet, the
@@ -129,7 +130,7 @@ class SessionRail extends StatelessWidget {
                     glyphPanelLeftClose,
                     key: const ValueKey('rail-hide'),
                     label: 'Hide sidebar',
-                    shortcut: 'Ctrl+B',
+                    shortcut: commandKeyHint('Ctrl+B'),
                     onTap: hide,
                     color: theme.railInk,
                     hoverColor: theme.railHover,
@@ -456,7 +457,7 @@ class _SearchRow extends StatelessWidget {
               ),
               if (showKey)
                 Text(
-                  'Ctrl K',
+                  commandKeyHint('Ctrl K'),
                   style: ts(
                     const TypeSpec(11, 16, 400),
                     theme.railMuted.withValues(alpha: .85),
