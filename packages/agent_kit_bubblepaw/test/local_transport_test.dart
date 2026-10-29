@@ -276,7 +276,7 @@ void main() {
     timeout: const Timeout(Duration(minutes: 2)),
   );
   test(
-    'released v0.3.0 host serves context and history reads on a demo chat',
+    'released v0.3.1 host serves context and history reads on a demo chat',
     () async {
       final root = await Directory.systemTemp.createTemp('agent-kit-context-');
       addTearDown(() => root.delete(recursive: true));
@@ -296,7 +296,7 @@ void main() {
         ],
       );
       addTearDown(backend.dispose);
-      // The v0.3.0 host advertises all three features this adapter reads.
+      // The v0.3.1 host advertises all three features this adapter reads.
       expect(
         backend.features,
         containsAll(['context', 'child_events', 'question.answer_child']),
@@ -344,6 +344,59 @@ void main() {
         1 << 40,
       );
       expect(rest.messages.length, page.messages.length - 1);
+    },
+    skip: binary == null || binary.trim().isEmpty
+        ? 'Set BP_TEST_BIN to opt in to the released local stdio host.'
+        : false,
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+  test(
+    'released v0.3.1 host lists providers and pages the session list',
+    () async {
+      final root = await Directory.systemTemp.createTemp('agent-kit-hc-');
+      addTearDown(() => root.delete(recursive: true));
+      final workspace = await Directory('${root.path}/workspace').create();
+      final data = await Directory('${root.path}/data').create();
+      final backend = await BubblePawBackend.start(
+        binaryPath: binary!,
+        workspaceDirectory: workspace.path,
+        dataDirectory: data.path,
+        arguments: const [
+          '--set',
+          "agent.execution_mode='native'",
+          '--provider',
+          'demo',
+          '--no-auto-summarize',
+          '--read-only',
+        ],
+      );
+      addTearDown(backend.dispose);
+      expect(
+        backend.features,
+        containsAll([
+          'providers.list',
+          'roles.set_main',
+          'session.list.pagination',
+          'child.cancel',
+        ]),
+      );
+      for (final c in [
+        KitCapability.providers,
+        KitCapability.defaultModel,
+        KitCapability.models,
+        KitCapability.children,
+      ]) {
+        expect(backend.capabilities.has(c), isTrue, reason: '$c');
+      }
+
+      final setup = await backend.listProviders();
+      expect(setup.providers.map((p) => p.name), contains('demo'));
+
+      await backend.createChat(title: 'First');
+      await backend.createChat(title: 'Second');
+      final page = await backend.listChats();
+      expect(page.chats.map((c) => c.title), containsAll(['First', 'Second']));
+      expect(page.nextCursor, isNull);
     },
     skip: binary == null || binary.trim().isEmpty
         ? 'Set BP_TEST_BIN to opt in to the released local stdio host.'
