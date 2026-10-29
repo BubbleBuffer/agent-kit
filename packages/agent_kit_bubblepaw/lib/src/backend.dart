@@ -176,13 +176,11 @@ final class BubblePawBackend
     final needle = query?.toLowerCase();
     return ChatPage(
       chats: [
-        for (final session
-            in sessions
-                .where(
-                  (s) =>
-                      needle == null ||
-                      '${s['title'] ?? ''}'.toLowerCase().contains(needle),
-                ))
+        for (final session in sessions.where(
+          (s) =>
+              needle == null ||
+              '${s['title'] ?? ''}'.toLowerCase().contains(needle),
+        ))
           _projection('${session['id']}').summary(session),
       ],
     );
