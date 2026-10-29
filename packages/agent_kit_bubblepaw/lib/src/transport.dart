@@ -327,7 +327,8 @@ class StdioBubblePawTransport implements BubblePawTransport {
     }
     if (text.startsWith('unknown session') ||
         text.startsWith('unknown approval') ||
-        text.contains('not found')) {
+        text.contains('not found') ||
+        text.startsWith('unknown or expired')) {
       return const BubblePawException(
         'notFound',
         'The requested host resource was not found.',
@@ -335,7 +336,8 @@ class StdioBubblePawTransport implements BubblePawTransport {
     }
     if ((text.startsWith('approval ') && text.contains(' is already ')) ||
         text.contains('already resolved') ||
-        text.contains('already decided')) {
+        text.contains('already decided') ||
+        text.contains('already answered')) {
       return const BubblePawException(
         'conflict',
         'The requested operation conflicts with the host state.',
@@ -350,6 +352,8 @@ class StdioBubblePawTransport implements BubblePawTransport {
       );
     }
     if (text.startsWith('invalid ') ||
+        text.contains('does not belong to') ||
+        text.startsWith('provide exactly') ||
         text.contains(' is required') ||
         text.contains(' must be ') ||
         text.contains('missing required')) {

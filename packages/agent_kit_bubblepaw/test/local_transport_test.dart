@@ -1,4 +1,4 @@
-// Opt in with BP_TEST_BIN pointing at the public v0.2.2 binary. The provider
+// Opt in with BP_TEST_BIN pointing at the public v0.3.0 binary. The provider
 // below is BubblePaw's built-in deterministic demo, with no paid/live calls.
 import 'dart:async';
 import 'dart:io';
@@ -26,7 +26,7 @@ void main() {
           binaryPath: binary!,
           workspaceDirectory: workspace.path,
           dataDirectory: data.path,
-          // v0.2.2's demo supports the native surface (provider/scripted.rs).
+          // v0.3.0's demo supports the native surface (provider/scripted.rs).
           // It lists only this disposable workspace. JS nested progress can
           // legitimately trigger a canonical reload before run_finished arrives;
           // native mode lets this test also observe the complete KIT event trio.
@@ -269,6 +269,81 @@ void main() {
         hasLength(1),
       );
       expect(errors, isEmpty);
+    },
+    skip: binary == null || binary.trim().isEmpty
+        ? 'Set BP_TEST_BIN to opt in to the released local stdio host.'
+        : false,
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+  test(
+    'released v0.3.0 host serves context and history reads on a demo chat',
+    () async {
+      final root = await Directory.systemTemp.createTemp('agent-kit-context-');
+      addTearDown(() => root.delete(recursive: true));
+      final workspace = await Directory('${root.path}/workspace').create();
+      final data = await Directory('${root.path}/data').create();
+      final backend = await BubblePawBackend.start(
+        binaryPath: binary!,
+        workspaceDirectory: workspace.path,
+        dataDirectory: data.path,
+        arguments: const [
+          '--set',
+          "agent.execution_mode='native'",
+          '--provider',
+          'demo',
+          '--no-auto-summarize',
+          '--read-only',
+        ],
+      );
+      addTearDown(backend.dispose);
+      // The v0.3.0 host advertises all three features this adapter reads.
+      expect(
+        backend.features,
+        containsAll(['context', 'child_events', 'question.answer_child']),
+      );
+      expect(backend.capabilities.has(KitCapability.context), isTrue);
+      expect(
+        backend.capabilities.has(KitCapability.answerChildQuestion),
+        isTrue,
+      );
+      final chat = await backend.createChat(title: 'Offline context reads');
+      final run = await backend.send(chat.id, 'Run the offline demo');
+      var snapshot = await backend.loadChat(chat.id);
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      while (snapshot.run?.id != run.runId ||
+          snapshot.run?.outcome != RunOutcome.completed) {
+        if (DateTime.now().isAfter(deadline)) {
+          fail('Timed out waiting for the demo run: ${snapshot.run?.outcome}');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        snapshot = await backend.loadChat(chat.id);
+      }
+      // The demo provider writes no episodes, so the structure may be empty and
+      // the view null. These reads must succeed; only their shape is asserted.
+      final details = await backend.loadContext(chat.id);
+      for (final episode in details.episodes) {
+        expect(episode.firstSeq, lessThanOrEqualTo(episode.lastSeq));
+      }
+      for (final summary in details.summaries) {
+        final whole = await backend.loadSummary(chat.id, summary.id);
+        expect(whole.id, summary.id);
+      }
+      expect(snapshot.children, isEmpty);
+      final page = await backend.loadHistoryRange(chat.id, 0, 1 << 40);
+      expect(page.messages, isNotEmpty);
+      expect(page.messages.first.role, HistoryRole.user);
+      expect(page.messages.first.preview, 'Run the offline demo');
+      expect(
+        page.messages.map((m) => m.seq),
+        orderedEquals([...page.messages.map((m) => m.seq)]..sort()),
+      );
+      // A second range starting after the first message holds the rest.
+      final rest = await backend.loadHistoryRange(
+        chat.id,
+        page.messages.first.seq + 1,
+        1 << 40,
+      );
+      expect(rest.messages.length, page.messages.length - 1);
     },
     skip: binary == null || binary.trim().isEmpty
         ? 'Set BP_TEST_BIN to opt in to the released local stdio host.'

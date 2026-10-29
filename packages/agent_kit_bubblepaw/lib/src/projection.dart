@@ -64,9 +64,16 @@ final class BubblePawProjection {
   /// The caller may add `approvals` from approval.list. BubblePaw does not
   /// expose timestamps for queued inputs or questions; the epoch represents
   /// an unknown time, rather than an invented arrival time.
+  ///
+  /// [children], [context] and [compactions] come from other reads (child
+  /// sessions, `context.view` and `context.events`) and stay empty without
+  /// the matching host features.
   ChatSnapshot snapshot(
     Map<String, Object?> state, {
     required String workspaceDirectory,
+    List<ChildAgent> children = const [],
+    ContextView? context,
+    List<CompactionItem> compactions = const [],
   }) {
     final session = _map(state['session']);
     final chat = _string(session, 'id');
@@ -140,14 +147,21 @@ final class BubblePawProjection {
           items.add(SystemLine(id: id, text: content, at: at));
       }
     }
-    for (final record in _maps(state['outputs'])) {
-      final line = _outputLine(record);
-      if (line == null || items.any((item) => item.id == line.id)) continue;
+    void place(TranscriptItem line) {
       final at = line.at;
       final next = at == null
           ? -1
           : items.indexWhere((item) => item.at?.isAfter(at) == true);
       items.insert(next < 0 ? items.length : next, line);
+    }
+
+    for (final record in _maps(state['outputs'])) {
+      final line = _outputLine(record);
+      if (line == null || items.any((item) => item.id == line.id)) continue;
+      place(line);
+    }
+    for (final marker in compactions) {
+      if (items.every((item) => item.id != marker.id)) place(marker);
     }
     final stream = _Session(
       rawSeq,
@@ -213,6 +227,8 @@ final class BubblePawProjection {
       ],
       plan: _plan(state['todo']),
       usage: _usage(state['usage']),
+      children: children,
+      context: context,
     );
   }
 
