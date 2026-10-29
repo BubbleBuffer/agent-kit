@@ -195,6 +195,41 @@ void main() {
     },
   );
 
+  testWidgets('a compact bar puts the picks on their own line, unscaled', (
+    tester,
+  ) async {
+    await pumpComposer(
+      tester,
+      AgentComposer(
+        running: true,
+        models: fixtureModels,
+        modelId: 'flash',
+        workspaces: fixtureWorkspaces,
+        workspaceId: 'base',
+        onSubmit: (_) => true,
+      ),
+      width: 390,
+    );
+    final pick = find.text('BubblePaw-base');
+    final model = find.text('deepseek-v4.1-flash');
+    expect(pick, findsOneWidget);
+    expect(model, findsOneWidget);
+    expect(
+      find.ancestor(of: pick, matching: find.byType(FittedBox)),
+      findsNothing,
+    );
+    expect(
+      find.ancestor(of: model, matching: find.byType(FittedBox)),
+      findsNothing,
+    );
+    // Above the buttons, not beside them.
+    expect(
+      tester.getBottomLeft(pick).dy,
+      lessThan(tester.getTopLeft(find.text('Send')).dy),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a chip takes the host key; its remove button follows it', (
     tester,
   ) async {

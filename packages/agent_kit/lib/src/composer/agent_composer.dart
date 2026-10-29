@@ -9,8 +9,10 @@
 // and down arrows move, Enter or Tab picks, Esc closes them.
 //
 // Look: Scratch's. The box is bb_ui's FieldFrame; Send, Stop, the picks and
-// the mention menu are bb_ui's buttons, SelectButton and menu parts. The
-// picks scale down in a narrow bar so the buttons keep their size.
+// the mention menu are bb_ui's buttons, SelectButton and menu parts. In a bar
+// narrower than the compact size class the picks take their own line above the
+// buttons, at normal size; wider, they scale down if the bar runs out of room
+// so the buttons keep theirs.
 
 import 'dart:async' show FutureOr;
 import 'dart:math' as math;
@@ -572,38 +574,34 @@ class _AgentComposerState extends State<AgentComposer> {
           ? send
           : IgnorePointer(child: Opacity(opacity: .5, child: send)),
     );
-    return Row(
+    final picks = <Widget>[
+      if (showWorkspace)
+        _pickFor(
+          key: widget.keys.workspace,
+          title: widget.workspaceTitle,
+          choices: widget.workspaces,
+          selectedId: widget.workspaceId,
+          onSelected: widget.workspaceLocked ? null : widget.onWorkspaceChanged,
+        ),
+      if (showModel)
+        _pickFor(
+          key: widget.keys.model,
+          title: 'Model',
+          choices: widget.models,
+          selectedId: widget.modelId,
+          onSelected: widget.onModelChanged,
+        ),
+    ];
+    Widget buttons(bool withPicks) => Row(
       children: [
-        if (showWorkspace || showModel)
+        if (withPicks && picks.isNotEmpty)
           Expanded(
             child: Align(
               alignment: Alignment.centerLeft,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (showWorkspace)
-                      _pickFor(
-                        key: widget.keys.workspace,
-                        title: widget.workspaceTitle,
-                        choices: widget.workspaces,
-                        selectedId: widget.workspaceId,
-                        onSelected: widget.workspaceLocked
-                            ? null
-                            : widget.onWorkspaceChanged,
-                      ),
-                    if (showModel)
-                      _pickFor(
-                        key: widget.keys.model,
-                        title: 'Model',
-                        choices: widget.models,
-                        selectedId: widget.modelId,
-                        onSelected: widget.onModelChanged,
-                      ),
-                  ],
-                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: picks),
               ),
             ),
           )
@@ -632,6 +630,28 @@ class _AgentComposerState extends State<AgentComposer> {
         ],
         send,
       ],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.hasBoundedWidth &&
+            SizeClass.forWidth(constraints.maxWidth).isCompact;
+        if (!compact || picks.isEmpty) return buttons(true);
+        // Compact: the picks keep their size on a line of their own.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              runSpacing: 4,
+              children: picks,
+            ),
+            const SizedBox(height: 6),
+            buttons(false),
+          ],
+        );
+      },
     );
   }
 }
