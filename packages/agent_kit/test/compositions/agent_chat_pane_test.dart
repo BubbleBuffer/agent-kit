@@ -8,6 +8,7 @@ import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit/src/composer/composer_parts.dart' show KitIconButton;
 import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:agent_kit_core/fake.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -205,6 +206,61 @@ void main() {
         await tester.pump();
       }
       expect(find.text('Plan'), findsOneWidget);
+    });
+  });
+
+  group('rewind', () {
+    testWidgets('"Rewind from here" on a user message calls the backend', (
+      tester,
+    ) async {
+      final s = await playedBackend(tester);
+      await pumpApp(tester, _pane(s.backend, s.clock));
+      for (var i = 0; i < 8; i++) {
+        await tester.drag(find.byType(TranscriptList), const Offset(0, 2000));
+        await tester.pump();
+      }
+      final action = find.text('Rewind from here');
+      expect(action, findsOneWidget);
+      // Drawn invisible until the pointer is over the message.
+      expect(
+        tester
+            .widget<Opacity>(
+              find.ancestor(of: action, matching: find.byType(Opacity)).first,
+            )
+            .opacity,
+        0,
+      );
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      addTearDown(mouse.removePointer);
+      await mouse.addPointer(location: tester.getCenter(action));
+      await tester.pump();
+      expect(
+        tester
+            .widget<Opacity>(
+              find.ancestor(of: action, matching: find.byType(Opacity)).first,
+            )
+            .opacity,
+        1,
+      );
+
+      await tester.tap(action);
+      await _settle(tester);
+      final args = lastArgs(s.backend, 'rewind');
+      expect(args[0], quotaChatId);
+      expect(args[1], 'u1');
+    });
+
+    testWidgets('is left out when the backend cannot rewind', (tester) async {
+      final s = await playedBackend(
+        tester,
+        capabilities: KitCapabilities([KitCapability.send]),
+      );
+      await pumpApp(tester, _pane(s.backend, s.clock));
+      for (var i = 0; i < 8; i++) {
+        await tester.drag(find.byType(TranscriptList), const Offset(0, 2000));
+        await tester.pump();
+      }
+      expect(find.text('Rewind from here'), findsNothing);
     });
   });
 
