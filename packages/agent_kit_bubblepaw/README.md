@@ -88,7 +88,7 @@ applications needing navigation must use that result or stream. It never
 overwrites the source chat. BubblePaw's file restoration can report conflicts
 and is limited to checkpointed file-tool effects; it is not a universal undo.
 
-## Context and children (Core v0.3.0)
+## Context and children (Core v0.3.1)
 
 Each of these turns on only when `initialize.features` names it.
 
@@ -307,7 +307,7 @@ Requested core changes, kept outside this implementation's scope:
 - Return a new chat from rewind, with file restoration/conflict details.
 - Allow typed adapter lifecycle failures within the kit error contract.
 - Split context details, summary loading and history paging capabilities; use
-  canonical message-ID cursors for history. Core v0.3.0 reads ranges by ID or by
+  canonical message-ID cursors for history. Core v0.3.1 reads ranges by ID or by
   store sequence; the kit's `messageCount` assumes a dense sequence.
 - Express the single-item and no-skip limits beyond the supported question kinds.
 - Carry transient tool boundaries and text replacement/reset explicitly.

@@ -92,10 +92,10 @@ Widget _states() {
         id: 'x2',
         name: 'bash',
         kind: ToolKind.exec,
-        target: 'cargo test -p bubblepaw-host usage',
+        target: 'cargo test -p harbor-runtime usage',
         meta: '12s',
         output: ToolOutput(
-          text: '   Compiling bubblepaw-host v0.2.1\nrunning 14 tests\n',
+          text: '   Compiling harbor-runtime v0.2.1\nrunning 14 tests\n',
         ),
       ),
     ],
@@ -133,7 +133,7 @@ Widget _states() {
   final deleted = FileEdit(
     id: 'e3',
     diff: FileDiff(
-      path: 'crates/bubblepaw-host/src/usage/legacy.rs',
+      path: 'crates/harbor-runtime/src/usage/legacy.rs',
       change: FileChange.deleted,
       hunks: [
         DiffHunk(

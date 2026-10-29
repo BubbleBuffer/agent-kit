@@ -11,7 +11,7 @@ import 'package:agent_kit_core/agent_kit_core.dart'
     show AssistantMessage, TranscriptItem, UserMessage;
 import 'package:flutter/widgets.dart';
 
-const _tests = 'cargo test -p bubblepaw-host usage';
+const _tests = 'cargo test -p harbor-runtime usage';
 
 DateTime _at(int day, int h, int m) => DateTime(2026, 10, day, h, m);
 
