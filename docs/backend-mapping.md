@@ -47,7 +47,7 @@ below describes gateway operations, not permissions granted by that adapter.
 
 | Kit | BubblePaw stdio | Scratch |
 |---|---|---|
-| `listChats({cursor, query})` | **Partial:** `session.list`, sorted by updated time, title-filtered locally, capped at 64, no cursor. Its metadata has no run status. | `sessions()`, newest first; no cursor or query. |
+| `listChats({cursor, query})` | **Partial:** `session.list`, sorted by updated time, title-filtered locally, every chat returned, no cursor. Its metadata has no run status. | `sessions()`, newest first; no cursor or query. |
 | `loadChat(id)` | **Yes:** `session.state` plus `approval.list` for pending approvals. Snapshot has `seq`, canonical messages, runs, inputs, outputs, todo, question and usage. | `sessionState(id)` with seq, streaming text, messages, runs, approvals, activity, edits. |
 | `events(chat, after: N)` | **Yes:** `events.after {session_id, after, limit:1000}`, then buffered/live `event` notifications. `resync` or `events.gap` reloads state and replays from the fresh host cursor. | `eventsAfter` then `subscribe`; resync/gap reloads. |
 | Durable sequence | Adapter reserves 16 native kit sequence positions per host `HarnessEvent.sequence`, permitting multiple kit events per host event. Snapshots use the final position. Replay always converts back to host sequence. | `AgentEvent.sequence`. |

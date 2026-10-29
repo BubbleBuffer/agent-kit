@@ -123,13 +123,23 @@ class SessionRail extends StatelessWidget {
               child: _SearchRow(onTap: onSearch),
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(bottom: 8),
-                children: [
-                  for (final group in groups) ...[
-                    _GroupLabel(group.label),
-                    for (final chat in group.chats)
-                      SessionRow(
+              child: Builder(
+                builder: (context) {
+                  // Flattened so the list builds only the rows in view.
+                  final entries = <Object>[
+                    for (final group in groups) ...[
+                      group.label,
+                      ...group.chats,
+                    ],
+                  ];
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    itemCount: entries.length,
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      if (entry is String) return _GroupLabel(entry);
+                      final chat = entry as ChatSummary;
+                      return SessionRow(
                         key: ValueKey('rail-row-${chat.id}'),
                         chat: chat,
                         detail: detailFor != null
@@ -137,9 +147,10 @@ class SessionRail extends StatelessWidget {
                             : railDetail(chat, clock),
                         selected: chat.id == selectedId,
                         onTap: () => select(chat),
-                      ),
-                  ],
-                ],
+                      );
+                    },
+                  );
+                },
               ),
             ),
             Padding(
