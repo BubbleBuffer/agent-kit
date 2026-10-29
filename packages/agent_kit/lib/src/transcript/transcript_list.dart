@@ -557,12 +557,7 @@ class _TranscriptListState extends State<TranscriptList> {
               final entry = entries[i];
               final insert = entry.insert;
               if (insert != null) {
-                return column(
-                  insert.id,
-                  index,
-                  widget.rowGap,
-                  insert.child,
-                );
+                return column(insert.id, index, widget.rowGap, insert.child);
               }
               final item = entry.item!;
               final before = i > 0 ? entries[i - 1] : null;
@@ -596,11 +591,11 @@ class _TranscriptListState extends State<TranscriptList> {
                   return LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: const [
-                      Color(0xFF000000),
-                      Color(0xFF000000),
-                      Color(0x00000000),
-                      Color(0x00000000),
+                    colors: [
+                      t.ink,
+                      t.ink,
+                      t.ink.withValues(alpha: 0),
+                      t.ink.withValues(alpha: 0),
                     ],
                     stops: [0, start, end, 1],
                   ).createShader(bounds);
