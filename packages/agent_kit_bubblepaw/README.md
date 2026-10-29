@@ -25,9 +25,11 @@ through `arguments`; callers remain responsible for their configuration.
 ## Protocol and capabilities
 
 The implementation is checked against
-[BubblePaw-Core v0.2.2](https://github.com/BubbleBuffer/BubblePaw-Core/tree/v0.2.2),
+[BubblePaw-Core v0.3.0](https://github.com/BubbleBuffer/BubblePaw-Core/tree/v0.3.0),
 specifically `crates/bubblepaw-runner/src/main.rs`'s stdio dispatcher,
-`docs/session-api.md`, `docs/web-contract.md` and `docs/sdk.md`.
+`stdio_context.rs`, `context_reads.rs` and `question_stdio.rs`, with
+`docs/session-api.md`, `docs/context-compaction.md`, `docs/lcm-contract.md` and
+`docs/child-sessions.md`. Where those docs and the code differed, the code won.
 `initialize.protocol_version` must equal **`0.1`**; any other value raises
 `BubblePawProtocolMismatch` with `expectedVersion` and `actualVersion` and closes
 the owned transport. Sessions and resumable events are required. The negotiated
@@ -48,17 +50,22 @@ in `backend.features` without inventing support for them.
 | `rename` | `session.rename` | Yes; resnapshot after metadata changes |
 | `rewind` | `session.rewind` | Partial: creates a new chat, including the selected message; source remains intact |
 | `sendQueuedNow`, `editQueued`, `removeQueued` | No method | Missing |
-| `answerChildQuestion`, `cancelChild`, `cancelJob` | No compatible advertised feature/operation | Missing |
+| `answerChildQuestion` | `question.answer_child {parent, child, question_id, text}` (feature `question.answer_child`) | Yes; `KitNotFound` for a gone question, `KitConflict` for an answered one |
+| `cancelChild`, `cancelJob` | No compatible advertised feature/operation | Missing |
 | `archive`, `undoEdit`, profiles | No method | Missing |
 | `fork`, models | No stdio fork/model-list/settings methods | Missing |
-| `loadContext`, `loadSummary` | No method | Missing |
-| `loadHistoryRange` | No stdio paging method or integer message sequence | Missing: see the port gap below |
+| `loadContext` | `context.structure`, `context.events`, `context.view` (feature `context`) | Yes, see "Context and children" |
+| `loadSummary` | `context.summary {kind, id}` (kit ID `episode:<id>` or `chapter:<id>`) | Yes |
+| `loadHistoryRange` | `history.range {first_seq, last_seq, limit}`, paged by `next_seq` | Yes, in host store sequences |
+| `ChatSnapshot.context`, compaction markers | `context.view`, `context.events`, the `context_compaction` event | Yes, with feature `context` |
+| Child agents and child questions | `session.list`, the child's `session.state`, `child_run_state_changed`, `child_question`, `child_question_answer` (feature `child_events`) | Yes: crew entries and questions; no child cancel |
 
 Capabilities enabled: createChat, send, cancel, rename, resume, usage; approve
 with `approvals`, steer with `steer`, questions with
-`question`, plan with `todo`, and rewind with `rewind`. Capabilities for queue
-editing/send-now, children, child answers, jobs, archive, edit undo, fork, models,
-profiles, reasoning text, worktrees and context are absent. Widgets hide those
+`question`, plan with `todo`, rewind with `rewind`, context with `context` and
+child answers with `question.answer_child`. Capabilities for queue
+editing/send-now, child cancel, jobs, archive, edit undo, fork, models,
+profiles, reasoning text and worktrees are absent. Widgets hide those
 controls. Direct calls to absent optional commands return the core's specific
 `KitUnsupported(capability)`; no advertised capability relies on an unsupported
 RPC. Host slash commands are rejected before sending text because their results
@@ -76,6 +83,58 @@ the supported question kinds, and whether `follow_up` was negotiated.
 applications needing navigation must use that result or stream. It never
 overwrites the source chat. BubblePaw's file restoration can report conflicts
 and is limited to checkpointed file-tool effects; it is not a universal undo.
+
+## Context and children (Core v0.3.0)
+
+Each of these turns on only when `initialize.features` names it.
+
+**Sequences.** The kit addresses messages by integer sequence; the host names
+them by message ID in its context reads. The kit sequence is the host's canonical
+store `seq`, which `history.range` returns with every row. The adapter resolves
+each ID once (`history.range` with the ID as both bounds) and caches it. A host
+sequence increases but is not necessarily dense, so counts derived from a span
+(`ContextEpisode.messageCount`, `ContextSummary.messageCount`) are upper bounds;
+a block's `messageCount` stays null. An episode, chapter or event whose IDs
+cannot be resolved is left out of `loadContext`.
+
+**`ChatSnapshot.context`.** `context.view` has `threshold`, the input size at
+which a compaction is applied (`applyCap`), and the blocks. It has no window: the
+window is `usage.context.window_tokens` of `session.state`, the reserve is the
+window minus the cap, and without a window they are the cap and zero.
+`pendingEpisodeIds` stays empty (not derivable over stdio). `appliedAt` is the
+time of the latest `applied` fact. A failing context read leaves `context` null
+rather than failing the chat. `context.view` carries the frozen prefix messages
+too; each chat load reads it once.
+
+**`loadContext`.** `context.structure` (episodes, subject chapters, legacy
+chapters), `context.events` and `context.view`. Summary bodies stay empty;
+`loadSummary` has them. A summary's creation time is the time of the fact that
+wrote it (the UTC epoch when none is recorded); it is `applied` when the view
+holds it. The host's `tokens_before` is null for inherited coverage and the kit
+field is not nullable: it takes the covered episodes' source size, else 0.
+
+**`loadHistoryRange`.** `history.range` with `first_seq`/`last_seq`, pages of 1000
+followed by `next_seq`, at most 20 pages. Rows carry a one-line preview; system
+messages read as agent lines (the kit has no system role).
+
+**`context_compaction`.** The event only names the fact. The adapter refreshes
+and publishes the difference: a `CompactionUpdated` marker
+(`bubblepaw:compaction:<id>`) for an `applied` fact, and `ContextChanged` when
+the serving view differs. `episode_written` and `chapter_closed` change neither
+by themselves; applications re-read `loadContext`. After a reload the markers
+return from `context.events`, in time order.
+
+**Children.** A parent's children are its `session.list` entries with a matching
+`parent_session_id`; each child's `session.state` gives the crew entry: the task
+is its first user message, a finished run reads as done with the last reply as
+the result, an interrupted run as cancelled, and a pending question as waiting
+for an answer. The three child events do not carry the task or result, so each
+marks its child stale and refreshes; the stream then publishes `ChildSpawned`,
+`ChildQuestionAsked`, `ChildQuestionResolved` (answered, with its author, or
+cancelled) and `ChildFinished`. Child records are cached only while the chat has
+an open event stream. A finished child that runs again cannot be shown by kit
+events (an ended child never leaves its state), so the stream resyncs with a gap.
+A spawn row in the transcript appears for live events only, not after a reload.
 
 ## Snapshot and event consistency
 
@@ -149,11 +208,13 @@ All builds and tests run on GitHub-hosted CI.
 1. **Unit:** in-process peers and synthetic JSON lines test framing, mapping,
    capabilities, gap/resync recovery, protocol mismatch and crashes.
 2. **Local transport:** opt in with `BP_TEST_BIN`. CI downloads the pinned Linux
-   v0.2.2 archive, checks its entry in `SHA256SUMS`, and runs the real child with
+   v0.3.0 archive, checks its entry in `SHA256SUMS`, and runs the real child with
    the built-in `demo` provider, read-only workspace, native mode and automatic
    summaries disabled. It sends messages, sees kit run/text/completion, and
    survives dropped real notifications followed by an injected `events.gap`.
-   Gap injection tests adapter recovery, not an actual host buffer overflow.
+   Gap injection tests adapter recovery, not an actual host buffer overflow. It
+   also reads the context, every summary and the whole history range of a demo
+   chat; the demo writes no episodes, so only the shape of those reads is asserted.
 3. **Live model:** the opt-in script below exercises a real configured provider.
    It is never run in CI and has no live acceptance result until a user runs it.
 
@@ -233,17 +294,18 @@ own private data directory remains separate from this capture.
 
 ## Port gaps
 
-`loadHistoryRange` remains an absent capability, pending a paging RPC in
-BubblePaw stdio. The adapter does not assign snapshot-backed message ordinals
-or change the core contract.
+The adapter does not assign snapshot-backed message ordinals or change the core
+contract: history ranges use the host's store sequence.
 
 Requested core changes, kept outside this implementation's scope:
 
 - Return a new chat from rewind, with file restoration/conflict details.
 - Allow typed adapter lifecycle failures within the kit error contract.
 - Split context details, summary loading and history paging capabilities; use
-  canonical message-ID cursors for history. The HTTP `/messages` endpoint does
-  not exist in v0.2.2 stdio, and message IDs have no integer event sequence.
+  canonical message-ID cursors for history. Core v0.3.0 reads ranges by ID or by
+  store sequence; the kit's `messageCount` assumes a dense sequence.
+- Allow an unknown `ContextEvent.tokensBefore`, a context view without a window
+  and reserve, and a summary without a creation time (v0.3.0 reports none).
 - Express the single-item and no-skip limits beyond the supported question kinds.
 - Carry transient tool boundaries and text replacement/reset explicitly.
 - Allow unknown question/queue timestamps and unknown session-list status.

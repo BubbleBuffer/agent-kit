@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:agent_kit_core/agent_kit_core.dart';
 
+import 'context_projection.dart';
 import 'errors.dart';
 import 'projection.dart';
 import 'transport.dart';
@@ -77,6 +78,9 @@ final class BubblePawBackend
         KitCapability.rename,
         KitCapability.resume,
         KitCapability.usage,
+        if (backend.features.contains('context')) KitCapability.context,
+        if (backend.features.contains('question.answer_child'))
+          KitCapability.answerChildQuestion,
       ]);
       backend._constraints = BackendConstraints(
         acceptsReferences: false,
@@ -98,6 +102,12 @@ final class BubblePawBackend
   late final StreamSubscription<Map<String, Object?>> _subscription;
   final Map<String, BubblePawProjection> _projections = {};
   final Map<String, Json> _states = {};
+  final Map<String, _Extras> _extras = {};
+  final Map<String, int> _messageSeqs = {};
+  final Map<String, ChildAgent> _childAgents = {};
+  final Map<String, ChildQuestion> _childQuestions = {};
+  final Set<String> _staleChildren = {};
+  final Map<String, String> _childParents = {};
   final Map<String, Future<ChatSnapshot>> _loading = {};
   final Set<_Watch> _watches = {};
   final _created = StreamController<ChatSummary>.broadcast();
@@ -203,10 +213,158 @@ final class BubblePawBackend
     if (features.contains('approvals')) {
       state['approvals'] = await _request('approval.list', {'session_id': id});
     }
+    final extras = await _loadExtras(id, state);
     _states[id] = state;
-    return _projection(id)
-        .snapshot(state, workspaceDirectory: workspaceDirectory);
+    _extras[id] = extras;
+    return _projection(id).snapshot(
+      state,
+      workspaceDirectory: workspaceDirectory,
+      children: extras.children,
+      context: extras.context,
+      compactions: extras.compactions,
+    );
   }
+
+  // Context and child reads add to session.state only when their features are
+  // negotiated. A failing auxiliary read leaves that part out rather than
+  // making the whole chat unloadable; a lost host still fails.
+  Future<_Extras> _loadExtras(String id, Json state) async {
+    ContextView? context;
+    var compactions = const <CompactionItem>[];
+    if (features.contains('context')) {
+      try {
+        final events = _objects(
+          _object(
+            await _request('context.events', {'session_id': id}),
+          )['events'],
+        );
+        compactions = compactionItems(events);
+        final wire = _object(
+          await _request('context.view', {'session_id': id}),
+        )['view'];
+        if (wire is Map<String, Object?>) {
+          final view = _object(wire);
+          await _resolveSeqs(id, viewMessageIds(view));
+          context = contextView(
+            view,
+            seq: _seqLookup(id),
+            windowTokens:
+                _object(_object(state['usage'])['context'])['window_tokens']
+                    as int?,
+            appliedAt: latestApplied(events),
+          );
+        }
+      } on KitUnavailable {
+        rethrow;
+      } on KitError {
+        context = null;
+      }
+    }
+    var children = const <ChildAgent>[];
+    if (features.contains('child_events')) {
+      children = await _loadChildren(id);
+    }
+    return _Extras(children, context, compactions);
+  }
+
+  // Child records are cached only while the parent has an open event stream:
+  // that stream delivers the child events which mark a record stale. Without
+  // one, every read refetches.
+  Future<List<ChildAgent>> _loadChildren(String parent) async {
+    final watched = _watches.any((w) => w.chatId == parent && !w.closed);
+    final listed = _objects(await _request('session.list'));
+    final ids = [
+      for (final session in listed)
+        if (session['parent_session_id'] == parent && session['id'] is String)
+          session['id']! as String,
+    ];
+    if (!watched) {
+      for (final id in ids) {
+        _childAgents.remove(id);
+        _childQuestions.remove(id);
+      }
+    }
+    final fetch = [
+      for (final id in ids)
+        if (!_childAgents.containsKey(id) || _staleChildren.contains(id)) id,
+    ];
+    for (var i = 0; i < fetch.length; i += 6) {
+      await Future.wait([
+        for (final id in fetch.skip(i).take(6)) _fetchChild(parent, id),
+      ]);
+    }
+    final agents = [for (final id in ids) ?_childAgents[id]];
+    if (!watched) {
+      for (final id in ids) {
+        _childAgents.remove(id);
+      }
+    }
+    agents.sort((a, b) {
+      final at = a.startedAt, bt = b.startedAt;
+      if (at != null && bt != null && at != bt) return at.compareTo(bt);
+      if ((at == null) != (bt == null)) return at == null ? 1 : -1;
+      return a.id.compareTo(b.id);
+    });
+    return agents;
+  }
+
+  Future<void> _fetchChild(String parent, String id) async {
+    _staleChildren.remove(id);
+    _childParents[id] = parent;
+    try {
+      final state = _object(
+        await _request('session.state', {'session_id': id}),
+      );
+      final agent = childAgent(state);
+      _childAgents[id] = agent;
+      final question = childQuestion(id, state['question']);
+      if (question == null) {
+        _childQuestions.remove(id);
+      } else {
+        _childQuestions[id] = question;
+      }
+    } on KitNotFound {
+      _childAgents.remove(id);
+      _childQuestions.remove(id);
+    }
+  }
+
+  // The host sequence of each message ID the host named, resolved through
+  // history.range and kept: a message keeps its sequence.
+  Future<void> _resolveSeqs(String chat, Iterable<String> ids) async {
+    final todo = {
+      for (final id in ids)
+        if (!_messageSeqs.containsKey('$chat\u0000$id')) id,
+    }.toList();
+    for (var i = 0; i < todo.length; i += 8) {
+      await Future.wait([
+        for (final id in todo.skip(i).take(8)) _resolveSeq(chat, id),
+      ]);
+    }
+  }
+
+  Future<void> _resolveSeq(String chat, String id) async {
+    try {
+      final page = _object(
+        await _request('history.range', {
+          'session_id': chat,
+          'first_message_id': id,
+          'last_message_id': id,
+          'limit': 1,
+        }),
+      );
+      final rows = _objects(page['messages']);
+      final seq = rows.isEmpty ? null : rows.first['seq'];
+      if (seq is int) _messageSeqs['$chat\u0000$id'] = seq;
+    } on KitNotFound {
+      return;
+    } on KitInvalid {
+      return;
+    }
+  }
+
+  SeqOf _seqLookup(String chat) =>
+      (id) => id == null ? null : _messageSeqs['$chat\u0000$id'];
 
   @override
   Stream<KitEvent> events(String chatId, {required int after}) {
@@ -217,6 +375,14 @@ final class BubblePawBackend
           watch.controller.addError(const KitUnavailable());
           unawaited(watch.controller.close());
           return;
+        }
+        if (!_watches.any((w) => w.chatId == chatId)) {
+          // Cached child records are only kept current by an open stream.
+          for (final entry in _childParents.entries.toList()) {
+            if (entry.value != chatId) continue;
+            _childAgents.remove(entry.key);
+            _childQuestions.remove(entry.key);
+          }
         }
         _watches.add(watch);
         watch.enqueue(
@@ -487,7 +653,19 @@ final class BubblePawBackend
     String childId,
     String questionId,
     String text,
-  ) => _missing(KitCapability.answerChildQuestion);
+  ) async {
+    _require(KitCapability.answerChildQuestion);
+    if (text.trim().isEmpty) throw const KitInvalid('Enter an answer.');
+    await _request('question.answer_child', {
+      'parent': chatId,
+      'child': childId,
+      'question_id': questionId,
+      'text': text,
+    });
+    _staleChildren.add(childId);
+    await _refreshWatches(chatId);
+  }
+
   @override
   Future<void> archive(String chatId, {bool archived = true}) =>
       _missing(KitCapability.archive);
@@ -514,17 +692,81 @@ final class BubblePawBackend
   Future<void> setProfile(String chatId, String profileId) =>
       _missing(KitCapability.profiles);
   @override
-  Future<ContextDetails> loadContext(String chatId) =>
-      _missing(KitCapability.context);
+  Future<ContextDetails> loadContext(String chatId) async {
+    _require(KitCapability.context);
+    final structure = _object(
+      await _request('context.structure', {'session_id': chatId}),
+    );
+    final events = _objects(
+      _object(
+        await _request('context.events', {'session_id': chatId}),
+      )['events'],
+    );
+    final view = _object(
+      await _request('context.view', {'session_id': chatId}),
+    )['view'];
+    await _resolveSeqs(chatId, structureMessageIds(structure, events));
+    return contextDetails(
+      structure: structure,
+      events: events,
+      view: view is Map<String, Object?> ? _object(view) : null,
+      seq: _seqLookup(chatId),
+    );
+  }
+
+  /// Pages are read to the end of the range, at most 20 pages of 1000.
   @override
   Future<HistoryPage> loadHistoryRange(
     String chatId,
     int firstSeq,
     int lastSeq,
-  ) => _missing(KitCapability.context);
+  ) async {
+    _require(KitCapability.context);
+    if (firstSeq < 0 || lastSeq < firstSeq) {
+      throw const KitInvalid('The history range must be ordered.');
+    }
+    final messages = <HistoryMessage>[];
+    var next = firstSeq;
+    for (var page = 0; page < 20; page++) {
+      final result = _object(
+        await _request('history.range', {
+          'session_id': chatId,
+          'first_seq': next,
+          'last_seq': lastSeq,
+          'limit': 1000,
+        }),
+      );
+      messages.addAll(_objects(result['messages']).map(historyMessage));
+      final more = result['next_seq'];
+      if (more is! int || more <= next) break;
+      next = more;
+    }
+    return HistoryPage(
+      firstSeq: firstSeq,
+      lastSeq: lastSeq,
+      messages: messages,
+    );
+  }
+
   @override
-  Future<ContextSummary> loadSummary(String chatId, String summaryId) =>
-      _missing(KitCapability.context);
+  Future<ContextSummary> loadSummary(String chatId, String summaryId) async {
+    _require(KitCapability.context);
+    final parsed = parseSummaryId(summaryId);
+    if (parsed == null) throw const KitNotFound();
+    final known = (await loadContext(chatId)).summary(summaryId);
+    if (known == null) throw const KitNotFound();
+    final result = _object(
+      await _request('context.summary', {
+        'session_id': chatId,
+        'kind': parsed.$1.name,
+        'id': parsed.$2,
+      }),
+    );
+    return ContextSummary.fromJson({
+      ...known.toJson(),
+      'text': result['summary'] is String ? result['summary'] : null,
+    });
+  }
 
   /// Gracefully stops only the host owned by this backend; idempotent.
   Future<void> dispose() => _disposing ??= _dispose();
@@ -545,11 +787,15 @@ final class BubblePawBackend
 final class _Watch {
   _Watch(this.backend, this.chatId, this.controller) {
     final state = backend._states[chatId];
+    final extras = backend._extras[chatId];
     view = state == null
         ? ChatSnapshot.empty(chatId)
         : projection.snapshot(
             state,
             workspaceDirectory: backend.workspaceDirectory,
+            children: extras?.children ?? const [],
+            context: extras?.context,
+            compactions: extras?.compactions ?? const [],
           );
   }
   final BubblePawBackend backend;
@@ -679,6 +925,8 @@ final class _Watch {
     final durable = event['durable'] != false;
     if ((durable && seq <= cursor) || (!durable && seq < cursor)) return false;
     if (durable) cursor = seq;
+    final child = childOfEvent(event);
+    if (child != null) backend._staleChildren.add(child);
     var refreshNeeded = false;
     for (final kit in projection.event(event)) {
       if (kit is GapEvent) {
@@ -695,13 +943,18 @@ final class _Watch {
 
   bool _projectionGap = false;
 
-  static bool _needsRefresh(Json event) => switch (event['type']) {
+  bool _needsRefresh(Json event) => switch (event['type']) {
+    'context_compaction' => backend.features.contains('context'),
+    'child_run_state_changed' => backend.features.contains('child_events'),
     'run_started' ||
     'run_finished' ||
     'steering_accepted' ||
     'followup_queued' ||
     'session_settled' => true,
-    'host_state_changed' => event['key'] == 'usage.last_request',
+    'host_state_changed' =>
+      event['key'] == 'usage.last_request' ||
+          (backend.features.contains('child_events') &&
+              childOfEvent(event) != null),
     _ => false,
   };
 
@@ -763,8 +1016,9 @@ final class _Watch {
         final first = view.seq >= barrier * 16
             ? view.seq + 1
             : barrier * 16 + 2;
-        if (changes.isNotEmpty &&
-            changes.length > barrier * 16 + 14 - first + 1) {
+        if (changes == null ||
+            (changes.isNotEmpty &&
+                changes.length > barrier * 16 + 14 - first + 1)) {
           // The fixed 16-slot wire mapping cannot encode an arbitrarily
           // large snapshot diff, or mutation at an already loaded cursor.
           // Every replayable durable event has still been delivered first.
@@ -805,7 +1059,8 @@ final class _Watch {
     _projectionGap = false;
   }
 
-  List<KitEvent Function(int)> _changes(ChatSnapshot snapshot) {
+  // Null when the snapshot cannot be reached by events from the current view.
+  List<KitEvent Function(int)>? _changes(ChatSnapshot snapshot) {
     final changes = <KitEvent Function(int)>[];
     if (snapshot.title != view.title) {
       changes.add(
@@ -835,6 +1090,21 @@ final class _Watch {
             text: item.text,
           ),
         );
+      } else if (item is CompactionItem) {
+        changes.add(
+          (seq) => CompactionUpdated(
+            seq: seq,
+            chat: chatId,
+            at: item.at,
+            itemId: item.id,
+            state: item.state,
+            eventId: item.eventId,
+            episodesSummarized: item.episodesSummarized,
+            tokensBefore: item.tokensBefore,
+            tokensAfter: item.tokensAfter,
+            detail: item.detail,
+          ),
+        );
       }
     }
     for (final old in view.queue) {
@@ -854,8 +1124,119 @@ final class _Watch {
       // Replacement session-own totals, never addition of run or request usage.
       changes.add((seq) => UsageUpdated(seq: seq, chat: chatId, usage: usage));
     }
+    final context = snapshot.context;
+    if (context != null && context != view.context) {
+      changes.add(
+        (seq) => ContextChanged(seq: seq, chat: chatId, context: context),
+      );
+    }
+    final childChanges = _childChanges(snapshot);
+    if (childChanges == null) return null;
+    return changes..addAll(childChanges);
+  }
+
+  // Children reach a view through their records, not through events with the
+  // task and result in them: a new child is spawned, a question appears or
+  // resolves, an ended child finishes. A child that ended and runs again
+  // cannot be shown by an event (an ended child never leaves its state), so
+  // that returns null and the caller resyncs.
+  List<KitEvent Function(int)>? _childChanges(ChatSnapshot snapshot) {
+    final changes = <KitEvent Function(int)>[];
+    final known = {for (final c in view.children) c.id: c};
+    for (final child in snapshot.children) {
+      final old = known[child.id];
+      final question = child.pendingQuestion;
+      if (old == null) {
+        changes.add(
+          (seq) => ChildSpawned(
+            seq: seq,
+            chat: chatId,
+            at: child.startedAt,
+            childId: child.id,
+            task: child.task,
+          ),
+        );
+        if (question != null) {
+          changes.add(
+            (seq) =>
+                ChildQuestionAsked(seq: seq, chat: chatId, question: question),
+          );
+        }
+        if (child.state.isEnded) {
+          changes.add(
+            (seq) => ChildFinished(
+              seq: seq,
+              chat: chatId,
+              at: child.endedAt,
+              childId: child.id,
+              state: child.state,
+              result: child.result,
+            ),
+          );
+        }
+        continue;
+      }
+      if (old.state.isEnded) {
+        if (!child.state.isEnded) return null;
+        continue;
+      }
+      final before = old.pendingQuestion;
+      if (before != null && before.id != question?.id) {
+        final last = backend._childQuestions[child.id];
+        final resolved =
+            last != null && last.id == before.id && !last.isPending;
+        changes.add(
+          (seq) => ChildQuestionResolved(
+            seq: seq,
+            chat: chatId,
+            at: resolved ? last.answeredAt : child.endedAt,
+            childId: child.id,
+            questionId: before.id,
+            state: resolved ? last.state : ChildQuestionState.cancelled,
+            answer: resolved ? last.answer : null,
+            answeredBy: resolved ? last.answeredBy : null,
+          ),
+        );
+      }
+      if (question != null && question.id != before?.id) {
+        changes.add(
+          (seq) =>
+              ChildQuestionAsked(seq: seq, chat: chatId, question: question),
+        );
+      }
+      if (child.state.isEnded) {
+        changes.add(
+          (seq) => ChildFinished(
+            seq: seq,
+            chat: chatId,
+            at: child.endedAt,
+            childId: child.id,
+            state: child.state,
+            result: child.result,
+          ),
+        );
+      } else if (child.state != old.state &&
+          child.state != WorkState.waitingForAnswer &&
+          old.state != WorkState.waitingForAnswer) {
+        changes.add(
+          (seq) => ChildProgress(
+            seq: seq,
+            chat: chatId,
+            childId: child.id,
+            state: child.state,
+          ),
+        );
+      }
+    }
     return changes;
   }
+}
+
+final class _Extras {
+  const _Extras(this.children, this.context, this.compactions);
+  final List<ChildAgent> children;
+  final ContextView? context;
+  final List<CompactionItem> compactions;
 }
 
 final class _ReplayResult {

@@ -1,7 +1,7 @@
 # Backend mapping
 
 The kit's backend port is implemented by adapters. BubblePaw is the public
-[BubblePaw-Core v0.2.2](https://github.com/BubbleBuffer/BubblePaw-Core/tree/v0.2.2)
+[BubblePaw-Core v0.3.0](https://github.com/BubbleBuffer/BubblePaw-Core/tree/v0.3.0)
 runner over **stdio JSON-RPC 0.1**, through `agent_kit_bubblepaw`. There is no
 `client` Cargo feature or pre-existing layer that emits kit-shaped JSON.
 Scratch is the separate `NotesAgent` bridge; its column below preserves the
@@ -9,10 +9,9 @@ existing bridge mapping and has not been requalified against a new release.
 
 BubblePaw calls and fields were checked against the tagged source:
 
-- [`main.rs` stdio dispatcher](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.2.2/crates/bubblepaw-runner/src/main.rs)
-- [Session API](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.2.2/docs/session-api.md)
-- [Web contract](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.2.2/docs/web-contract.md)
-- [SDK](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.2.2/docs/sdk.md)
+- [`main.rs` stdio dispatcher](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.3.0/crates/bubblepaw-runner/src/main.rs)
+- [`stdio_context.rs`](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.3.0/crates/bubblepaw-runner/src/stdio_context.rs), [`context_reads.rs`](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.3.0/crates/bubblepaw-runner/src/context_reads.rs) and [`question_stdio.rs`](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.3.0/crates/bubblepaw-runner/src/question_stdio.rs)
+- [Session API](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.3.0/docs/session-api.md), [context compaction](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.3.0/docs/context-compaction.md) and [child sessions](https://github.com/BubbleBuffer/BubblePaw-Core/blob/v0.3.0/docs/child-sessions.md)
 
 A method available through HTTP, core Rust or a model-facing JS tool is not
 necessarily a stdio RPC. The stdio mapping below is deliberately transport-specific.
@@ -34,8 +33,10 @@ all question answer shapes and follow-ups while running.
 | `createChat`, `send`, `cancel` | Yes | No |
 | `approve` | When `approvals` is negotiated | No |
 | `steer`, `questions`, `plan`, `rewind` | When the respective protocol feature is negotiated | No |
+| `context` | When feature `context` is negotiated | No |
+| `answerChildQuestion` | When feature `question.answer_child` is negotiated | No |
 | `rename`, `resume`, `usage` | Yes | No |
-| Other optional capabilities | Not advertised | No |
+| Other optional capabilities (child cancel, jobs, archive, fork, models) | Not advertised | No |
 
 BubblePaw rejects references, supports a single choice or free-text question
 answer, and supports follow-up while running when `follow_up` is negotiated.
@@ -51,8 +52,8 @@ below describes gateway operations, not permissions granted by that adapter.
 | `events(chat, after: N)` | **Yes:** `events.after {session_id, after, limit:1000}`, then buffered/live `event` notifications. `resync` or `events.gap` reloads state and replays from the fresh host cursor. | `eventsAfter` then `subscribe`; resync/gap reloads. |
 | Durable sequence | Adapter reserves 16 native kit sequence positions per host `HarnessEvent.sequence`, permitting multiple kit events per host event. Snapshots use the final position. Replay always converts back to host sequence. | `AgentEvent.sequence`. |
 | Transient sequence and offset | `paragraph` and `text_delta` carry the last host sequence. Adapter reconciles prefixes, counts UTF-16 offsets and never persists them. Stdio state lacks `live_seen`; ambiguous fragments at the snapshot cursor are skipped. | Adapter counts from `streamingText`. |
-| `loadHistoryRange` | **Missing on the current port:** stdio has only full canonical `session.state.messages`; IDs are strings without integer message sequences. HTTP message-ID paging is not a stdio method. `context` remains off. | Older-history paging is not mapped here. |
-| `loadContext`, `loadSummary` | **Missing:** no stdio RPC. Hooks remain the absent core methods, without fabricated data. | No mapping qualified here. |
+| `loadHistoryRange` | **Yes** (feature `context`): `history.range {first_seq,last_seq,limit}` paged by `next_seq`. The kit sequence is the host's store `seq`: increasing, not necessarily dense, so span-derived counts are upper bounds. | Older-history paging is not mapped here. |
+| `loadContext`, `loadSummary` | **Yes** (feature `context`): `context.structure`, `context.events`, `context.view`; `context.summary {kind,id}` with kit IDs `episode:<id>` / `chapter:<id>`. Host message IDs are resolved to sequences once and cached. The window comes from `session.state` usage; the reserve is window minus the view's `threshold`. | No mapping qualified here. |
 
 ## Events
 
@@ -78,7 +79,9 @@ below describes gateway operations, not permissions granted by that adapter.
 | `approval.resolved` | `approval_resolved {approval_id,state,reason}`; approved_session maps to approvedForSession. | Same kind. |
 | `question.asked`, `question.resolved` | **Built:** `host_state_changed {key:"question",value}`. One root question with free text and optional suggestions. A cleared question triggers state reload; snapshots retain only pending questions, so resolved prompt history disappears on reload. Child questions are not root prompts. | Questions missing. |
 | Queue changes | `steering_accepted` / `followup_queued` omit input IDs, so reload real `session.state.inputs`; response IDs are retained by commands. No edit/remove methods. | Follow-up kind exists; IDs require reload. |
-| Child/job events | Not advertised: initialization has no complete child feature, and `process.list` does not supply individual cancellation or streamed output. | Children/jobs missing. |
+| Child events | **Built** (feature `child_events`): `child_run_state_changed` and `host_state_changed` keys `child_question` / `child_question_answer` mark the child stale and refresh; the diff yields `ChildSpawned`, `ChildQuestionAsked`, `ChildQuestionResolved`, `ChildFinished`. A finished child that runs again forces a gap. | Children missing. |
+| Compaction events | **Built:** `context_compaction {event_id,kind,trigger}` refreshes; `CompactionUpdated` for an applied fact, `ContextChanged` when the view differs. | Missing. |
+| Job events | Not advertised: `process.list` does not supply individual cancellation or streamed output. | Jobs missing. |
 | `usage.updated` | `usage.last_request`, run completion and snapshot refresh trigger a diff of authoritative own-session totals/context in `session.state.usage`. Changed values emit `UsageUpdated`; per-run totals are never added twice. | Run token counts; context meter missing. |
 | `gap` | `events.gap` or `events.after.resync`; reload state and replay from the last delivered durable cursor. A snapshot cursor does not discard undelivered events. Retention loss requires a snapshot reset. | gap/resync then reload. |
 | Other host state / `session_settled` | Unprojected host state is ignored; `session_settled` refreshes snapshot-derived fields without an unconditional gap. Unknown event kinds are ignored. | Host-state/settled are read triggers. |
@@ -99,12 +102,12 @@ tests are distinct from live-model acceptance; neither proves a paid provider.
 | `cancel`, `resume` | **Yes:** `run.cancel`, `run.resume`. | Cancel yes; resume missing. |
 | `decideApproval` | **Yes:** `approval.decide {approval_id,decision,reason?}`; approve / approve_session / deny. Verify pending approval belongs to the addressed chat. | `decideApproval`. |
 | `answerQuestion` | **Partial:** `question.answer {session_id,question_id,text}`. A single item maps one chosen label or one text answer; no skipped/multiple answers. | Missing. |
-| `answerChildQuestion` | **Missing:** root endpoint explicitly rejects child sessions; no substitution with a root answer. | Missing. |
+| `answerChildQuestion` | **Yes** (feature `question.answer_child`): `question.answer_child {parent,child,question_id,text}`. Unknown or expired question maps to `KitNotFound`, already answered to `KitConflict`, a foreign child or blank text to `KitInvalid`. | Missing. |
 | `rename` | **Yes:** `session.rename`, followed by snapshot refresh. | `renameSession`. |
 | `archive` | **Missing:** `session.delete` is not archive. | Missing. |
 | `fork` | **Missing:** core `Store::fork_at` and HTTP fork do not create a stdio RPC. | Missing. |
 | `rewind` | **Partial:** `session.rewind {session_id,message_id}` creates a **new** session, including the selected message, and restores eligible checkpointed files. Adapter `rewindToNewChat` returns that summary and emits `createdChats`; source remains intact. | Missing. |
-| `cancelChild` | **Missing capability:** no complete child projection/negotiated feature. | Children missing. |
+| `cancelChild` | **Missing capability:** no child cancel method in stdio v0.3.0. | Children missing. |
 | `cancelJob` | **Missing:** `process.background` is not cancellation. | Jobs missing. |
 | `undoEdit` | **Missing:** rewind is not per-edit undo. | `editUndo`. |
 | `listModels`, `setModel` | **Missing:** run options can carry a model, but no stdio model enumeration/settings RPC. | `models()`; choice passed to send. |
@@ -134,9 +137,14 @@ is changed by the capability and read-port work.
 
 ## Remaining port gaps
 
-`loadHistoryRange` remains an absent capability, pending a paging RPC in
-BubblePaw stdio. Snapshot-backed message ordinals are not introduced and the
-core contract is unchanged. The core also groups all
-context operations behind one capability, seals error subtypes, returns void
-from rewind and treats all tool boundaries as durable; unknown timestamps also
-remain a gap. These limits are recorded in the adapter README.
+The adapter does not introduce snapshot-backed message ordinals and leaves the
+core contract unchanged. Over Core v0.3.0 stdio it works around these limits:
+`ContextEvent.tokensBefore` is required but the host's `tokens_before` can be
+null (the adapter uses the covered episodes' source size, else 0); `ContextView`
+requires a window and reserve while the host's view has only a threshold and
+budget (the window comes from usage; without it, window equals threshold and the
+reserve is 0); `ContextSummary.createdAt` is required but structure carries no
+creation time; host sequences are not dense, so `messageCount` is an upper bound;
+`pendingEpisodeIds` is not derivable. The core also groups all context operations
+behind one capability, seals error subtypes, returns void from rewind and treats
+all tool boundaries as durable. These limits are recorded in the adapter README.
