@@ -12,6 +12,7 @@ export 'src/events.dart';
 export 'src/feed.dart';
 export 'src/items.dart';
 export 'src/models.dart' hide appendText;
+export 'src/providers.dart';
 export 'src/reducer.dart';
 export 'src/snapshot.dart';
 export 'src/value.dart' show Json, KitValue, JsonRead, jsonEquals;

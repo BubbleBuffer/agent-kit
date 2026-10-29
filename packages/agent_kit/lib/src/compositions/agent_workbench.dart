@@ -126,6 +126,18 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
   final GlobalKey _workspaceKey = GlobalKey(debugLabel: 'workbench workspace');
   RailController? _ownRail;
   List<ChatSummary> _chats = const [];
+
+  // The cursor for older chats, when the backend pages the list. Once an
+  // older page is loaded, a refresh updates the first page in place instead
+  // of dropping what was loaded.
+  String? _nextCursor;
+  bool _extended = false;
+  bool _loadingMore = false;
+  bool _loadMoreFailed = false;
+
+  // Agents whose cancellation was asked for, and the last failure.
+  final Set<String> _cancelling = {};
+  String? _cancelError;
   String? _selected;
   bool _listed = false;
   String? _listError;
@@ -153,6 +165,12 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
     if (old.backend != widget.backend) {
       _selected = widget.initialChatId;
       _chats = const [];
+      _nextCursor = null;
+      _extended = false;
+      _loadingMore = false;
+      _loadMoreFailed = false;
+      _cancelling.clear();
+      _cancelError = null;
       _listed = false;
       _refresh();
     } else if (old.initialChatId != widget.initialChatId &&
@@ -175,7 +193,17 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
       final page = await backend.listChats();
       if (!mounted || ticket != _listing || backend != widget.backend) return;
       setState(() {
-        _chats = page.chats;
+        if (_extended) {
+          final first = {for (final c in page.chats) c.id};
+          _chats = [
+            ...page.chats,
+            for (final c in _chats)
+              if (!first.contains(c.id)) c,
+          ];
+        } else {
+          _chats = page.chats;
+          _nextCursor = page.nextCursor;
+        }
         _listed = true;
         _listError = null;
         _selected ??= page.chats.isEmpty ? null : page.chats.first.id;
@@ -187,6 +215,59 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
         _listError = error is KitError
             ? error.message
             : 'Something went wrong.';
+      });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    final cursor = _nextCursor;
+    final backend = widget.backend;
+    if (cursor == null || _loadingMore) return;
+    setState(() {
+      _loadingMore = true;
+      _loadMoreFailed = false;
+    });
+    try {
+      final page = await backend.listChats(cursor: cursor);
+      if (!mounted || backend != widget.backend) return;
+      setState(() {
+        final known = {for (final c in _chats) c.id};
+        _chats = [
+          ..._chats,
+          for (final c in page.chats)
+            if (!known.contains(c.id)) c,
+        ];
+        _nextCursor = page.nextCursor;
+        _extended = true;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted || backend != widget.backend) return;
+      setState(() {
+        _loadingMore = false;
+        _loadMoreFailed = true;
+      });
+    }
+  }
+
+  bool get _canCancelAgent =>
+      widget.backend.capabilities.has(KitCapability.children);
+
+  Future<void> _cancelAgent(String chatId, ChildAgent agent) async {
+    final backend = widget.backend;
+    setState(() {
+      _cancelling.add(agent.id);
+      _cancelError = null;
+    });
+    try {
+      await backend.cancelChild(chatId, agent.id);
+    } catch (error) {
+      if (!mounted || backend != widget.backend) return;
+      setState(() {
+        _cancelling.remove(agent.id);
+        _cancelError =
+            'Could not cancel “${agent.task}”. '
+            '${error is KitError ? error.message : 'Something went wrong.'}';
       });
     }
   }
@@ -298,6 +379,10 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
           onSearch: widget.onSearch,
           onSwitchWorkspace: widget.onSwitchWorkspace,
           onSettings: widget.onSettings,
+          hasMore: _nextCursor != null,
+          loadingMore: _loadingMore,
+          loadMoreFailed: _loadMoreFailed,
+          onLoadMore: _loadMore,
         ),
         child: Builder(
           builder: (context) {
@@ -431,6 +516,7 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
 
   Widget? _ledger(BuildContext context, ChatSnapshot snap) {
     final clock = widget.now;
+    final t = context.bb;
     // Nothing running and no usage to show: no side column at all.
     if (snap.children.isEmpty &&
         snap.jobs.isEmpty &&
@@ -447,7 +533,23 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
           now: clock,
           onOpenAgent: widget.onOpenAgent,
           onOpenJob: widget.onOpenJob,
+          onCancelAgent: _canCancelAgent
+              ? (agent) => _cancelAgent(snap.chatId, agent)
+              : null,
+          cancelling: _cancelling,
         ),
+        if (_cancelError != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: Semantics(
+              liveRegion: true,
+              child: Text(
+                _cancelError!,
+                key: const ValueKey('ledger-cancel-error'),
+                style: ts(const TypeSpec(12, 16, 400), t.dangerInk),
+              ),
+            ),
+          ),
         if (widget.modelUsage.isNotEmpty) ...[
           if (snap.children.isNotEmpty || snap.jobs.isNotEmpty)
             const SizedBox(height: 16),

@@ -8,6 +8,7 @@ import '../context.dart';
 import '../events.dart';
 import '../items.dart';
 import '../models.dart';
+import '../providers.dart';
 import '../reducer.dart';
 import '../snapshot.dart';
 import '../value.dart';
@@ -86,12 +87,15 @@ final class ScriptedBackend
     this.constraints = BackendConstraints.defaults,
     List<KitChoice> models = const [],
     List<KitChoice> profiles = const [],
+    ProviderSetup? providers,
+    this.chatPageSize,
     this.onSend,
   }) : clock = clock ?? const SystemClock(),
        capabilities = capabilities ?? KitCapabilities.all(),
        _scripts = List.unmodifiable(scripts),
        _models = List.unmodifiable(models),
-       _profiles = List.unmodifiable(profiles) {
+       _profiles = List.unmodifiable(profiles),
+       _providers = providers ?? ProviderSetup() {
     for (final s in scripts) {
       _addChat(s.chatId, s.title)
         ..details = s.context
@@ -108,6 +112,9 @@ final class ScriptedBackend
   @override
   final BackendConstraints constraints;
 
+  /// When set, `listChats` returns pages of this many chats with a cursor.
+  final int? chatPageSize;
+
   /// Called after `send` started a run, to script a reply.
   final FakeResponder? onSend;
 
@@ -120,6 +127,7 @@ final class ScriptedBackend
   final List<ChatScript> _scripts;
   final List<KitChoice> _models;
   final List<KitChoice> _profiles;
+  ProviderSetup _providers;
   final _chats = <String, _FakeChat>{};
   var _seq = 0;
   var _ids = 0;
@@ -235,7 +243,15 @@ final class ScriptedBackend
         if (q == null || c.state.title.toLowerCase().contains(q))
           ChatSummary.of(c.state, updatedAt: c.updatedAt),
     ]..sort((a, b) => b.updatedAt!.compareTo(a.updatedAt!));
-    return ChatPage(chats: chats);
+    final size = chatPageSize;
+    if (size == null) return ChatPage(chats: chats);
+    final start = cursor == null ? 0 : int.tryParse(cursor);
+    if (start == null || start < 0) throw const KitInvalid('Bad page cursor.');
+    final end = start + size;
+    return ChatPage(
+      chats: chats.skip(start).take(size).toList(),
+      nextCursor: end < chats.length ? '$end' : null,
+    );
   }
 
   @override
@@ -688,7 +704,36 @@ final class ScriptedBackend
       chatId: chatId,
       needs: KitCapability.models,
     );
+    // With a host default, the pick sets it for every chat.
+    if (capabilities.has(KitCapability.defaultModel)) {
+      _providers = ProviderSetup(
+        main: modelId,
+        activeMain: modelId,
+        providers: _providers.providers,
+      );
+    }
     emit(chatId, {'kind': 'chat.settings', 'model': modelId});
+  }
+
+  @override
+  Future<ProviderSetup> listProviders() async {
+    _command('listProviders', const [], needs: KitCapability.providers);
+    return _providers;
+  }
+
+  @override
+  Future<ProviderSetup> setDefaultModel(String modelId) async {
+    _command('setDefaultModel', [modelId], needs: KitCapability.defaultModel);
+    final known = [
+      for (final p in _providers.providers)
+        for (final m in p.models) p.qualify(m),
+    ];
+    if (!known.contains(modelId)) throw const KitInvalid('Unknown model.');
+    return _providers = ProviderSetup(
+      main: modelId,
+      activeMain: modelId,
+      providers: _providers.providers,
+    );
   }
 
   @override

@@ -296,6 +296,84 @@ void main() {
     });
   });
 
+  group('providers and the default model', () {
+    ProviderSetup setup() => ProviderSetup(
+      main: 'demo/scripted',
+      activeMain: 'demo/scripted',
+      providers: [
+        ProviderInfo(
+          name: 'demo',
+          kind: 'scripted',
+          models: const [
+            ProviderModel(id: 'scripted'),
+            ProviderModel(id: 'b'),
+          ],
+        ),
+      ],
+    );
+
+    test('lists the providers and sets a known model as default', () async {
+      final backend = ScriptedBackend(providers: setup());
+      final read = await backend.listProviders();
+      expect(read.defaultModel, 'demo/scripted');
+      final changed = await backend.setDefaultModel('demo/b');
+      expect(changed.defaultModel, 'demo/b');
+      expect((await backend.listProviders()).defaultModel, 'demo/b');
+    });
+
+    test('an unknown model is invalid', () async {
+      final backend = ScriptedBackend(providers: setup());
+      await expectLater(
+        backend.setDefaultModel('demo/nope'),
+        throwsA(isA<KitInvalid>()),
+      );
+    });
+
+    test('each method needs its own capability', () async {
+      final backend = ScriptedBackend(
+        providers: setup(),
+        capabilities: KitCapabilities([KitCapability.providers]),
+      );
+      await backend.listProviders();
+      await expectLater(
+        backend.setDefaultModel('demo/b'),
+        throwsA(isA<KitUnsupported>()),
+      );
+    });
+
+    test('a setup round-trips through JSON without a key field', () {
+      final json = setup().toJson();
+      expect(ProviderSetup.fromJson(json), setup());
+      expect(json.toString().toLowerCase(), isNot(contains('secret')));
+    });
+  });
+
+  group('paged chat list', () {
+    test('pages by cursor and ends with no cursor', () async {
+      final backend = ScriptedBackend(chatPageSize: 2);
+      for (var i = 0; i < 5; i++) {
+        await backend.createChat();
+      }
+      final first = await backend.listChats();
+      expect(first.chats, hasLength(2));
+      expect(first.nextCursor, isNotNull);
+      final second = await backend.listChats(cursor: first.nextCursor);
+      final third = await backend.listChats(cursor: second.nextCursor);
+      expect(third.chats, hasLength(1));
+      expect(third.nextCursor, isNull);
+      final ids = [...first.chats, ...second.chats, ...third.chats];
+      expect(ids.map((c) => c.id).toSet(), hasLength(5));
+    });
+
+    test('a bad cursor is invalid', () async {
+      final backend = ScriptedBackend(chatPageSize: 2);
+      await expectLater(
+        backend.listChats(cursor: 'x'),
+        throwsA(isA<KitInvalid>()),
+      );
+    });
+  });
+
   test('a snapshot holds no status input', () {
     final s = ChatSnapshot.fromJson({'chatId': 'c', 'status': 'failed'});
     expect(s.status, ChatStatus.idle);

@@ -66,7 +66,7 @@ class CrewStrip extends StatelessWidget {
     ];
     return Semantics(
       container: true,
-      label: 'Still running',
+      label: crewHeading(agents, jobs).label,
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: theme.colors.borderSubtle)),

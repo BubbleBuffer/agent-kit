@@ -67,6 +67,7 @@ const testProfiles = [
 Future<({ScriptedBackend backend, ManualClock clock})> playedBackend(
   WidgetTester tester, {
   KitCapabilities? capabilities,
+  int? chatPageSize,
 }) async {
   final clock = ManualClock();
   final backend = ScriptedBackend(
@@ -75,6 +76,7 @@ Future<({ScriptedBackend backend, ManualClock clock})> playedBackend(
     capabilities: capabilities,
     models: testModels,
     profiles: testProfiles,
+    chatPageSize: chatPageSize,
   );
   await tester.runAsync(() async {
     unawaited(backend.play());

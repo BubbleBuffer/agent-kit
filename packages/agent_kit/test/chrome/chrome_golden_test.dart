@@ -22,6 +22,17 @@ SessionRail _rail() => SessionRail(
   initials: 'BC',
 );
 
+SessionRail _railWithMore() => SessionRail(
+  workspaceName: 'bubblepaw-base',
+  groups: groupSessions(s.chats, s.now),
+  selectedId: 'quota',
+  detailFor: s.detailFor,
+  now: s.now,
+  initials: 'BC',
+  hasMore: true,
+  onLoadMore: () {},
+);
+
 Widget _sheet(Widget child) => Builder(
   builder: (context) => ColoredBox(
     color: context.bb.surface,
@@ -73,7 +84,12 @@ Widget _crew({required bool wide}) {
     now: s.now,
     agentTitle: s.agentTitle,
   );
-  final ledger = CrewLedger(agents: s.agents, jobs: s.jobs, now: s.now);
+  final ledger = CrewLedger(
+    agents: s.agents,
+    jobs: s.jobs,
+    now: s.now,
+    onCancelAgent: (_) {},
+  );
   final usage = UsageByModel(models: s.models, usage: s.usage);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -114,6 +130,19 @@ void main() {
       await expectLater(
         find.byType(WidgetsApp),
         matchesGoldenFile('../goldens/chrome_rail_$name.png'),
+      );
+    });
+
+    testWidgets('rail with more sessions to load, $name', (tester) async {
+      await pumpChrome(
+        tester,
+        SizedBox(width: 240, child: _railWithMore()),
+        brightness: brightness,
+        size: const Size(240, 640),
+      );
+      await expectLater(
+        find.byType(WidgetsApp),
+        matchesGoldenFile('../goldens/chrome_rail_more_$name.png'),
       );
     });
 

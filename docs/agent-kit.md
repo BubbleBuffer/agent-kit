@@ -69,6 +69,14 @@ compact, a 240 to 420 px column when medium, beside a 444 to 584 px chat when
 expanded). The host passes what the kit cannot know: the workspace name, the
 per-model usage, panes, and callbacks to open files, agents and jobs.
 
+With a paged `listChats` the rail ends in a "Show older sessions" row that
+loads the next `nextCursor` page; with the `children` capability the ledger
+shows Cancel on a running agent (expanded width only); its heading counts only
+running agents ("Crew" with "1 running · 2 finished" when mixed). `ProviderSettings(backend: ...)` is the
+settings section for providers and models: a read-only list, plus Make
+default with `defaultModel`. The composer's model pick, when `defaultModel` is
+on, is titled "Default model" because it sets the host default.
+
 Needs outside the kit: `agent_kit_core` has no interrupted transcript item (the
 pane uses the run's outcome), no answered time or transcript position for a
 question (placed by request time), no older-history paging, and no per-model

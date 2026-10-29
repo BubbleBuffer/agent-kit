@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import '../tool/live_check_support.dart';
 
 part 'backend_v030_part.dart';
+part 'backend_v031_part.dart';
 
 void main() {
   test('attempt 5 preserves queued paragraphs across refresh replay', () async {
@@ -1552,6 +1553,7 @@ void main() {
     },
   );
   _contextAndChildTests();
+  _hostControlTests();
 }
 
 // Source-backed synthetic durable ordering: runtime.rs commits steering before

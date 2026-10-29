@@ -1,7 +1,7 @@
 # Backend mapping
 
 The kit's backend port is implemented by adapters. BubblePaw is the public
-[BubblePaw-Core v0.3.0](https://github.com/BubbleBuffer/BubblePaw-Core/tree/v0.3.0)
+[BubblePaw-Core v0.3.0](https://github.com/BubbleBuffer/BubblePaw-Core/tree/v0.3.0) (plus the v0.3.1 methods listed below, written against `origin/release`)
 runner over **stdio JSON-RPC 0.1**, through `agent_kit_bubblepaw`. There is no
 `client` Cargo feature or pre-existing layer that emits kit-shaped JSON.
 Scratch is the separate `NotesAgent` bridge; its column below preserves the
@@ -36,7 +36,7 @@ all question answer shapes and follow-ups while running.
 | `context` | When feature `context` is negotiated | No |
 | `answerChildQuestion` | When feature `question.answer_child` is negotiated | No |
 | `rename`, `resume`, `usage` | Yes | No |
-| Other optional capabilities (child cancel, jobs, archive, fork, models) | Not advertised | No |
+| Other optional capabilities (jobs, archive, fork) | Not advertised | No |
 
 BubblePaw rejects references, supports a single choice or free-text question
 answer, and supports follow-up while running when `follow_up` is negotiated.
@@ -47,7 +47,7 @@ below describes gateway operations, not permissions granted by that adapter.
 
 | Kit | BubblePaw stdio | Scratch |
 |---|---|---|
-| `listChats({cursor, query})` | **Partial:** `session.list`, sorted by updated time, title-filtered locally, every chat returned, no cursor. Its metadata has no run status. | `sessions()`, newest first; no cursor or query. |
+| `listChats({cursor, query})` | **Partial:** `session.list`. With feature `session.list.pagination` (Core v0.3.1) it sends `limit` 100 and the previous `next_cursor`, and the host orders pages (newest created first); without it, every chat comes back at once, sorted by updated time, with no cursor. The title query filters the returned page only. Its metadata has no run status. | `sessions()`, newest first; no cursor or query. |
 | `loadChat(id)` | **Yes:** `session.state` plus `approval.list` for pending approvals. Snapshot has `seq`, canonical messages, runs, inputs, outputs, todo, question and usage. | `sessionState(id)` with seq, streaming text, messages, runs, approvals, activity, edits. |
 | `events(chat, after: N)` | **Yes:** `events.after {session_id, after, limit:1000}`, then buffered/live `event` notifications. `resync` or `events.gap` reloads state and replays from the fresh host cursor. | `eventsAfter` then `subscribe`; resync/gap reloads. |
 | Durable sequence | Adapter reserves 16 native kit sequence positions per host `HarnessEvent.sequence`, permitting multiple kit events per host event. Snapshots use the final position. Replay always converts back to host sequence. | `AgentEvent.sequence`. |
@@ -107,10 +107,10 @@ tests are distinct from live-model acceptance; neither proves a paid provider.
 | `archive` | **Missing:** `session.delete` is not archive. | Missing. |
 | `fork` | **Missing:** core `Store::fork_at` and HTTP fork do not create a stdio RPC. | Missing. |
 | `rewind` | **Partial:** `session.rewind {session_id,message_id}` creates a **new** session, including the selected message, and restores eligible checkpointed files. Adapter `rewindToNewChat` returns that summary and emits `createdChats`; source remains intact. | Missing. |
-| `cancelChild` | **Missing capability:** no child cancel method in stdio v0.3.0. | Children missing. |
+| `cancelChild` | **Yes (Core v0.3.1):** `child.cancel {parent, child}`, feature `child.cancel` turns on `children`. Cancels the child and what it started; the parent must be the child's direct parent. The adapter refreshes the crew afterwards. | Children missing. |
 | `cancelJob` | **Missing:** `process.background` is not cancellation. | Jobs missing. |
 | `undoEdit` | **Missing:** rewind is not per-edit undo. | `editUndo`. |
-| `listModels`, `setModel` | **Missing:** run options can carry a model, but no stdio model enumeration/settings RPC. | `models()`; choice passed to send. |
+| `listProviders`, `setDefaultModel`, `listModels`, `setModel` | **Yes (Core v0.3.1):** `providers.list` (feature `providers.list`, capability `providers`) returns providers, kinds, whether a key was found (never the key), models, `main` and `active_main`. `roles.set_main {model}` (feature `roles.set_main`, capability `defaultModel`) saves the default as `provider/model`. `models` needs both. The host has one default, not one per chat, so `setModel` sets it for every chat and a run in progress keeps its own model. | `models()`; choice passed to send. |
 | `listProfiles`, `setProfile` | **Missing.** | Missing. |
 
 ## Errors and recovery
