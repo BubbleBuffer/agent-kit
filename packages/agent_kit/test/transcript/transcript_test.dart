@@ -14,6 +14,12 @@ import 'package:bb_ui/hover.dart';
 import 'fixtures.dart';
 import 'harness.dart';
 
+/// The fade that clears the lines under the "Jump to latest" pill.
+Finder get pillFade => find.descendant(
+  of: find.byType(TranscriptList),
+  matching: find.byType(ShaderMask),
+);
+
 void main() {
   group('markdown', () {
     test('splits blocks', () {
@@ -501,6 +507,7 @@ void main() {
       expect(listPosition(tester).maxScrollExtent, greaterThan(500));
       expect(atBottom(tester), isTrue);
       expect(find.text('Jump to latest'), findsNothing);
+      expect(pillFade, findsNothing);
 
       // New content keeps it pinned.
       await pumpTranscript(tester, list(longTranscript(21), controller));
@@ -512,6 +519,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(controller.following, isFalse);
       expect(find.text('Jump to latest'), findsOneWidget);
+      // The lines under the pill fade out above it.
+      expect(pillFade, findsOneWidget);
       final before = listPosition(tester).pixels;
 
       await pumpTranscript(tester, list(longTranscript(22), controller));
@@ -524,6 +533,7 @@ void main() {
       expect(atBottom(tester), isTrue);
       expect(controller.following, isTrue);
       expect(find.text('Jump to latest'), findsNothing);
+      expect(pillFade, findsNothing);
     });
 
     testWidgets('restores an anchor', (tester) async {
