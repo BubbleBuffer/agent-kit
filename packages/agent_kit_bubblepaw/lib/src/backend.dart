@@ -182,8 +182,7 @@ final class BubblePawBackend
                   (s) =>
                       needle == null ||
                       '${s['title'] ?? ''}'.toLowerCase().contains(needle),
-                )
-                .take(64))
+                ))
           _projection('${session['id']}').summary(session),
       ],
     );

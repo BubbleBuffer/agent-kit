@@ -723,7 +723,7 @@ void main() {
   );
 
   test(
-    'list caps at 64, filters case-insensitively and rejects cursors',
+    'list returns every chat, filters case-insensitively and rejects cursors',
     () async {
       final peer = _BackendPeer();
       final backend = await peer.connect();
@@ -743,7 +743,7 @@ void main() {
             ]
           : peer.defaultResponse(method, params);
       final all = await backend.listChats();
-      expect(all.chats.length, 64);
+      expect(all.chats.length, 80);
       expect(all.chats.first.id, 's79');
       expect(all.nextCursor, isNull);
       final cats = await backend.listChats(query: 'cAt');

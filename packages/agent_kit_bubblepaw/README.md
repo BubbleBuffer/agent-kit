@@ -38,7 +38,7 @@ in `backend.features` without inventing support for them.
 
 | Kit port | BubblePaw stdio | Support |
 |---|---|---|
-| `listChats` | `session.list` | Partial: newest 64 matching titles, no cursor; list metadata has no run status |
+| `listChats` | `session.list` | Partial: every chat the host returns, newest first, or those matching the title query; no cursor; list metadata has no run status |
 | `loadChat` | `session.state`, `approval.list` | Yes: canonical messages, tools, runs, queue, todo, question, usage |
 | `events` | `event`, `events.after`, `events.gap` | Yes, snapshot recovery described below |
 | `createChat` | `session.open` | Yes, host-bound workspace |
