@@ -137,6 +137,11 @@ JSON-RPC errors are classified privately into safe kit errors. The core seals
 `KitError`, so adapter lifecycle exceptions cannot currently be kit error subtypes;
 the existing workbench displays its generic error text for these exceptions.
 
+`BubblePawBackend.connectionLost` completes with the error that ended the host
+connection (a `BubblePawHostExited` when the child exits), including while no
+event stream is open, so an idle application can show the failure at once. It
+never completes after a deliberate `dispose`.
+
 ## Verification levels
 
 All builds and tests run on GitHub-hosted CI.

@@ -823,6 +823,31 @@ void main() {
   );
 
   test(
+    'connectionLost reports a host exit with no event stream open',
+    () async {
+      final peer = _BackendPeer();
+      final backend = await peer.connect();
+      addTearDown(() => peer.close(backend));
+      final lost = backend.connectionLost;
+      await peer.exit(7);
+      expect(
+        await lost.timeout(const Duration(seconds: 2)),
+        isA<BubblePawHostExited>().having((e) => e.exitCode, 'exit code', 7),
+      );
+    },
+  );
+
+  test('connectionLost stays pending after a deliberate dispose', () async {
+    final peer = _BackendPeer();
+    final backend = await peer.connect();
+    var completed = false;
+    unawaited(backend.connectionLost.then((_) => completed = true));
+    await peer.close(backend);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(completed, isFalse);
+  });
+
+  test(
     'retention resync retries available history before adopting a fresh cursor',
     () async {
       final peer = _BackendPeer()..features = ['sessions', 'events'];

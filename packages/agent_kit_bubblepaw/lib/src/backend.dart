@@ -109,6 +109,14 @@ final class BubblePawBackend
   late final KitCapabilities _capabilities;
   late final BackendConstraints _constraints;
 
+  final _lost = Completer<Object>();
+
+  /// Completes with the error that ended the host connection (a
+  /// [BubblePawHostExited] when the child exits), whether or not any event
+  /// stream is open. Never completes after [dispose] and never completes with
+  /// an error, so an unobserved future is safe.
+  Future<Object> get connectionLost => _lost.future;
+
   /// New sessions created by [rewindToNewChat] (also called by [rewind]).
   /// The original session is never relabelled as the rewound session.
   Stream<ChatSummary> get createdChats => _created.stream;
@@ -237,12 +245,14 @@ final class BubblePawBackend
   }
 
   void _transportError(Object error, [StackTrace? stack]) {
+    if (!_closed && !_lost.isCompleted) _lost.complete(error);
     for (final watch in _watches.toList()) {
       if (!watch.closed) watch.controller.addError(error, stack);
     }
   }
 
   void _transportDone() {
+    if (!_closed && !_lost.isCompleted) _lost.complete(const KitUnavailable());
     for (final watch in _watches.toList()) {
       unawaited(watch.controller.close());
       watch.closed = true;
