@@ -242,7 +242,7 @@ dark;
 `test/goldens/<scene>_<width>_<theme>.png`), with the scripted chat played to
 its end. Text is real because the bundled fonts are loaded in the tests.
 Rendering happens only in CI, on `ubuntu-latest` with Flutter pinned to the
-version Scratch pins (3.47.5); goldens rendered elsewhere will not match.
+version this repo's CI pins (3.47.5); goldens rendered elsewhere will not match.
 
 - Push or pull request: the job compares with the committed PNGs and fails on
   a difference (`golden-failures` artifact holds the diffs).

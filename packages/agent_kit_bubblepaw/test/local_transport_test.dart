@@ -1,4 +1,4 @@
-// Opt in with BP_TEST_BIN pointing at the public v0.3.0 binary. The provider
+// Opt in with BP_TEST_BIN pointing at the public v0.3.1 binary. The provider
 // below is BubblePaw's built-in deterministic demo, with no paid/live calls.
 import 'dart:async';
 import 'dart:io';
@@ -26,7 +26,7 @@ void main() {
           binaryPath: binary!,
           workspaceDirectory: workspace.path,
           dataDirectory: data.path,
-          // v0.3.0's demo supports the native surface (provider/scripted.rs).
+          // v0.3.1's demo supports the native surface (provider/scripted.rs).
           // It lists only this disposable workspace. JS nested progress can
           // legitimately trigger a canonical reload before run_finished arrives;
           // native mode lets this test also observe the complete KIT event trio.

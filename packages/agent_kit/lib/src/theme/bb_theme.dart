@@ -1,4 +1,4 @@
-// BbTheme: the one ThemeExtension of the kit. It maps Scratch's tokens
+// BbTheme: the one ThemeExtension of the kit. It maps bb-ui's tokens
 // (bb_tokens) to the semantic roles of the approved mockup's theme.css, so
 // widgets read roles and never raw colours.
 //
@@ -13,7 +13,7 @@ import 'package:bb_ui/tokens.dart';
 import 'package:flutter/material.dart' show ThemeExtension;
 import 'package:flutter/widgets.dart';
 
-/// How one status looks (a row of NOTES.md's status table).
+/// How one status looks (one row of the kit's status table).
 @immutable
 class BbStatusStyle {
   const BbStatusStyle({
@@ -36,7 +36,7 @@ class BbStatusStyle {
   final Color? line;
 }
 
-/// Motion tokens: Scratch's durations and curves plus the breathe loop.
+/// Motion tokens: bb-ui's durations and curves plus the breathe loop.
 @immutable
 class BbMotion {
   const BbMotion();
@@ -50,7 +50,7 @@ class BbMotion {
   Curve get settle => Motion.settle;
 }
 
-/// Radii tokens (Scratch's `Radii`).
+/// Radii tokens (bb-ui's `Radii`).
 @immutable
 class BbRadii {
   const BbRadii();
@@ -68,7 +68,7 @@ class BbRadii {
 /// Semantic roles, status roles, type, spacing, radii, motion and the
 /// size-class thresholds.
 ///
-/// Build one from Scratch's [AppColors]; [BbThemeScope] does this from a
+/// Build one from the bb-ui colours ([AppColors]); [BbThemeScope] does this from a
 /// [Brightness]. Role names follow `theme.css`: `canvas`, `surface`, `ink`,
 /// `muted`, `seam`, `accent`, `constructive`, `information`, `attention`
 /// and `danger` (the four state roles also have an `...Ink` text colour).
@@ -124,7 +124,7 @@ class BbTheme extends ThemeExtension<BbTheme> {
       codeBackground = colors.inlineCodeBg,
       codeInk = colors.inlineCodeText,
       // The rail follows the theme: light builds it from light tokens, dark
-      // uses Scratch's own rail tokens (NOTES.md, departure 2).
+      // uses the bb-ui rail tokens.
       rail = colors.dark ? colors.rail : colors.bgSecondary,
       railHover = colors.dark ? colors.rail2 : colors.bgHover,
       railSelected = colors.dark
@@ -145,7 +145,7 @@ class BbTheme extends ThemeExtension<BbTheme> {
       ctxSummary = colors.palette.ctxSummary,
       ctxLive = colors.palette.ctxLive;
 
-  /// Scratch's palette this theme was derived from; `bb_ui` reads it.
+  /// The bb-ui palette this theme was derived from; `bb_ui` reads it.
   final AppColors colors;
 
   /// Decides touch sizing and the type scale (window width, as in Scratch).
@@ -183,7 +183,7 @@ class BbTheme extends ThemeExtension<BbTheme> {
   /// Primary action, selection and live marks.
   final Color accent, accentHover, accentInk, onAccent;
 
-  /// State roles: Scratch's fills and the inks chosen for text on them.
+  /// State roles: bb-ui's fills and the inks chosen for text on them.
   final Color constructive, constructiveInk;
   final Color information, informationInk;
   final Color attention, attentionInk;
@@ -210,7 +210,7 @@ class BbTheme extends ThemeExtension<BbTheme> {
   final BbRadii radii = const BbRadii();
   final BbMotion motion = const BbMotion();
 
-  /// Scratch's type scale for the [formFactor].
+  /// bb-ui's type scale for the [formFactor].
   TypeScale get typeScale =>
       formFactor == FormFactor.mobile ? TypeScale.mobile : TypeScale.desktop;
 

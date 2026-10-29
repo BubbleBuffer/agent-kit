@@ -63,8 +63,8 @@ ChatScript quotaReconnectScript() {
       const ScriptStep(Duration.zero, {
         'kind': 'chat.workspace',
         'workspace': {
-          'name': 'bubblepaw',
-          'path': 'projects/bubblepaw',
+          'name': 'harbor-service',
+          'path': 'projects/harbor-service',
           'branch': 'bp/quota-reconnect',
           'worktree': '.worktrees/quota-reconnect',
         },
@@ -81,7 +81,7 @@ ChatScript quotaReconnectScript() {
         'refs': [
           {
             'kind': 'file',
-            'id': 'crates/bubblepaw-host/src/usage/mod.rs',
+            'id': 'crates/harbor-runtime/src/usage/mod.rs',
             'label': 'usage/mod.rs',
           },
           {
@@ -123,7 +123,7 @@ ChatScript quotaReconnectScript() {
         'callId': 'c1',
         'name': 'read',
         'toolKind': 'read',
-        'target': 'crates/bubblepaw-host/src/usage/mod.rs',
+        'target': 'crates/harbor-runtime/src/usage/mod.rs',
       }),
       ScriptStep(s(1), {
         'kind': 'tool.finished',
@@ -287,7 +287,7 @@ ChatScript quotaReconnectScript() {
               'oldStart': 0,
               'newStart': 1,
               'lines': [
-                line('add', 'use bubblepaw_host::usage::UsageState;'),
+                line('add', 'use harbor_runtime::usage::UsageState;'),
                 line('add', ''),
                 line('add', '#[test]'),
                 line('add', 'fn snapshot_survives_reconnect() {'),
@@ -323,7 +323,7 @@ ChatScript quotaReconnectScript() {
         'callId': 'c7',
         'name': 'exec',
         'toolKind': 'exec',
-        'target': 'cargo test -p bubblepaw-host usage',
+        'target': 'cargo test -p harbor-runtime usage',
         'runId': run,
       }),
       ScriptStep(s(2), {
@@ -354,7 +354,7 @@ ChatScript quotaReconnectScript() {
       ScriptStep(s(1), {
         'kind': 'job.started',
         'jobId': 'j1',
-        'command': 'cargo test -p bubblepaw-host usage',
+        'command': 'cargo test -p harbor-runtime usage',
       }),
       ScriptStep(s(20), {
         'kind': 'job.output',
@@ -403,7 +403,7 @@ ChatScript quotaReconnectScript() {
         'itemId': 'e2',
         'callId': 'c8',
         'diff': {
-          'path': 'crates/bubblepaw-host/src/usage/mod.rs',
+          'path': 'crates/harbor-runtime/src/usage/mod.rs',
           'hunks': [
             {
               'oldStart': 52,
@@ -454,7 +454,7 @@ ChatScript quotaReconnectScript() {
         'callId': 'c9',
         'name': 'edit',
         'toolKind': 'edit',
-        'target': 'crates/bubblepaw-host/src/usage/mod.rs',
+        'target': 'crates/harbor-runtime/src/usage/mod.rs',
         'runId': run,
       }),
       ScriptStep(Duration.zero, {
@@ -463,11 +463,11 @@ ChatScript quotaReconnectScript() {
           'id': 'ap1',
           'tool': 'edit',
           'kind': 'edit',
-          'target': 'crates/bubblepaw-host/src/usage/mod.rs',
+          'target': 'crates/harbor-runtime/src/usage/mod.rs',
           'callId': 'c9',
           'runId': run,
           'diff': {
-            'path': 'crates/bubblepaw-host/src/usage/mod.rs',
+            'path': 'crates/harbor-runtime/src/usage/mod.rs',
             'hunks': [
               {
                 'oldStart': 88,

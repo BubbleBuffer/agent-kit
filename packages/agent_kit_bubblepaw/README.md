@@ -25,7 +25,7 @@ through `arguments`; callers remain responsible for their configuration.
 ## Protocol and capabilities
 
 The implementation is checked against
-[BubblePaw-Core v0.3.0](https://github.com/BubbleBuffer/BubblePaw-Core/tree/v0.3.0),
+[BubblePaw-Core v0.3.1](https://github.com/BubbleBuffer/BubblePaw-Core/tree/v0.3.1),
 specifically `crates/bubblepaw-runner/src/main.rs`'s stdio dispatcher,
 `stdio_context.rs`, `context_reads.rs` and `question_stdio.rs`, with
 `docs/session-api.md`, `docs/context-compaction.md`, `docs/lcm-contract.md` and
@@ -213,7 +213,7 @@ All builds and tests run on GitHub-hosted CI.
 1. **Unit:** in-process peers and synthetic JSON lines test framing, mapping,
    capabilities, gap/resync recovery, protocol mismatch and crashes.
 2. **Local transport:** opt in with `BP_TEST_BIN`. CI downloads the pinned Linux
-   v0.3.0 archive, checks its entry in `SHA256SUMS`, and runs the real child with
+   v0.3.1 archive, checks its entry in `SHA256SUMS`, and runs the real child with
    the built-in `demo` provider, read-only workspace, native mode and automatic
    summaries disabled. It sends messages, sees kit run/text/completion, and
    survives dropped real notifications followed by an injected `events.gap`.
