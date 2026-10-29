@@ -13,7 +13,7 @@ spec.
 `packages/agent_kit_bubblepaw` adds a pure Dart `AgentBackend` over an owned
 BubblePaw stdio JSON-RPC child. It pins protocol `0.1`, negotiates capabilities
 and recovers snapshots after event gaps. See its
-[README](../packages/agent_kit_bubblepaw/README.md) for the v0.2.2 mapping and
+[README](../packages/agent_kit_bubblepaw/README.md) for the v0.3.1 mapping and
 limits. The gallery's optional desktop live mode uses `BP_BIN`, `BP_WORKSPACE`
 and `BP_DATA` Dart defines; with no defines the scripted gallery is unchanged.
 See [gallery usage](../apps/gallery/README.md).
@@ -242,7 +242,7 @@ dark;
 `test/goldens/<scene>_<width>_<theme>.png`), with the scripted chat played to
 its end. Text is real because the bundled fonts are loaded in the tests.
 Rendering happens only in CI, on `ubuntu-latest` with Flutter pinned to the
-version Scratch pins (3.47.5); goldens rendered elsewhere will not match.
+version this repo's CI pins (3.47.5); goldens rendered elsewhere will not match.
 
 - Push or pull request: the job compares with the committed PNGs and fails on
   a difference (`golden-failures` artifact holds the diffs).

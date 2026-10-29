@@ -128,7 +128,7 @@ Widget buildScene(
     key: ValueKey((backend, scene)),
     backend: backend,
     initialChatId: controller.chatId,
-    workspaceName: 'BubblePaw-base',
+    workspaceName: 'harbor-service',
     initials: 'BC',
     now: controller.now,
     detailFor: controller.detailFor,

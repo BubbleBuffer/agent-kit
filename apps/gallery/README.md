@@ -23,7 +23,7 @@ settings explains that a desktop app is required. Startup failures use generic
 copy so local paths and host diagnostics do not appear in the UI.
 
 The adapter workflow builds web and Linux variants. Its separate opt-in local
-transport test uses the checksum-verified public BubblePaw v0.2.2 release and
+transport test uses the checksum-verified public BubblePaw v0.3.1 release and
 the offline demo provider. The gap test drops a real host notification and
 injects a synthetic `events.gap` to exercise recovery; it does not reproduce a
 host buffer overflow.

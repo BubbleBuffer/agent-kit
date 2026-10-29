@@ -58,7 +58,7 @@ ChatScript mixedQuestionScript() => ChatScript(
             'kind': 'pickAny',
             'options': [
               {'label': 'Web quota bar'},
-              {'label': 'Desktop tray'},
+              {'label': 'Status panel'},
               {'label': 'CLI status line'},
             ],
             'allowOther': true,

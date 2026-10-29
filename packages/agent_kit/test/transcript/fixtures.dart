@@ -6,7 +6,7 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 final t0 = DateTime.utc(2026, 10, 26, 9);
 
 const execOutput = [
-  '   Compiling bubblepaw-host v0.2.1 (crates/bubblepaw-host)',
+  '   Compiling harbor-runtime v0.2.1 (crates/harbor-runtime)',
   '    Finished `test` profile [unoptimized + debuginfo] in 6.42s',
   '     Running unittests src/lib.rs',
   '',
@@ -68,7 +68,7 @@ ToolRow execRow({WorkState state = WorkState.failed, int? exitCode = 101}) =>
       id: 'r5',
       name: 'bash',
       kind: ToolKind.exec,
-      target: 'cargo test -p bubblepaw-host usage',
+      target: 'cargo test -p harbor-runtime usage',
       state: state,
       exitCode: exitCode,
       output: failingOutput(),
@@ -135,7 +135,7 @@ FileEdit modifiedEdit({bool undone = false}) => FileEdit(
   id: 'e1',
   undone: undone,
   diff: FileDiff(
-    path: 'crates/bubblepaw-host/src/usage/mod.rs',
+    path: 'crates/harbor-runtime/src/usage/mod.rs',
     hunks: [
       DiffHunk(
         oldStart: 24,
@@ -173,7 +173,7 @@ FileEdit modifiedEdit({bool undone = false}) => FileEdit(
 FileEdit createdEdit() => FileEdit(
   id: 'e2',
   diff: FileDiff(
-    path: 'crates/bubblepaw-host/tests/quota_reconnect.rs',
+    path: 'crates/harbor-runtime/tests/quota_reconnect.rs',
     change: FileChange.created,
     hunks: [
       DiffHunk(

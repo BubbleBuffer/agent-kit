@@ -200,7 +200,7 @@ ContextDetails quotaContextDetails() => ContextDetails(
       text:
           'Added `snapshot_survives_reconnect` and '
           '`stale_flag_clears_on_update` to the usage tests.\n\n'
-          '- First run of `cargo test -p bubblepaw-host usage`: 12 passed, '
+          '- First run of `cargo test -p harbor-runtime usage`: 12 passed, '
           '2 failed.\n'
           '- Both fail because `last` is reset to the default on close.',
       firstSeq: 59,
@@ -354,7 +354,7 @@ List<HistoryMessage> quotaHistory() {
     88: (HistoryRole.user, 'Dim the bar while stale, but never hide it.', 22),
     96: (
       HistoryRole.tool,
-      'cargo test -p bubblepaw-host usage · 12 passed, 2 failed',
+      'cargo test -p harbor-runtime usage · 12 passed, 2 failed',
       412,
     ),
     97: (
@@ -371,7 +371,7 @@ List<HistoryMessage> quotaHistory() {
     133: (HistoryRole.tool, 'read · usage/mod.rs', 1900),
     142: (
       HistoryRole.tool,
-      'cargo test -p bubblepaw-host usage · exit 101',
+      'cargo test -p harbor-runtime usage · exit 101',
       420,
     ),
     143: (

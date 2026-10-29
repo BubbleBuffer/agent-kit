@@ -445,8 +445,8 @@ class _Meter extends StatelessWidget {
 }
 
 const _terminal = <(String, String)>[
-  ('p', r'$ cargo test -p bubblepaw-host usage'),
-  ('d', '   Compiling bubblepaw-host v0.2.1 (crates/bubblepaw-host)'),
+  ('p', r'$ cargo test -p harbor-runtime usage'),
+  ('d', '   Compiling harbor-runtime v0.2.1 (crates/harbor-runtime)'),
   ('d', '    Finished `test` profile [unoptimized + debuginfo] in 6.42s'),
   ('d', '     Running unittests src/lib.rs'),
   ('', ''),
@@ -459,7 +459,7 @@ const _terminal = <(String, String)>[
   ('', ''),
   ('', '---- usage::tests::snapshot_survives_reconnect stdout ----'),
   ('', "thread 'usage::tests::snapshot_survives_reconnect' panicked at"),
-  ('', 'crates/bubblepaw-host/src/usage/mod.rs:212:9:'),
+  ('', 'crates/harbor-runtime/src/usage/mod.rs:212:9:'),
   ('', 'assertion `left == right` failed'),
   ('', '  left: None'),
   ('', ' right: Some(UsageSnapshot { percent: 62, .. })'),
@@ -694,7 +694,7 @@ class FakeActivityPane extends StatelessWidget {
           const SizedBox(height: 6),
           const StatusMark(
             ChatStatus.failed,
-            label: 'cargo test -p bubblepaw-host usage',
+            label: 'cargo test -p harbor-runtime usage',
             detail: 'exit 101',
           ),
         ],

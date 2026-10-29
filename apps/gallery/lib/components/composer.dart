@@ -39,10 +39,10 @@ final _approval = Approval(
   id: 'ap1',
   tool: 'edit',
   kind: ToolKind.edit,
-  target: 'crates/bubblepaw-host/src/usage/mod.rs',
+  target: 'crates/harbor-runtime/src/usage/mod.rs',
   requestedAt: _now.subtract(const Duration(minutes: 12)),
   diff: FileDiff(
-    path: 'crates/bubblepaw-host/src/usage/mod.rs',
+    path: 'crates/harbor-runtime/src/usage/mod.rs',
     hunks: [
       DiffHunk(
         oldStart: 40,
@@ -98,7 +98,7 @@ final _pickAny = QuestionItem(
   kind: QuestionKind.pickAny,
   options: const [
     QuestionOption(label: 'Web quota bar'),
-    QuestionOption(label: 'Desktop tray'),
+    QuestionOption(label: 'Status panel'),
     QuestionOption(label: 'CLI status line'),
   ],
   allowOther: true,
@@ -162,7 +162,7 @@ final _answered = Question(
   answers: {
     'age': QuestionAnswer(choices: const ['Only on hover']),
     'views': QuestionAnswer(
-      choices: const ['Web quota bar', 'Desktop tray'],
+      choices: const ['Web quota bar', 'Status panel'],
       text: 'Hub dashboard',
     ),
     'label': QuestionAnswer(skipped: true),
@@ -175,7 +175,7 @@ const _models = [
 ];
 
 const _workspaces = [
-  KitChoice(id: 'base', label: 'BubblePaw-base'),
+  KitChoice(id: 'base', label: 'harbor-service'),
   KitChoice(id: 'kit', label: 'agent-kit'),
 ];
 
@@ -345,7 +345,7 @@ class _ComposerSpecimensState extends State<ComposerSpecimens> {
             _any,
             answers: {
               'views': QuestionAnswer(
-                choices: const ['Web quota bar', 'Desktop tray'],
+                choices: const ['Web quota bar', 'Status panel'],
                 text: 'Hub dashboard',
               ),
             },
@@ -372,7 +372,7 @@ class _ComposerSpecimensState extends State<ComposerSpecimens> {
             step: 3,
             answers: {
               'age': QuestionAnswer(choices: const ['Always']),
-              'views': QuestionAnswer(choices: const ['Desktop tray']),
+              'views': QuestionAnswer(choices: const ['Status panel']),
               'label': QuestionAnswer(skipped: true),
             },
           ),

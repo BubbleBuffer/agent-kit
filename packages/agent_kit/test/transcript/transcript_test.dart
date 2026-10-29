@@ -232,7 +232,7 @@ void main() {
       expect(find.text('9 hits'), findsOneWidget);
       expect(find.text('child c7e2'), findsOneWidget);
 
-      await tester.tap(find.text('cargo test -p bubblepaw-host usage'));
+      await tester.tap(find.text('cargo test -p harbor-runtime usage'));
       await tester.pump();
       expect(find.text('Show all 20 lines'), findsOneWidget);
 

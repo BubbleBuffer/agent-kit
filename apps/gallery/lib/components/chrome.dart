@@ -70,7 +70,7 @@ final _agents = <ChildAgent>[
 final _jobs = <BackgroundJob>[
   BackgroundJob(
     id: 'test',
-    command: 'cargo test -p bubblepaw-host usage',
+    command: 'cargo test -p harbor-runtime usage',
     state: JobState.exited,
     exitCode: 101,
     summary: '2 failed',
@@ -88,7 +88,7 @@ String _agentTitle(ChildAgent agent) =>
     agent.id == 'survey' ? 'Survey quota' : 'Map transitions';
 
 SessionRail _rail() => SessionRail(
-  workspaceName: 'bubblepaw-base',
+  workspaceName: 'harbor-service',
   groups: groupSessions(_chats, _now),
   selectedId: 'quota',
   detailFor: _detailFor,
@@ -254,7 +254,7 @@ class _Headers extends StatelessWidget {
           ChatHeader(
             chat: _chats[0],
             branch: 'quota-bar-reconnect',
-            worktree: '/work/bubblepaw-base-quota',
+            worktree: '/work/harbor-service-quota',
             usage: _usage,
             workspaceShown: true,
             onToggleWorkspace: () {},
@@ -281,7 +281,7 @@ class _Headers extends StatelessWidget {
               title: 'A very long title that is cut where the room ends',
               status: ChatStatus.done,
             ),
-            branch: 'release',
+            branch: 'main',
             usage: _usage,
             onToggleWorkspace: () {},
           ),

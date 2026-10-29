@@ -199,7 +199,7 @@ pub fn is_stale(&self) -> bool {
 );
 
 const _outputLines = [
-  '   Compiling bubblepaw-host v0.2.1 (crates/bubblepaw-host)',
+  '   Compiling harbor-runtime v0.2.1 (crates/harbor-runtime)',
   '    Finished `test` profile [unoptimized + debuginfo] in 6.42s',
   '     Running unittests src/lib.rs',
   '',
@@ -266,7 +266,7 @@ ActivityGroup _activity() => ActivityGroup(
       id: 'r5',
       name: 'bash',
       kind: ToolKind.exec,
-      target: 'cargo test -p bubblepaw-host usage',
+      target: 'cargo test -p harbor-runtime usage',
       state: WorkState.failed,
       exitCode: 101,
       output: ToolOutput(
@@ -302,10 +302,10 @@ ActivityGroup _running() => ActivityGroup(
       id: 'x2',
       name: 'bash',
       kind: ToolKind.exec,
-      target: 'cargo test -p bubblepaw-host usage',
+      target: 'cargo test -p harbor-runtime usage',
       meta: '12s',
       output: ToolOutput(
-        text: '   Compiling bubblepaw-host v0.2.1\nrunning 14 tests\n',
+        text: '   Compiling harbor-runtime v0.2.1\nrunning 14 tests\n',
       ),
     ),
   ],
@@ -337,7 +337,7 @@ FileEdit _modified({bool undone = false}) => FileEdit(
   id: 'e1',
   undone: undone,
   diff: FileDiff(
-    path: 'crates/bubblepaw-host/src/usage/mod.rs',
+    path: 'crates/harbor-runtime/src/usage/mod.rs',
     hunks: [
       DiffHunk(
         oldStart: 24,
@@ -378,7 +378,7 @@ FileEdit _modified({bool undone = false}) => FileEdit(
 FileEdit _created() => FileEdit(
   id: 'e2',
   diff: FileDiff(
-    path: 'crates/bubblepaw-host/tests/quota_reconnect.rs',
+    path: 'crates/harbor-runtime/tests/quota_reconnect.rs',
     change: FileChange.created,
     hunks: [
       DiffHunk(
