@@ -6,6 +6,7 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 import 'context_projection.dart';
 import 'errors.dart';
 import 'projection.dart';
+import 'provider_projection.dart';
 import 'transport.dart';
 
 /// A BubblePaw 0.1 stdio host owned by its consuming application.
@@ -81,6 +82,14 @@ final class BubblePawBackend
         if (backend.features.contains('context')) KitCapability.context,
         if (backend.features.contains('question.answer_child'))
           KitCapability.answerChildQuestion,
+        if (backend.features.contains('child.cancel')) KitCapability.children,
+        if (backend.features.contains('providers.list'))
+          KitCapability.providers,
+        if (backend.features.contains('roles.set_main'))
+          KitCapability.defaultModel,
+        // The composer's model pick needs both: the list and the setter.
+        if (backend.features.containsAll({'providers.list', 'roles.set_main'}))
+          KitCapability.models,
       ]);
       backend._constraints = BackendConstraints(
         acceptsReferences: false,
@@ -137,6 +146,26 @@ final class BubblePawBackend
   @override
   BackendConstraints get constraints => _constraints;
 
+  // The host default (`active_main`) as last read. Only the composer's pick
+  // shows it, so a failed read leaves the last run's model there instead.
+  String? _defaultModel;
+  Future<void>? _readingDefault;
+
+  Future<void> _knowDefaultModel() {
+    if (_defaultModel != null) return Future.value();
+    return _readingDefault ??= () async {
+      try {
+        await listProviders();
+      } on KitUnavailable {
+        rethrow;
+      } on KitError {
+        // The snapshot goes without a default.
+      } finally {
+        _readingDefault = null;
+      }
+    }();
+  }
+
   BubblePawProjection _projection(String id) =>
       _projections.putIfAbsent(id, BubblePawProjection.new);
 
@@ -162,17 +191,42 @@ final class BubblePawBackend
     }
   }
 
+  /// Chats per page when the host pages `session.list`.
+  static const chatPageSize = 100;
+
+  /// With feature `session.list.pagination` the host pages the list (newest
+  /// created first, [chatPageSize] a page) and [cursor] is the previous
+  /// page's `next_cursor`. Without it the host returns every chat at once,
+  /// sorted here by update time, and has no cursor. The title [query]
+  /// filters the returned page only.
   @override
   Future<ChatPage> listChats({String? cursor, String? query}) async {
-    if (cursor != null) {
+    final paged = features.contains('session.list.pagination');
+    if (cursor != null && !paged) {
       throw const KitInvalid('BubblePaw chat lists have no cursor.');
     }
-    final result = await _request('session.list');
+    final Object? result;
+    String? next;
+    if (paged) {
+      final page = _object(
+        await _request('session.list', {
+          'limit': chatPageSize,
+          'cursor': ?cursor,
+        }),
+      );
+      result = page['sessions'];
+      final wire = page['next_cursor'];
+      next = wire is String && wire.isNotEmpty ? wire : null;
+    } else {
+      result = await _request('session.list');
+    }
     final sessions = _objects(result);
-    sessions.sort(
-      (a, b) =>
-          '${b['updated_at'] ?? ''}'.compareTo('${a['updated_at'] ?? ''}'),
-    );
+    if (!paged) {
+      sessions.sort(
+        (a, b) =>
+            '${b['updated_at'] ?? ''}'.compareTo('${a['updated_at'] ?? ''}'),
+      );
+    }
     final needle = query?.toLowerCase();
     return ChatPage(
       chats: [
@@ -183,6 +237,7 @@ final class BubblePawBackend
         ))
           _projection('${session['id']}').summary(session),
       ],
+      nextCursor: next,
     );
   }
 
@@ -213,12 +268,14 @@ final class BubblePawBackend
     final extras = await _loadExtras(id, state);
     _states[id] = state;
     _extras[id] = extras;
+    if (capabilities.has(KitCapability.models)) await _knowDefaultModel();
     return _projection(id).snapshot(
       state,
       workspaceDirectory: workspaceDirectory,
       children: extras.children,
       context: extras.context,
       compactions: extras.compactions,
+      defaultModel: _defaultModel,
     );
   }
 
@@ -669,9 +726,17 @@ final class BubblePawBackend
   @override
   Future<ChatSummary> fork(String chatId, {String? atItemId}) =>
       _missing(KitCapability.fork);
+
+  /// Cancels the child and everything it started. Needs feature
+  /// `child.cancel`; [chatId] must be the child's direct parent.
   @override
-  Future<void> cancelChild(String chatId, String childId) =>
-      _missing(KitCapability.children);
+  Future<void> cancelChild(String chatId, String childId) async {
+    _require(KitCapability.children);
+    await _request('child.cancel', {'parent': chatId, 'child': childId});
+    _staleChildren.add(childId);
+    await _refreshWatches(chatId);
+  }
+
   @override
   Future<void> cancelJob(String chatId, String jobId) =>
       _missing(KitCapability.jobs);
@@ -679,12 +744,47 @@ final class BubblePawBackend
   Future<void> undoEdit(String chatId, String editId) =>
       _missing(KitCapability.editUndo);
   @override
-  Future<List<KitChoice>> listModels() => _missing(KitCapability.models);
+  Future<List<KitChoice>> listModels() async {
+    _require(KitCapability.models);
+    return modelChoices(await listProviders());
+  }
+
   @override
   Future<List<KitChoice>> listProfiles() => _missing(KitCapability.profiles);
+
+  /// The host has one default model, not one per chat: this sets it for
+  /// every chat, as [setDefaultModel] does. A run in progress keeps its model.
   @override
-  Future<void> setModel(String chatId, String modelId) =>
-      _missing(KitCapability.models);
+  Future<void> setModel(String chatId, String modelId) async {
+    _require(KitCapability.models);
+    await setDefaultModel(modelId);
+  }
+
+  @override
+  Future<ProviderSetup> listProviders() async {
+    _require(KitCapability.providers);
+    final setup = providerSetup(_object(await _request('providers.list')));
+    _defaultModel = setup.defaultModel;
+    return setup;
+  }
+
+  @override
+  Future<ProviderSetup> setDefaultModel(String modelId) async {
+    _require(KitCapability.defaultModel);
+    final id = modelId.trim();
+    if (!id.contains('/')) {
+      throw const KitInvalid('Choose a model as provider/model.');
+    }
+    final setup = providerSetup(
+      _object(await _request('roles.set_main', {'model': id})),
+    );
+    _defaultModel = setup.defaultModel;
+    for (final watch in _watches.toList()) {
+      watch.enqueue(watch.refresh);
+    }
+    return setup;
+  }
+
   @override
   Future<void> setProfile(String chatId, String profileId) =>
       _missing(KitCapability.profiles);
@@ -1115,6 +1215,16 @@ final class _Watch {
       if (!view.queue.contains(input)) {
         changes.add((seq) => QueueAdded(seq: seq, chat: chatId, input: input));
       }
+    }
+    // Only the host default can change under a view; without the model pick
+    // the snapshot's model is the last run's, which run events already carry.
+    final model = snapshot.model;
+    if (backend.capabilities.has(KitCapability.models) &&
+        model != null &&
+        model != view.model) {
+      changes.add(
+        (seq) => ChatSettingsChanged(seq: seq, chat: chatId, model: model),
+      );
     }
     final usage = snapshot.usage;
     if (usage != null && usage != view.usage) {

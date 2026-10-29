@@ -94,6 +94,18 @@ void main() {
         ),
         (KitCapability.models, () => backend.setModel('c', 'model')),
         (
+          KitCapability.providers,
+          () async {
+            await backend.listProviders();
+          },
+        ),
+        (
+          KitCapability.defaultModel,
+          () async {
+            await backend.setDefaultModel('p/m');
+          },
+        ),
+        (
           KitCapability.profiles,
           () async {
             await backend.listProfiles();

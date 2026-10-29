@@ -74,6 +74,7 @@ final class BubblePawProjection {
     List<ChildAgent> children = const [],
     ContextView? context,
     List<CompactionItem> compactions = const [],
+    String? defaultModel,
   }) {
     final session = _map(state['session']);
     final chat = _string(session, 'id');
@@ -197,7 +198,11 @@ final class BubblePawProjection {
       seq: seq,
       title: _string(session, 'title'),
       parentId: session['parent_session_id'] as String?,
-      model: run?.model,
+      // The model of the run in progress; otherwise the host default, which
+      // is what the next run uses.
+      model: run != null && run.isActive
+          ? run.model ?? defaultModel
+          : defaultModel ?? run?.model,
       workspace: WorkspaceInfo(
         name: directoryParts.isEmpty ? workspaceDirectory : directoryParts.last,
         path: workspaceDirectory,

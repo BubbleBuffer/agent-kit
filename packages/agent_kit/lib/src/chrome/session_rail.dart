@@ -36,6 +36,10 @@ class SessionRail extends StatelessWidget {
     this.onSwitchWorkspace,
     this.onSettings,
     this.onHide,
+    this.hasMore = false,
+    this.loadingMore = false,
+    this.loadMoreFailed = false,
+    this.onLoadMore,
   });
 
   /// The project switcher's label.
@@ -62,6 +66,21 @@ class SessionRail extends StatelessWidget {
 
   /// Overrides what the hide button does.
   final VoidCallback? onHide;
+
+  /// Whether the host has older sessions than [groups] holds (the page
+  /// cursor was not the last). The list then ends in a "Show older sessions"
+  /// row, which calls [onLoadMore].
+  final bool hasMore;
+
+  /// Older sessions are being loaded: the row says so and cannot be pressed.
+  final bool loadingMore;
+
+  /// The last load of older sessions failed: the row says so and offers
+  /// another try.
+  final bool loadMoreFailed;
+
+  /// Loads the next page of sessions.
+  final VoidCallback? onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -131,6 +150,7 @@ class SessionRail extends StatelessWidget {
                       group.label,
                       ...group.chats,
                     ],
+                    if (hasMore) _loadMoreMarker,
                   ];
                   return ListView.builder(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -138,6 +158,13 @@ class SessionRail extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final entry = entries[index];
                       if (entry is String) return _GroupLabel(entry);
+                      if (identical(entry, _loadMoreMarker)) {
+                        return _LoadMoreRow(
+                          loading: loadingMore,
+                          failed: loadMoreFailed,
+                          onTap: onLoadMore,
+                        );
+                      }
                       final chat = entry as ChatSummary;
                       return SessionRow(
                         key: ValueKey('rail-row-${chat.id}'),
@@ -252,6 +279,68 @@ class SessionRow extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// The marker entry that ends a list with older sessions to load.
+const Object _loadMoreMarker = #loadMore;
+
+class _LoadMoreRow extends StatelessWidget {
+  const _LoadMoreRow({
+    required this.loading,
+    required this.failed,
+    required this.onTap,
+  });
+
+  final bool loading;
+  final bool failed;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.bb;
+    final label = loading
+        ? 'Loading older sessions…'
+        : failed
+        ? 'Could not load older sessions. Try again'
+        : 'Show older sessions';
+    final enabled = !loading && onTap != null;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      excludeSemantics: true,
+      onTap: enabled ? onTap : null,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+        child: Hover(
+          key: const ValueKey('rail-load-more'),
+          onTap: enabled ? onTap : null,
+          borderRadius: theme.radii.ctl,
+          hoverBackground: theme.railHover,
+          pressedBackground: theme.railSelected,
+          lift: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 32),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  style: ts(
+                    theme.typeScale.ui,
+                    failed ? theme.dangerInk : theme.railMuted,
+                    weight: 500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

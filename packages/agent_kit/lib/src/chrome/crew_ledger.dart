@@ -8,6 +8,7 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../composer/composer_parts.dart' show KitButton, KitButtonKind;
 import '../status/status.dart';
 import '../theme/theme.dart';
 import 'chrome_button.dart' show chromeTooltip;
@@ -18,6 +19,12 @@ import 'crew_text.dart';
 /// The ledger; it draws nothing when there are no agents and no jobs.
 /// [agents] come from `ChatSnapshot.children`, [jobs] from
 /// `ChatSnapshot.jobs`; [now] is the clock for running times.
+///
+/// The heading says `Still running` only while every entry is running;
+/// otherwise it is `Crew` with the running and finished counts.
+///
+/// With [onCancelAgent], a running agent has a Cancel button; the ids in
+/// [cancelling] show `Cancelling…` instead, until the agent's state changes.
 class CrewLedger extends StatelessWidget {
   const CrewLedger({
     super.key,
@@ -26,6 +33,8 @@ class CrewLedger extends StatelessWidget {
     this.now,
     this.onOpenAgent,
     this.onOpenJob,
+    this.onCancelAgent,
+    this.cancelling = const {},
   });
 
   final List<ChildAgent> agents;
@@ -34,15 +43,22 @@ class CrewLedger extends StatelessWidget {
   final ValueChanged<ChildAgent>? onOpenAgent;
   final ValueChanged<BackgroundJob>? onOpenJob;
 
+  /// Cancels a running agent and the agents it started. Null: no button.
+  final ValueChanged<ChildAgent>? onCancelAgent;
+
+  /// The ids of agents whose cancellation was requested.
+  final Set<String> cancelling;
+
   @override
   Widget build(BuildContext context) {
     // Nothing is running: no heading over no rows.
     if (agents.isEmpty && jobs.isEmpty) return const SizedBox.shrink();
     final theme = context.bb;
     final clock = now ?? DateTime.now();
+    final heading = crewHeading(agents, jobs);
     return Semantics(
       container: true,
-      label: 'Still running',
+      label: heading.label,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -55,11 +71,11 @@ class CrewLedger extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
-                  'Still running',
+                  heading.label,
                   style: ts(const TypeSpec(12, 16, 700), theme.muted),
                 ),
                 Text(
-                  crewCounts(agents.length, jobs.length),
+                  heading.counts,
                   style: ts(const TypeSpec(12, 16, 500), theme.faint),
                 ),
               ],
@@ -82,6 +98,14 @@ class CrewLedger extends StatelessWidget {
                     : null,
               ),
               onTap: onOpenAgent == null ? null : () => onOpenAgent!(agent),
+              action: onCancelAgent == null || !agentActive(agent)
+                  ? null
+                  : _CancelAgent(
+                      key: ValueKey('ledger-cancel-${agent.id}'),
+                      task: agent.task,
+                      cancelling: cancelling.contains(agent.id),
+                      onTap: () => onCancelAgent!(agent),
+                    ),
             ),
           for (final job in jobs)
             _LedgerRow(
@@ -113,6 +137,7 @@ class _LedgerRow extends StatelessWidget {
     required this.onTap,
     this.detail,
     this.detailTip,
+    this.action,
     this.mono = false,
     this.failed = false,
   });
@@ -124,6 +149,9 @@ class _LedgerRow extends StatelessWidget {
   /// The full text for a truncated [detail], as a tooltip.
   final String? detailTip;
   final Widget status;
+
+  /// A button beside the status line.
+  final Widget? action;
   final bool mono;
   final bool failed;
   final VoidCallback? onTap;
@@ -183,7 +211,15 @@ class _LedgerRow extends StatelessWidget {
                             ),
                     ],
                     const SizedBox(height: 2),
-                    status,
+                    if (action == null)
+                      status
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [status, action!],
+                      ),
                   ],
                 ),
               ),
@@ -208,4 +244,35 @@ class _LedgerRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The Cancel button of a running agent. It says what it stops, since the
+/// agent's own children stop with it.
+class _CancelAgent extends StatelessWidget {
+  const _CancelAgent({
+    super.key,
+    required this.task,
+    required this.cancelling,
+    required this.onTap,
+  });
+
+  final String task;
+  final bool cancelling;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => chromeTooltip(
+    context,
+    'Stops this agent and any agents it started',
+    KitButton(
+      label: cancelling ? 'Cancelling…' : 'Cancel',
+      semanticLabel: cancelling ? 'Cancelling $task' : 'Cancel $task',
+      kind: KitButtonKind.quiet,
+      icon: cancelling ? null : glyphX,
+      iconSize: 13,
+      height: 24,
+      fontSize: 12,
+      onTap: cancelling ? null : onTap,
+    ),
+  );
 }

@@ -139,6 +139,86 @@ void main() {
     });
   });
 
+  group('SessionRail load more', () {
+    Widget railWith({
+      bool hasMore = true,
+      bool loading = false,
+      bool failed = false,
+      VoidCallback? onLoadMore,
+    }) => Align(
+      alignment: Alignment.topLeft,
+      child: SizedBox(
+        width: 240,
+        height: 640,
+        child: SessionRail(
+          workspaceName: 'bubblepaw-base',
+          groups: groupSessions(s.chats, s.now),
+          selectedId: 'quota',
+          detailFor: s.detailFor,
+          now: s.now,
+          initials: 'BC',
+          hasMore: hasMore,
+          loadingMore: loading,
+          loadMoreFailed: failed,
+          onLoadMore: onLoadMore,
+        ),
+      ),
+    );
+
+    testWidgets('ends the list with a row that loads the next page', (
+      tester,
+    ) async {
+      var loads = 0;
+      await pumpChrome(
+        tester,
+        railWith(onLoadMore: () => loads++),
+        size: const Size(300, 700),
+      );
+      expect(find.text('Show older sessions'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('rail-load-more')));
+      expect(loads, 1);
+    });
+
+    testWidgets('there is no row on the last page', (tester) async {
+      await pumpChrome(
+        tester,
+        railWith(hasMore: false),
+        size: const Size(300, 700),
+      );
+      expect(find.byKey(const ValueKey('rail-load-more')), findsNothing);
+      expect(find.text('Show older sessions'), findsNothing);
+    });
+
+    testWidgets('says it is loading and ignores presses meanwhile', (
+      tester,
+    ) async {
+      var loads = 0;
+      await pumpChrome(
+        tester,
+        railWith(loading: true, onLoadMore: () => loads++),
+        size: const Size(300, 700),
+      );
+      expect(find.text('Loading older sessions…'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('rail-load-more')));
+      expect(loads, 0);
+    });
+
+    testWidgets('after a failure the row offers another try', (tester) async {
+      var loads = 0;
+      await pumpChrome(
+        tester,
+        railWith(failed: true, onLoadMore: () => loads++),
+        size: const Size(300, 700),
+      );
+      expect(
+        find.text('Could not load older sessions. Try again'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('rail-load-more')));
+      expect(loads, 1);
+    });
+  });
+
   group('RailLayout', () {
     Widget layout(RailController controller) => RailLayout(
       controller: controller,
@@ -396,8 +476,11 @@ void main() {
         ),
         size: const Size(300, 600),
       );
-      expect(find.text('Still running'), findsOneWidget);
-      expect(find.text('2 agents · 1 command'), findsOneWidget);
+      // One agent runs, one has a result and the command exited: the
+      // heading must not claim they all still run.
+      expect(find.text('Still running'), findsNothing);
+      expect(find.text('Crew'), findsOneWidget);
+      expect(find.text('1 running · 2 finished'), findsOneWidget);
       expect(find.text('Survey quota handling in Codex'), findsOneWidget);
       expect(
         find.text('read codex-rs/core/src/rate_limits.rs'),
@@ -415,6 +498,130 @@ void main() {
       await tester.tap(find.text('cargo test -p bubblepaw-host usage'));
       await tester.tap(find.text('Survey quota handling in Codex'));
       expect(opened, ['test', 'survey']);
+    });
+
+    testWidgets('the heading says Still running only while every entry runs', (
+      tester,
+    ) async {
+      Future<void> show(List<ChildAgent> agents, List<BackgroundJob> jobs) =>
+          pumpChrome(
+            tester,
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 252,
+                child: CrewLedger(agents: agents, jobs: jobs, now: s.now),
+              ),
+            ),
+            size: const Size(300, 400),
+          );
+      final running = ChildAgent(
+        id: 'a',
+        task: 'Check the logs',
+        startedAt: s.now.subtract(const Duration(seconds: 30)),
+      );
+      final asking = ChildAgent(
+        id: 'b',
+        task: 'Pick a colour',
+        state: WorkState.waitingForAnswer,
+        startedAt: s.now.subtract(const Duration(seconds: 30)),
+      );
+      final failed = ChildAgent(
+        id: 'c',
+        task: 'Build it',
+        state: WorkState.failed,
+        endedAt: s.now,
+      );
+      final job = BackgroundJob(
+        id: 'j',
+        command: 'cargo test',
+        startedAt: s.now.subtract(const Duration(seconds: 5)),
+      );
+
+      await show([running, asking], [job]);
+      expect(find.text('Still running'), findsOneWidget);
+      expect(find.text('2 agents · 1 command'), findsOneWidget);
+
+      await show([running], const []);
+      expect(find.text('1 agent'), findsOneWidget);
+
+      await show([running, failed], [job]);
+      expect(find.text('Still running'), findsNothing);
+      expect(find.text('Crew'), findsOneWidget);
+      expect(find.text('2 running · 1 finished'), findsOneWidget);
+
+      await show([failed], const []);
+      expect(find.text('Crew'), findsOneWidget);
+      expect(find.text('1 finished'), findsOneWidget);
+    });
+
+    testWidgets('Cancel is offered on a running agent only', (tester) async {
+      final cancelled = <String>[];
+      await pumpChrome(
+        tester,
+        Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 252,
+            child: CrewLedger(
+              agents: s.agents,
+              jobs: s.jobs,
+              now: s.now,
+              onCancelAgent: (a) => cancelled.add(a.id),
+            ),
+          ),
+        ),
+        size: const Size(300, 600),
+      );
+      // 'survey' runs; 'map' has its result.
+      expect(
+        find.byKey(const ValueKey('ledger-cancel-survey')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('ledger-cancel-map')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('ledger-cancel-survey')));
+      expect(cancelled, ['survey']);
+    });
+
+    testWidgets('without onCancelAgent there is no Cancel', (tester) async {
+      await pumpChrome(
+        tester,
+        Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 252,
+            child: CrewLedger(agents: s.agents, jobs: s.jobs, now: s.now),
+          ),
+        ),
+        size: const Size(300, 600),
+      );
+      expect(find.text('Cancel'), findsNothing);
+    });
+
+    testWidgets('a cancelling agent shows it and cannot be cancelled twice', (
+      tester,
+    ) async {
+      final cancelled = <String>[];
+      await pumpChrome(
+        tester,
+        Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 252,
+            child: CrewLedger(
+              agents: s.agents,
+              jobs: s.jobs,
+              now: s.now,
+              onCancelAgent: (a) => cancelled.add(a.id),
+              cancelling: const {'survey'},
+            ),
+          ),
+        ),
+        size: const Size(300, 600),
+      );
+      expect(find.text('Cancelling…'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('ledger-cancel-survey')));
+      expect(cancelled, isEmpty);
     });
   });
 

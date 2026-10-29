@@ -715,6 +715,10 @@ class _AgentChatPaneState extends State<AgentChatPane> {
           models: models,
           modelId: snap.model,
           showModelPick: models.isNotEmpty,
+          // A host with one default model sets it for every chat.
+          modelTitle: _caps.has(KitCapability.defaultModel)
+              ? 'Default model'
+              : 'Model',
           onModelChanged: (c) => _run(() => backend.setModel(id, c.id)),
           workspaces: profiles,
           workspaceId: snap.profile,

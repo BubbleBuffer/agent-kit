@@ -102,6 +102,7 @@ class AgentComposer extends StatefulWidget {
     this.mentionSectionOf,
     this.runningSendLabel = 'Send',
     this.workspaceTitle = 'Workspace',
+    this.modelTitle = 'Model',
     this.workspaceLocked = false,
     this.keys = const ComposerKeys(),
   });
@@ -194,6 +195,10 @@ class AgentComposer extends StatefulWidget {
 
   /// What the workspace pick chooses (its menu header).
   final String workspaceTitle;
+
+  /// What the model pick is called: its menu header and semantics label.
+  /// "Default model" says the pick applies to every chat.
+  final String modelTitle;
 
   /// The workspace is fixed (shown, not changeable), for example once the
   /// chat has messages.
@@ -586,7 +591,7 @@ class _AgentComposerState extends State<AgentComposer> {
       if (showModel)
         _pickFor(
           key: widget.keys.model,
-          title: 'Model',
+          title: widget.modelTitle,
           choices: widget.models,
           selectedId: widget.modelId,
           onSelected: widget.onModelChanged,

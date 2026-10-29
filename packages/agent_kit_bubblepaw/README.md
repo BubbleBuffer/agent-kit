@@ -38,7 +38,7 @@ in `backend.features` without inventing support for them.
 
 | Kit port | BubblePaw stdio | Support |
 |---|---|---|
-| `listChats` | `session.list` | Partial: every chat the host returns, newest first, or those matching the title query; no cursor; list metadata has no run status |
+| `listChats` | `session.list` | Partial: with feature `session.list.pagination` pages of 100 by `next_cursor`; otherwise every chat, newest first; the title query filters the returned page; list metadata has no run status |
 | `loadChat` | `session.state`, `approval.list` | Yes: canonical messages, tools, runs, queue, todo, question, usage |
 | `events` | `event`, `events.after`, `events.gap` | Yes, snapshot recovery described below |
 | `createChat` | `session.open` | Yes, host-bound workspace |
@@ -51,9 +51,13 @@ in `backend.features` without inventing support for them.
 | `rewind` | `session.rewind` | Partial: creates a new chat, including the selected message; source remains intact |
 | `sendQueuedNow`, `editQueued`, `removeQueued` | No method | Missing |
 | `answerChildQuestion` | `question.answer_child {parent, child, question_id, text}` (feature `question.answer_child`) | Yes; `KitNotFound` for a gone question, `KitConflict` for an answered one |
-| `cancelChild`, `cancelJob` | No compatible advertised feature/operation | Missing |
+| `cancelChild` | `child.cancel {parent, child}` (feature `child.cancel`, capability `children`) | Yes: then the crew is read again |
+| `listProviders` | `providers.list` (feature `providers.list`, capability `providers`) | Yes: names, kinds, whether a key was found, models, default; no key value is read |
+| `setDefaultModel`, `setModel` | `roles.set_main {model}` (feature `roles.set_main`, capability `defaultModel`) | Yes: host-wide default as `provider/model`; `setModel` ignores its chat |
+| `listModels` | `providers.list` (capability `models` needs both features above) | Yes: usable models only (provider has no key requirement or its key was found) |
+| `cancelJob` | No compatible advertised feature/operation | Missing |
 | `archive`, `undoEdit`, profiles | No method | Missing |
-| `fork`, models | No stdio fork/model-list/settings methods | Missing |
+| `fork` | No stdio fork method | Missing |
 | `loadContext` | `context.structure`, `context.events`, `context.view` (feature `context`) | Yes, see "Context and children" |
 | `loadSummary` | `context.summary {kind, id}` (kit ID `episode:<id>` or `chapter:<id>`) | Yes |
 | `loadHistoryRange` | `history.range {first_seq, last_seq, limit}`, paged by `next_seq` | Yes, in host store sequences |

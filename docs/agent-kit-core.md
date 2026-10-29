@@ -164,7 +164,9 @@ Besides the reads, the port has `createChat`, `send` (starts a run or
 queues), `steer`, `followup`, `sendQueuedNow`, `editQueued`, `removeQueued`,
 `cancel`, `resume`, `decideApproval`, `answerQuestion`, `answerChildQuestion`, `rename`, `archive`,
 `fork`, `rewind`, `cancelChild`, `cancelJob`, `undoEdit`, `listModels`,
-`listProfiles`, `setModel`, `setProfile`, and the context reads
+`listProfiles`, `setModel`, `setProfile`, `listProviders` and
+`setDefaultModel` (capabilities `providers` and `defaultModel`; a
+`ProviderSetup` carries whether a key was found, never a key), and the context reads
 `loadContext`, `loadHistoryRange`, `loadSummary`.
 
 ## Fake backend

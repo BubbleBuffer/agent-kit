@@ -36,9 +36,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          asset=bubblepaw-v0.3.0-x86_64-unknown-linux-gnu.tar.gz
-          base=https://github.com/BubbleBuffer/BubblePaw-Core/releases/download/v0.3.0
-          destination="$RUNNER_TEMP/bubblepaw-v0.3.0"
+          asset=bubblepaw-v0.3.1-x86_64-unknown-linux-gnu.tar.gz
+          base=https://github.com/BubbleBuffer/BubblePaw-Core/releases/download/v0.3.1
+          destination="$RUNNER_TEMP/bubblepaw-v0.3.1"
           mkdir -p "$destination"
           cd "$destination"
           curl --fail --location --retry 3 "$base/$asset" --output "$asset"
@@ -47,7 +47,7 @@ jobs:
           test "$(wc -l < selected.sha256)" -eq 1
           sha256sum -c selected.sha256
           tar -xzf "$asset"
-          binary="$destination/bubblepaw-v0.3.0-x86_64-unknown-linux-gnu/bubblepaw"
+          binary="$destination/bubblepaw-v0.3.1-x86_64-unknown-linux-gnu/bubblepaw"
           test -f "$binary"
           chmod +x "$binary"
           printf 'BP_TEST_BIN=%s\n' "$binary" >> "$GITHUB_ENV"

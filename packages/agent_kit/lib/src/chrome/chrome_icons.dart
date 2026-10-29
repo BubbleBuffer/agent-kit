@@ -96,3 +96,5 @@ class ChromeIcon extends StatelessWidget {
   Widget build(BuildContext context) =>
       kitIcon(glyph, size: size, color: color);
 }
+
+const LucideGlyph glyphX = (LucideIcons.x300, LucideIcons.x, LucideIcons.x500);

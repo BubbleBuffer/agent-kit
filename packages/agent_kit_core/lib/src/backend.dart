@@ -4,6 +4,7 @@ library;
 import 'context.dart';
 import 'events.dart';
 import 'models.dart';
+import 'providers.dart';
 import 'snapshot.dart';
 import 'value.dart';
 
@@ -19,7 +20,8 @@ enum KitCapability {
   /// `sendQueuedNow`: deliver a queued message now, as a steer.
   sendQueuedNow,
 
-  /// Child agents in the crew, and `cancelChild`.
+  /// Child agents in the crew. The ledger offers Cancel on a running agent
+  /// only when this is declared, because it needs `cancelChild`.
   children,
 
   /// Background jobs, and `cancelJob`.
@@ -52,8 +54,15 @@ enum KitCapability {
   /// `undoEdit`.
   editUndo,
 
-  /// `listModels` and `setModel`.
+  /// `listModels` and `setModel`. With [defaultModel], the model pick sets
+  /// the host's default for every chat.
   models,
+
+  /// `listProviders`: the host's providers and which model new runs use.
+  providers,
+
+  /// `setDefaultModel`: the model new runs use in every chat.
+  defaultModel,
 
   /// `listProfiles` and `setProfile`.
   profiles,
@@ -498,6 +507,15 @@ abstract interface class AgentBackend implements ChatReader {
 
   /// The profiles a chat can use.
   Future<List<KitChoice>> listProfiles();
+
+  /// The host's providers and models, without keys. Needs `providers`.
+  Future<ProviderSetup> listProviders();
+
+  /// Makes [modelId] (`provider/model`) the model new runs use in every
+  /// chat, and returns the host's setup afterwards. Needs `defaultModel`;
+  /// fails with `KitInvalid` for an unknown provider or model and
+  /// `KitConflict` when a later configuration layer overrides the setting.
+  Future<ProviderSetup> setDefaultModel(String modelId);
 
   /// Sets the model for the chat's next runs.
   Future<void> setModel(String chatId, String modelId);

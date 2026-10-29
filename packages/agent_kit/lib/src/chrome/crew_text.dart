@@ -95,6 +95,42 @@ String jobDetailLine(BackgroundJob job, DateTime now) {
       : 'background · ${formatElapsed(elapsed)}';
 }
 
+/// Whether [agent] is working: running, or waiting for its parent's answer.
+bool agentActive(ChildAgent agent) =>
+    agent.state == WorkState.running ||
+    agent.state == WorkState.waitingForAnswer;
+
+/// The ledger's heading and counts. Every unit running: `Still running`,
+/// `2 agents · 1 command`. Any other mix (a result ready, a failure, a
+/// cancelled agent): the neutral `Crew`, `1 running · 2 finished`.
+({String label, String counts}) crewHeading(
+  List<ChildAgent> agents,
+  List<BackgroundJob> jobs,
+) {
+  final runningAgents = agents.where(agentActive).length;
+  final runningJobs = jobs.where((j) => j.state == JobState.running).length;
+  final running = runningAgents + runningJobs;
+  final total = agents.length + jobs.length;
+  if (running == total) {
+    return (
+      label: 'Still running',
+      counts: crewCounts(agents.length, jobs.length),
+    );
+  }
+  final finished =
+      agents.where((a) => a.state.isEnded).length +
+      jobs.where((j) => j.state != JobState.running).length;
+  final idle = total - running - finished;
+  return (
+    label: 'Crew',
+    counts: [
+      if (running > 0) '$running running',
+      if (finished > 0) '$finished finished',
+      if (idle > 0) '$idle idle',
+    ].join(' · '),
+  );
+}
+
 /// `Still running` header counts: `2 agents · 1 command`.
 String crewCounts(int agents, int jobs) => [
   if (agents > 0) plural(agents, 'agent'),
