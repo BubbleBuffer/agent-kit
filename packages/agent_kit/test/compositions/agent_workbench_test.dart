@@ -99,6 +99,25 @@ void main() {
       expect(find.byType(UsageByModel), findsOneWidget);
     });
 
+    testWidgets('expanded, with nothing running and no usage: no ledger', (
+      tester,
+    ) async {
+      final s = await playedBackend(tester);
+      await pumpApp(
+        tester,
+        AgentWorkbench(
+          backend: s.backend,
+          initialChatId: 'idle',
+          now: s.clock.now(),
+        ),
+        width: 1440,
+        height: 900,
+      );
+      await _settle(tester);
+      expect(find.byType(CrewLedger), findsNothing);
+      expect(find.text('Still running'), findsNothing);
+    });
+
     testWidgets('medium: a strip, no ledger', (tester) async {
       final s = await playedBackend(tester);
       await pumpApp(

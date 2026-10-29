@@ -8,7 +8,7 @@ callbacks, never a backend.
 |---|---|---|
 | `transcript_list.dart` | `TranscriptList`, `TranscriptController`, `TranscriptAnchor`, `JumpToLatestButton` | `.transcript`, `.scroll` |
 | `transcript_item.dart` | `TranscriptItemView` (dispatch on the item), `TranscriptActions` (the host's callbacks and markdown renderer) | |
-| `messages.dart` | `UserBubble`, `AssistantProse`, `SystemLineView`, `NoticeLineView` | `.turn-user`, `.bubble`, `.prose` |
+| `messages.dart` | `UserBubble` (with "Rewind from here" when `TranscriptActions.onRewind` is set), `AssistantProse`, `SystemLineView`, `NoticeLineView` | `.turn-user`, `.bubble`, `.prose` |
 | `markdown.dart`, `code_block.dart` | `MarkdownRenderer` (interface), `LeanMarkdownRenderer` (default), `MarkdownText`, `CodeBlock` | `.prose`, `pre.code` |
 | `activity_group.dart` | `ActivityGroupView`, `EvidenceRow`, `activitySummary`, `ActivitySummaryBuilder` | `.activity`, `.ev-*` |
 | `exec_output.dart` | `ExecOutput` (12-line clamp with fade, footer, callbacks) | `pre.out`, `.ev-foot` |

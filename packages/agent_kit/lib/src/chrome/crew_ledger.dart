@@ -15,7 +15,8 @@ import 'chrome_format.dart';
 import 'chrome_icons.dart';
 import 'crew_text.dart';
 
-/// The ledger. [agents] come from `ChatSnapshot.children`, [jobs] from
+/// The ledger; it draws nothing when there are no agents and no jobs.
+/// [agents] come from `ChatSnapshot.children`, [jobs] from
 /// `ChatSnapshot.jobs`; [now] is the clock for running times.
 class CrewLedger extends StatelessWidget {
   const CrewLedger({
@@ -35,6 +36,8 @@ class CrewLedger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Nothing is running: no heading over no rows.
+    if (agents.isEmpty && jobs.isEmpty) return const SizedBox.shrink();
     final theme = context.bb;
     final clock = now ?? DateTime.now();
     return Semantics(
@@ -55,11 +58,10 @@ class CrewLedger extends StatelessWidget {
                   'Still running',
                   style: ts(const TypeSpec(12, 16, 700), theme.muted),
                 ),
-                if (agents.isNotEmpty || jobs.isNotEmpty)
-                  Text(
-                    crewCounts(agents.length, jobs.length),
-                    style: ts(const TypeSpec(12, 16, 500), theme.faint),
-                  ),
+                Text(
+                  crewCounts(agents.length, jobs.length),
+                  style: ts(const TypeSpec(12, 16, 500), theme.faint),
+                ),
               ],
             ),
           ),

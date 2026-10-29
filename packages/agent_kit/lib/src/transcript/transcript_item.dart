@@ -45,6 +45,7 @@ class TranscriptActions {
     this.onViewContext,
     this.onAnswerChildQuestion,
     this.onResume,
+    this.onRewind,
     this.summaryOf,
     this.activityFooter,
     this.openEveryEdit = false,
@@ -87,6 +88,9 @@ class TranscriptActions {
   /// "Resume" on an interrupted notice.
   final VoidCallback? onResume;
 
+  /// "Rewind from here" on a user message. Null leaves it out.
+  final ValueChanged<UserMessage>? onRewind;
+
   /// Replaces the summary line of activity groups (default: verb counts).
   final ActivitySummaryBuilder? summaryOf;
 
@@ -113,7 +117,11 @@ class TranscriptItemView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => switch (item) {
-    final UserMessage m => UserBubble(m, onRefTap: actions.onRefTap),
+    final UserMessage m => UserBubble(
+      m,
+      onRefTap: actions.onRefTap,
+      onRewind: actions.onRewind == null ? null : () => actions.onRewind!(m),
+    ),
     final AssistantMessage m => AssistantProse(
       m,
       renderer: actions.markdown,

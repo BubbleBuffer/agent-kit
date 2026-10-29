@@ -431,6 +431,12 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
 
   Widget? _ledger(BuildContext context, ChatSnapshot snap) {
     final clock = widget.now;
+    // Nothing running and no usage to show: no side column at all.
+    if (snap.children.isEmpty &&
+        snap.jobs.isEmpty &&
+        widget.modelUsage.isEmpty) {
+      return null;
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -443,7 +449,8 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
           onOpenJob: widget.onOpenJob,
         ),
         if (widget.modelUsage.isNotEmpty) ...[
-          const SizedBox(height: 16),
+          if (snap.children.isNotEmpty || snap.jobs.isNotEmpty)
+            const SizedBox(height: 16),
           UsageByModel(models: widget.modelUsage, usage: snap.usage),
         ],
       ],

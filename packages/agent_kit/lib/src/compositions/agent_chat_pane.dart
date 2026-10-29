@@ -377,6 +377,9 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       onResume: _caps.has(KitCapability.resume)
           ? () => _run(() => backend.resume(widget.chatId))
           : null,
+      onRewind: _caps.has(KitCapability.rewind)
+          ? (message) => _run(() => backend.rewind(widget.chatId, message.id))
+          : null,
       now: widget.now ?? a.now,
     );
   }

@@ -368,6 +368,13 @@ void main() {
       expect(find.byType(SingleChildScrollView), findsNothing);
     });
 
+    testWidgets('the ledger draws nothing without agents and jobs', (
+      tester,
+    ) async {
+      await pumpChrome(tester, const CrewLedger(), size: const Size(300, 100));
+      expect(find.text('Still running'), findsNothing);
+    });
+
     testWidgets('the ledger counts, lists and opens its entries', (
       tester,
     ) async {

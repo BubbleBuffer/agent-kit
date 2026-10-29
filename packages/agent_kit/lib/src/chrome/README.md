@@ -17,7 +17,7 @@ Status always goes through `StatusMark`. The rail follows the theme (see
 | `rail_model.dart` | `RailController` (`hidden` above compact, `open` when compact), `RailScope`, `SessionGroup` |
 | `chat_header.dart` | `ChatHeader` (tile, title, `StatusMark` pill, branch, workspace toggle, session menu), `ContextMeter` (a button when `onOpenContext` is set), `ChromeMenuItem` |
 | `crew_strip.dart` | `CrewStrip`: chips for agents and jobs, scrolling sideways; a child waiting for its parent reads `asking parent` |
-| `crew_ledger.dart` | `CrewLedger`: the "Still running" column |
+| `crew_ledger.dart` | `CrewLedger`: the "Still running" column; draws nothing without agents and jobs |
 | `usage_view.dart` | `UsageByModel` and `ModelUsage`: tokens by model |
 | `chrome_format.dart` | `groupSessions`, `railDetail`, `chatAge`, `formatElapsed`, `formatTokens` |
 
