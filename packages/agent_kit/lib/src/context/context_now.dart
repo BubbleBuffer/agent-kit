@@ -431,7 +431,14 @@ class ContextDetail extends StatelessWidget {
             '${messagesText(s.messageCount)}',
       ),
       if (ordinals.isNotEmpty) ('Episodes', ordinals),
-      ('Written', [whenText(s.createdAt, now), ?s.model].join(' · ')),
+      if (s.createdAt != null || s.model != null)
+        (
+          'Written',
+          [
+            if (s.createdAt != null) whenText(s.createdAt!, now),
+            ?s.model,
+          ].join(' · '),
+        ),
       ('Kind', kindText),
     ];
     final pct = s.sourceTokens <= 0

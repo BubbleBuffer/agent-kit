@@ -227,6 +227,81 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('a missing window, sizes and write time render as absent', (
+      tester,
+    ) async {
+      final base = quotaContextDetails();
+      final view = ContextView(
+        applyCap: 84000,
+        blocks: quotaContextView().blocks,
+      );
+      final details = ContextDetails(
+        chapters: base.chapters,
+        episodes: base.episodes,
+        summaries: [
+          for (final s in base.summaries)
+            ContextSummary(
+              id: s.id,
+              kind: s.kind,
+              title: s.title,
+              firstSeq: s.firstSeq,
+              lastSeq: s.lastSeq,
+              messageCount: s.messageCount,
+              episodeIds: s.episodeIds,
+              chapterId: s.chapterId,
+              sourceTokens: s.sourceTokens,
+              summaryTokens: s.summaryTokens,
+              applied: s.applied,
+              closed: s.closed,
+            ),
+        ],
+        events: [
+          for (final e in base.events)
+            ContextEvent(
+              id: e.id,
+              kind: e.kind,
+              at: e.at,
+              firstSeq: e.firstSeq,
+              lastSeq: e.lastSeq,
+              episodeIds: e.episodeIds,
+              trigger: e.trigger,
+              summaryId: e.summaryId,
+            ),
+        ],
+      );
+      await pumpKit(
+        tester,
+        _pane(view: view, details: details),
+        size: wide,
+      );
+      await _settle(tester);
+      expect(find.textContaining('of 128'), findsNothing);
+      expect(find.textContaining('null'), findsNothing);
+      expect(find.textContaining('NaN'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await pumpKit(
+        tester,
+        _pane(view: view, details: details, tab: ContextTab.compactions),
+        size: wide,
+      );
+      await _settle(tester);
+      expect(find.textContaining('→'), findsNothing);
+      expect(find.textContaining('saved'), findsNothing);
+      expect(tester.takeException(), isNull);
+      final controller = ContextPaneController();
+      await pumpKit(
+        tester,
+        _pane(view: view, details: details, controller: controller),
+        size: wide,
+      );
+      await _settle(tester);
+      controller.showNow(summaryId: 'sum-e3');
+      await _settle(tester);
+      expect(find.byType(ContextDetail), findsOneWidget);
+      expect(find.textContaining('Written'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('without details the pane still builds', (tester) async {
       await pumpKit(
         tester,

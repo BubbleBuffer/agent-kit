@@ -53,7 +53,7 @@ below describes gateway operations, not permissions granted by that adapter.
 | Durable sequence | Adapter reserves 16 native kit sequence positions per host `HarnessEvent.sequence`, permitting multiple kit events per host event. Snapshots use the final position. Replay always converts back to host sequence. | `AgentEvent.sequence`. |
 | Transient sequence and offset | `paragraph` and `text_delta` carry the last host sequence. Adapter reconciles prefixes, counts UTF-16 offsets and never persists them. Stdio state lacks `live_seen`; ambiguous fragments at the snapshot cursor are skipped. | Adapter counts from `streamingText`. |
 | `loadHistoryRange` | **Yes** (feature `context`): `history.range {first_seq,last_seq,limit}` paged by `next_seq`. The kit sequence is the host's store `seq`: increasing, not necessarily dense, so span-derived counts are upper bounds. | Older-history paging is not mapped here. |
-| `loadContext`, `loadSummary` | **Yes** (feature `context`): `context.structure`, `context.events`, `context.view`; `context.summary {kind,id}` with kit IDs `episode:<id>` / `chapter:<id>`. Host message IDs are resolved to sequences once and cached. The window comes from `session.state` usage; the reserve is window minus the view's `threshold`. | No mapping qualified here. |
+| `loadContext`, `loadSummary` | **Yes** (feature `context`): `context.structure`, `context.events`, `context.view`; `context.summary {kind,id}` with kit IDs `episode:<id>` / `chapter:<id>`. Host message IDs are resolved to sequences once and cached. The window comes from `session.state` usage when it is at or above the view's `threshold`; the reserve is then window minus threshold, else both are absent. | No mapping qualified here. |
 
 ## Events
 
@@ -138,13 +138,11 @@ is changed by the capability and read-port work.
 ## Remaining port gaps
 
 The adapter does not introduce snapshot-backed message ordinals and leaves the
-core contract unchanged. Over Core v0.3.0 stdio it works around these limits:
-`ContextEvent.tokensBefore` is required but the host's `tokens_before` can be
-null (the adapter uses the covered episodes' source size, else 0); `ContextView`
-requires a window and reserve while the host's view has only a threshold and
-budget (the window comes from usage; without it, window equals threshold and the
-reserve is 0); `ContextSummary.createdAt` is required but structure carries no
-creation time; host sequences are not dense, so `messageCount` is an upper bound;
-`pendingEpisodeIds` is not derivable. The core also groups all context operations
+core contract unchanged. `ContextEvent.tokensBefore` and `tokensAfter`,
+`ContextView.window` and `responseReserve`, and `ContextSummary.createdAt` are
+nullable, so the adapter reports exactly what Core v0.3.0 sends (a view has only
+a threshold; the window appears only when the session usage reports one at or
+above it). Still worked around: host sequences are not dense, so `messageCount`
+is an upper bound, and `pendingEpisodeIds` is not derivable. The core also groups all context operations
 behind one capability, seals error subtypes, returns void from rewind and treats
 all tool boundaries as durable. These limits are recorded in the adapter README.

@@ -63,7 +63,7 @@ window, replaced whole by a `context.changed` event. Everything a host does
 not record is `null` and left out of the JSON; a widget hides a null, never
 shows zero.
 
-- `ContextView {window, applyCap, responseReserve, blocks, pendingEpisodeIds}`
+- `ContextView {window?, applyCap, responseReserve?, blocks, pendingEpisodeIds}`
   with the sum getters `totalTokens`, `openingTokens`, `memoryTokens` and
   `liveTokens` (null when a block lacks its tokens).
 - `ContextBlock {kind, label, tokens?, firstSeq?, lastSeq?, summaryId?}`;
@@ -74,7 +74,7 @@ shows zero.
   (`ContextChapter`), `episodes` (`ContextEpisode`), `summaries`
   (`ContextSummary`, text possibly empty until `loadSummary`) and `events`
   (`ContextEvent`), with lookups `chapter(id)`, `episode(id)`, `summary(id)`.
-- `ContextEvent {id, kind, at, firstSeq, lastSeq, tokensBefore, tokensAfter,
+- `ContextEvent {id, kind, at, firstSeq, lastSeq, tokensBefore?, tokensAfter?,
   summaryId?, trigger?, triggerText?, inputBefore?, inputAfter?}`;
   `ContextEventKind` is `episodeWritten`, `chapterClosed`, `applied`;
   `ContextTrigger` is `pressure`, `emergency`, `sourceSize`, `subjectChange`,

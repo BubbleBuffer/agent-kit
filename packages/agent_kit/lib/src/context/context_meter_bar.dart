@@ -47,14 +47,17 @@ class ContextMeterBar extends StatelessWidget {
     final segments = contextSegments(t, view);
     final total = view.totalTokens;
     final window = view.window;
-    final percent = total == null || window <= 0
+    // Without a window the bar is scaled to the compaction cap, and no
+    // percentage or limit is shown.
+    final base = window ?? view.applyCap;
+    final percent = total == null || window == null || window <= 0
         ? null
         : (total * 100 / window).round();
     final cap = view.applyCap;
     final known = segments.fold<int>(0, (a, s) => a + s.tokens);
     final label = StringBuffer();
     if (total != null) label.write('${ctxTokens(total)} of ');
-    label.write('${ctxLimit(window)} tokens');
+    label.write(window == null ? 'tokens' : '${ctxLimit(window)} tokens');
     for (final s in segments) {
       label.write(', ${s.label.toLowerCase()} ${ctxTokens(s.tokens)}');
     }
@@ -85,7 +88,9 @@ class ContextMeterBar extends StatelessWidget {
                   ],
                   Flexible(
                     child: Text(
-                      '${total != null ? 'of ' : ''}${ctxLimit(window)} tokens',
+                      window == null
+                          ? 'tokens'
+                          : '${total != null ? 'of ' : ''}${ctxLimit(window)} tokens',
                       style: head,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -112,7 +117,7 @@ class ContextMeterBar extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, box) {
                 final w = box.maxWidth;
-                final scale = window <= 0 ? 1.0 : w / window;
+                final scale = base <= 0 ? 1.0 : w / base;
                 return Stack(
                   clipBehavior: Clip.none,
                   children: [
@@ -149,7 +154,7 @@ class ContextMeterBar extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (cap > 0 && cap <= window)
+                    if (cap > 0 && cap <= base)
                       Positioned(
                         left: cap * scale - 1,
                         top: -3,

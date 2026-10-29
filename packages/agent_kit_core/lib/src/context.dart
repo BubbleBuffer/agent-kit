@@ -105,9 +105,9 @@ final class ContextBlock extends KitValue {
 final class ContextView extends KitValue {
   /// Creates a view.
   ContextView({
-    required this.window,
+    this.window,
     required this.applyCap,
-    required this.responseReserve,
+    this.responseReserve,
     List<ContextBlock> blocks = const [],
     List<String> pendingEpisodeIds = const [],
     this.appliedAt,
@@ -116,22 +116,22 @@ final class ContextView extends KitValue {
 
   /// Reads a view from JSON.
   factory ContextView.fromJson(Json j) => ContextView(
-    window: j.integer('window'),
+    window: j.intOpt('window'),
     applyCap: j.integer('applyCap'),
-    responseReserve: j.integer('responseReserve'),
+    responseReserve: j.intOpt('responseReserve'),
     blocks: j.listOf('blocks', ContextBlock.fromJson),
     pendingEpisodeIds: j.strings('pendingEpisodeIds'),
     appliedAt: j.timeOpt('appliedAt'),
   );
 
-  /// The context window in tokens.
-  final int window;
+  /// The context window in tokens; null when the host does not report it.
+  final int? window;
 
   /// The input size near which a compaction is applied.
   final int applyCap;
 
-  /// Tokens kept free for the response.
-  final int responseReserve;
+  /// Tokens kept free for the response; null when the host does not report it.
+  final int? responseReserve;
 
   /// The blocks, in the order the model receives them.
   final List<ContextBlock> blocks;
@@ -364,7 +364,7 @@ final class ContextSummary extends KitValue {
     required this.messageCount,
     required this.sourceTokens,
     required this.summaryTokens,
-    required this.createdAt,
+    this.createdAt,
     this.text = '',
     List<String> episodeIds = const [],
     this.chapterId,
@@ -390,7 +390,7 @@ final class ContextSummary extends KitValue {
     chapterId: j.strOpt('chapterId'),
     sourceTokens: j.integer('sourceTokens'),
     summaryTokens: j.integer('summaryTokens'),
-    createdAt: j.time('createdAt'),
+    createdAt: j.timeOpt('createdAt'),
     model: j.strOpt('model'),
     closed: j.boolean('closed'),
     applied: j.boolean('applied'),
@@ -430,8 +430,8 @@ final class ContextSummary extends KitValue {
   /// The size of the summary in tokens.
   final int summaryTokens;
 
-  /// When it was written.
-  final DateTime createdAt;
+  /// When it was written; null when the host does not record it.
+  final DateTime? createdAt;
 
   /// The model that wrote it.
   final String? model;
@@ -509,8 +509,8 @@ final class ContextEvent extends KitValue {
     required this.at,
     required this.firstSeq,
     required this.lastSeq,
-    required this.tokensBefore,
-    required this.tokensAfter,
+    this.tokensBefore,
+    this.tokensAfter,
     this.trigger,
     this.triggerText,
     List<String> episodeIds = const [],
@@ -535,8 +535,8 @@ final class ContextEvent extends KitValue {
     firstSeq: j.integer('firstSeq'),
     lastSeq: j.integer('lastSeq'),
     episodeIds: j.strings('episodeIds'),
-    tokensBefore: j.integer('tokensBefore'),
-    tokensAfter: j.integer('tokensAfter'),
+    tokensBefore: j.intOpt('tokensBefore'),
+    tokensAfter: j.intOpt('tokensAfter'),
     inputBefore: j.intOpt('inputBefore'),
     inputAfter: j.intOpt('inputAfter'),
     summaryId: j.strOpt('summaryId'),
@@ -567,11 +567,11 @@ final class ContextEvent extends KitValue {
   /// The episodes it covers.
   final List<String> episodeIds;
 
-  /// The covered originals' size.
-  final int tokensBefore;
+  /// The covered originals' size; null when the host does not record it.
+  final int? tokensBefore;
 
-  /// The size of what replaces them.
-  final int tokensAfter;
+  /// The size of what replaces them; null when the host does not record it.
+  final int? tokensAfter;
 
   /// The request's input size before the apply; applied events only, and
   /// null when the host does not record it.

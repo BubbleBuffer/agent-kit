@@ -100,7 +100,8 @@ cannot be resolved is left out of `loadContext`.
 **`ChatSnapshot.context`.** `context.view` has `threshold`, the input size at
 which a compaction is applied (`applyCap`), and the blocks. It has no window: the
 window is `usage.context.window_tokens` of `session.state`, the reserve is the
-window minus the cap, and without a window they are the cap and zero.
+window minus the cap; without a window (or one below the cap) both are null,
+which the widgets show as absent.
 `pendingEpisodeIds` stays empty (not derivable over stdio). `appliedAt` is the
 time of the latest `applied` fact. A failing context read leaves `context` null
 rather than failing the chat. `context.view` carries the frozen prefix messages
@@ -109,9 +110,9 @@ too; each chat load reads it once.
 **`loadContext`.** `context.structure` (episodes, subject chapters, legacy
 chapters), `context.events` and `context.view`. Summary bodies stay empty;
 `loadSummary` has them. A summary's creation time is the time of the fact that
-wrote it (the UTC epoch when none is recorded); it is `applied` when the view
-holds it. The host's `tokens_before` is null for inherited coverage and the kit
-field is not nullable: it takes the covered episodes' source size, else 0.
+wrote it (null when none is recorded); it is `applied` when the view
+holds it. The host's `tokens_before` and `tokens_after` stay null when absent
+(`ContextEvent.tokensBefore` and `tokensAfter` are nullable).
 
 **`loadHistoryRange`.** `history.range` with `first_seq`/`last_seq`, pages of 1000
 followed by `next_seq`, at most 20 pages. Rows carry a one-line preview; system
@@ -304,8 +305,6 @@ Requested core changes, kept outside this implementation's scope:
 - Split context details, summary loading and history paging capabilities; use
   canonical message-ID cursors for history. Core v0.3.0 reads ranges by ID or by
   store sequence; the kit's `messageCount` assumes a dense sequence.
-- Allow an unknown `ContextEvent.tokensBefore`, a context view without a window
-  and reserve, and a summary without a creation time (v0.3.0 reports none).
 - Express the single-item and no-skip limits beyond the supported question kinds.
 - Carry transient tool boundaries and text replacement/reset explicitly.
 - Allow unknown question/queue timestamps and unknown session-list status.
