@@ -128,21 +128,20 @@ from also being kit errors; this is a requested port change, not a core edit.
 Pending approvals and interrupted runs recovered by the host are reflected by
 fresh snapshots, even where recovery itself emits no durable event.
 
-## Open rewind semantics
+## Rewind semantics
 
 Core describes an in-place rewind to before the selected item and returns void.
 BubblePaw instead creates a new chat including that item; its adapter exposes
-the resulting chat separately. This disagreement remains open; neither behavior
-is changed by the capability and read-port work.
+the resulting chat separately.
 
-## Remaining port gaps
+## Known port limits
 
 The adapter does not introduce snapshot-backed message ordinals and leaves the
 core contract unchanged. `ContextEvent.tokensBefore` and `tokensAfter`,
 `ContextView.window` and `responseReserve`, and `ContextSummary.createdAt` are
 nullable, so the adapter reports exactly what Core v0.3.0 sends (a view has only
 a threshold; the window appears only when the session usage reports one at or
-above it). Still worked around: host sequences are not dense, so `messageCount`
+above it). Worked around: host sequences are not dense, so `messageCount`
 is an upper bound, and `pendingEpisodeIds` is not derivable. The core also groups all context operations
 behind one capability, seals error subtypes, returns void from rewind and treats
 all tool boundaries as durable. These limits are recorded in the adapter README.

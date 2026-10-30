@@ -1,0 +1,50 @@
+# Publish docs/ to the GitHub wiki. Pull requests only build the pages and
+# check that every link and image resolves; a push to main replaces the wiki
+# content (the wiki is generated, edits belong in docs/).
+name: wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "scripts/build_wiki.py"
+      - ".github/workflows/wiki.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "scripts/build_wiki.py"
+      - ".github/workflows/wiki.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  wiki:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Convert docs/ to wiki pages
+        run: python3 scripts/build_wiki.py "$RUNNER_TEMP/wiki"
+      - name: Publish
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wiki"
+          git init -q -b master
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publish docs/ at ${GITHUB_SHA::7}"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git"
+          git push --force origin master

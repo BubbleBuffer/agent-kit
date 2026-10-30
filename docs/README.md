@@ -1,6 +1,6 @@
 # agent-kit docs
 
-How the kit works now. Plans and decisions live in the owner's notes.
+How the kit works now. The same pages are published on the [GitHub wiki](https://github.com/BubbleBuffer/agent-kit/wiki).
 
 - [Package layout and pinning](package-layout.md): the workspace, what each package holds, where it came from, how consumers pin a tag and how to release.
 - [agent_kit_core](agent-kit-core.md): chat view models, the backend port, the event reducer and the scripted fake backend (pure Dart).
