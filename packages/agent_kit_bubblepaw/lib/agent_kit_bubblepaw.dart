@@ -3,3 +3,4 @@ library;
 
 export 'src/backend.dart';
 export 'src/errors.dart';
+export 'src/transport.dart';
