@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:agent_kit_bubblepaw/agent_kit_bubblepaw.dart';
-import 'package:agent_kit_bubblepaw/src/transport.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
 
 import 'live_check_support.dart';
