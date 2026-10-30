@@ -307,7 +307,8 @@ class StdioBubblePawTransport implements BubblePawTransport {
     if (hasError) {
       pending.completer.completeError(
         _classifyRpcError(
-          (error as Map<String, Object?>)['message']! as String,
+          (error as Map<String, Object?>)['code']! as int,
+          error['message']! as String,
         ),
       );
     } else {
@@ -315,7 +316,15 @@ class StdioBubblePawTransport implements BubblePawTransport {
     }
   }
 
-  static BubblePawException _classifyRpcError(String message) {
+  /// The host-API code for a run that needs a model before any provider is
+  /// configured (BubblePaw Core v0.5.1). Its message names config keys and
+  /// host methods, never credentials, so it is kept for the user.
+  static const _noProviderCode = -32004;
+
+  static BubblePawException _classifyRpcError(int code, String message) {
+    if (code == _noProviderCode) {
+      return BubblePawException('noProvider', message);
+    }
     // v0.2.2 uses -32000 for all command errors. Inspect its known error
     // phrases privately, then discard arbitrary host text and identifiers.
     final text = message.toLowerCase();

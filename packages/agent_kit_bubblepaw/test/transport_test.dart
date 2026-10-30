@@ -135,6 +135,44 @@ void main() {
     );
   }
 
+  test('code -32004 is noProvider and keeps the host message', () async {
+    final peer = _Peer();
+    final transport = peer.transport();
+    addTearDown(() => _cleanup(transport, peer));
+    peer.onRequest = (request) => peer.send({
+      'jsonrpc': '2.0',
+      'id': request['id'],
+      'error': {'code': -32004, 'message': 'No provider is configured.'},
+    });
+    await expectLater(
+      transport.request('run.start'),
+      throwsA(
+        isA<BubblePawException>()
+            .having((error) => error.code, 'code', 'noProvider')
+            .having(
+              (error) => error.message,
+              'message',
+              'No provider is configured.',
+            ),
+      ),
+    );
+  });
+
+  test('other codes keep classifying by message', () async {
+    final peer = _Peer();
+    final transport = peer.transport();
+    addTearDown(() => _cleanup(transport, peer));
+    peer.onRequest = (request) => peer.send({
+      'jsonrpc': '2.0',
+      'id': request['id'],
+      'error': {'code': -32003, 'message': 'Unrecognized provider failure'},
+    });
+    await expectLater(
+      transport.request('run.start'),
+      throwsA(_code('rpcError')),
+    );
+  });
+
   test(
     'deadline rejects only its request and tolerates its late response',
     () async {

@@ -590,6 +590,30 @@ void main() {
     expect(peer.calls.skip(before).map((call) => call.method), ['run.start']);
   });
 
+  test('send maps a no-provider host error to KitNeedsSetup', () async {
+    final peer = _BackendPeer();
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    peer.handler = (method, params) => switch (method) {
+      'run.start' => const _RpcFailure('No provider is configured.', -32004),
+      _ => peer.defaultResponse(method, params),
+    };
+    await expectLater(
+      backend.send('s1', 'hello'),
+      throwsA(
+        isA<KitNeedsSetup>()
+            .having((error) => error.code, 'code', 'needsSetup')
+            .having((error) => error.message, 'message',
+                'No provider is configured.'),
+      ),
+    );
+    peer.handler = (method, params) => switch (method) {
+      'run.start' => const _RpcFailure('Provider failed', -32003),
+      _ => peer.defaultResponse(method, params),
+    };
+    await expectLater(backend.send('s1', 'hello'), throwsA(isA<KitFailed>()));
+  });
+
   test('send preserves busy when follow-up was not negotiated', () async {
     final peer = _BackendPeer()..features = ['sessions', 'events'];
     final backend = await peer.connect();
@@ -1605,8 +1629,9 @@ class _Call {
 }
 
 class _RpcFailure {
-  const _RpcFailure(this.message);
+  const _RpcFailure(this.message, [this.code = -32000]);
   final String message;
+  final int code;
 }
 
 class _BackendPeer {
@@ -1701,7 +1726,7 @@ class _BackendPeer {
       'jsonrpc': '2.0',
       'id': request['id'],
       if (response is _RpcFailure)
-        'error': {'code': -32000, 'message': response.message}
+        'error': {'code': response.code, 'message': response.message}
       else
         'result': response,
     });

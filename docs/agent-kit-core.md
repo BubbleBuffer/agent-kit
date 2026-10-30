@@ -158,7 +158,8 @@ supported operations; absent command capabilities fail with `KitUnsupported`.
 limits, with defaults preserving existing backend behavior.
 Commands return futures and fail with a `KitError` subclass whose `message`
 is safe to show: `KitUnsupported`, `KitNotFound`, `KitBusy`, `KitConflict`,
-`KitInvalid`, `KitUnavailable`, `KitDenied`, `KitFailed`.
+`KitInvalid`, `KitUnavailable`, `KitDenied`, `KitNeedsSetup`, `KitFailed`.
+`KitNeedsSetup` means the backend cannot do this until something is configured (a model provider, say); its `message` is the backend's own text and says what, and a retry works after the setup.
 
 Besides the reads, the port has `createChat`, `send` (starts a run or
 queues), `steer`, `followup`, `sendQueuedNow`, `editQueued`, `removeQueued`,

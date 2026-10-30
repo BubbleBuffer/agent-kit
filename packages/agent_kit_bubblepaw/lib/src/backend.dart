@@ -183,6 +183,7 @@ final class BubblePawBackend
         'conflict' => const KitConflict(),
         'invalid' => const KitInvalid(),
         'denied' => const KitDenied(),
+        'noProvider' => KitNeedsSetup(error.message),
         'requestTimeout' ||
         'transportClosed' ||
         'writeFailed' => const KitUnavailable(),
