@@ -1,0 +1,1 @@
+Cat-eared transcript panel over two context layers: transcript plus context and workspace.

@@ -1,0 +1,1 @@
+A cat-eared prompt field with caret and a send button (Lucide arrow-up, ISC): the composer.
