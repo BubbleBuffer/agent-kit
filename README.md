@@ -21,6 +21,8 @@
 - **Two compositions.** `AgentChatPane` is one chat and `AgentWorkbench` is the whole workspace. Give either an `AgentBackend` and it maps every user action to a backend command.
 - **A backend port, not a backend.** `agent_kit_core` holds the chat models, the `ChatReader` and `AgentBackend` ports, an event reducer over snapshots and events, typed command errors and a scripted backend, in pure Dart with no Flutter. Widgets read semantic roles from `BbTheme`, light and dark, in three size classes.
 
+The agent UI in [BubblePaw Desktop](https://github.com/BubbleBuffer/BubblePaw-Desktop) and [Scratch](https://github.com/BubbleBuffer/Scratch) comes from this kit. Desktop uses all three packages; Scratch uses `agent_kit` and `agent_kit_core` for its chat outline and dev pane.
+
 <p>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="design/readme/shots/composer-dark.png">
@@ -42,7 +44,7 @@ The shots are the gallery's golden tests, rendered on Linux CI with the bundled 
 
 ```mermaid
 flowchart LR
-  host[Host app] --> kit[agent_kit]
+  host["Host app<br/>(BubblePaw Desktop, Scratch)"] --> kit[agent_kit]
   host --> bp[agent_kit_bubblepaw]
   kit --> core[agent_kit_core]
   bp --> core
@@ -54,7 +56,7 @@ flowchart LR
 |---|---|
 | [`agent_kit_core`](packages/agent_kit_core) | Pure Dart chat models, the `ChatReader` and `AgentBackend` ports, capabilities and constraints, the event reducer, typed command errors and a scripted backend. |
 | [`agent_kit`](packages/agent_kit) | Flutter agent UI: theme, status, transcript, composer, chrome, context, workspace and compositions. Depends on `agent_kit_core` and on [bb-ui](https://github.com/BubbleBuffer/bb-ui). |
-| [`agent_kit_bubblepaw`](packages/agent_kit_bubblepaw) | Pure Dart backend that drives a BubblePaw child process over stdio JSON-RPC. It is the current BubblePaw client; this README promises nothing about its future. |
+| [`agent_kit_bubblepaw`](packages/agent_kit_bubblepaw) | Pure Dart backend that drives a BubblePaw child process over stdio JSON-RPC. |
 
 [`apps/gallery`](apps/gallery) holds the agent scenes, the scripted backend, an optional live BubblePaw mode, and the fonts and goldens the tests use.
 
