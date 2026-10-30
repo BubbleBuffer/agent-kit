@@ -3,7 +3,6 @@
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
-import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
 ProviderSetup _setup({required bool reload}) => ProviderSetup(
