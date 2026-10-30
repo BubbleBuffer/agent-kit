@@ -118,7 +118,9 @@ tests are distinct from live-model acceptance; neither proves a paid provider.
 BubblePaw stdio wraps command failures in JSON-RPC `-32000` with error strings.
 The adapter recognizes source-backed busy/not-found/conflict/invalid/denied
 patterns and produces safe kit errors; other RPC failures use a fixed failure
-message. Raw provider/command errors are not logged. A busy send alone is retried
+message, except code `-32004` (Core v0.5.1, a run with no provider configured): that one
+becomes `KitNeedsSetup` carrying the host's message, which names the config keys and
+host methods to set up. Raw provider/command errors are not logged. A busy send alone is retried
 as follow-up, preventing duplicate admission after unrelated failures.
 
 Protocol mismatch is typed with expected and actual versions. Child exit is typed

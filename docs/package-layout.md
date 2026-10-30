@@ -95,8 +95,8 @@ all existing golden PNGs stay here; neutral-gallery goldens live in bb-ui.
 1. Release the required bb-ui tag before updating its Git pin here. This split
    requires `bb-ui` tag `v0.6.0` to exist before dependency resolution can pass.
 2. Merge the agent-kit change with hosted CI green. Bump the three library
-   versions together; the current release is `0.16.2`.
-3. Tag the green commit on `main` as `v0.16.2` and push the tag.
+   versions together; the current release is `0.16.3`.
+3. Tag the green commit on `main` as `v0.16.3` and push the tag.
 
 Applications update their pins and lockfiles when adopting a release. This
 workspace ignores its generated `pubspec.lock`.

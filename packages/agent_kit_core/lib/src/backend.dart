@@ -284,7 +284,7 @@ sealed class KitError implements Exception {
   final String message;
 
   /// A stable code: `unsupported`, `notFound`, `busy`, `conflict`,
-  /// `invalid`, `unavailable`, `denied` or `failed`.
+  /// `invalid`, `unavailable`, `denied`, `needsSetup` or `failed`.
   String get code;
 
   @override
@@ -357,6 +357,17 @@ final class KitDenied extends KitError {
 
   @override
   String get code => 'denied';
+}
+
+/// The backend cannot do this until something is configured, such as a model
+/// provider. [message] is the backend's own text and says what to set up; it
+/// carries no secrets. Retry once the setup is done.
+final class KitNeedsSetup extends KitError {
+  /// Creates the error.
+  const KitNeedsSetup([super.message = 'The backend needs setup first.']);
+
+  @override
+  String get code => 'needsSetup';
 }
 
 /// Any other failure, with a generic or adapter-written message.
