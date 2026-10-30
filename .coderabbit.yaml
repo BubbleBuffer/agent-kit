@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+reviews:
+  profile: chill
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!**/goldens/**"
+  path_instructions:
+    - path: "packages/agent_kit_core/{lib,test}/**"
+      instructions: >-
+        Keep core pure Dart with no runtime dependencies (no Flutter).
+        Preserve JSON round-trips, durable sequence deduplication, transient
+        offsets and gap reloads as in docs/agent-kit-core.md. Treat
+        test/fixtures/*.json and paired snapshots as the event contract.
+    - path: "packages/agent_kit_bubblepaw/{lib,test}/**"
+      instructions: >-
+        Check mappings against the stdio contract in docs/backend-mapping.md,
+        not HTTP or Rust APIs. Gate optional commands on negotiated features and
+        keep the 16-slot kit sequence per host sequence and replay recovery.
+        Keep raw host stderr and provider keys out of errors. Keep tests that
+        need the host binary opt-in via BP_TEST_BIN.
+    - path: "packages/agent_kit/lib/src/**"
+      instructions: >-
+        Derive layout from SizeClass (container width), not MediaQuery.size,
+        and draw status through StatusMark. Export public widgets through the
+        folder and package barrels, and update the matching docs/components sheet.
+        Hosts own controllers: never dispose a supplied ScrollController or
+        OutlineController. Workspace panes keep state by tab ID, and a closed
+        compact sheet must ignore pointers and be excluded from semantics.
+    - path: "packages/agent_kit/lib/src/{composer,compositions}/**"
+      instructions: >-
+        Keep text and mentions when a send fails. Question answers must carry an
+        entry for every item ID, skipped items included. Scope approval keys to
+        the focused ApprovalKeyPane. Close the ChatFeed when the backend or chat
+        changes, and honour capabilities and explicit paneActions overrides.
+    - path: "apps/gallery/lib/**"
+      instructions: >-
+        Keep the default ScriptedBackend and ManualClock deterministic. Live mode
+        needs BP_BIN, BP_WORKSPACE and BP_DATA together; scripted mode (web too)
+        must keep working.
+    - path: "{packages/agent_kit,apps/gallery}/test/**"
+      instructions: >-
+        Load fonts through flutter_test_config.dart (loadKitFonts). Tag
+        screenshot tests golden and cover light and dark. Goldens are rendered
+        only by the pinned Linux CI job: do not accept locally rendered PNGs.
+    - path: ".github/workflows/**"
+      instructions: >-
+        Give write permissions only to the job that needs them. Keep the
+        fork/Dependabot guard on SARIF upload and the fork-safe private-strings
+        check. Verify downloaded BubblePaw assets against the matching SHA256SUMS entry.
+    - path: "**/pubspec.yaml"
+      instructions: >-
+        Keep the three library versions equal and bump them together with the
+        release tag. Members use workspace resolution and relative path deps.
+        Declare bb_ui with the identical git source (url, ref, path) in agent_kit,
+        the gallery and the ci.yml consumer check. Leave bb_tokens transitive.
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "docs/**/*.md"
