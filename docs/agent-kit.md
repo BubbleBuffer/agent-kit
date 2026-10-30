@@ -167,9 +167,8 @@ window width as in Scratch) decides only touch sizing and the type scale.
 
 Status is drawn by `StatusMark` only: every other widget puts one next to its
 text. `StatusMark(status)` is the dot form (list rows, meta lines);
-`StatusMark.pill(status)` is the header form. `label` and `detail` override the
-text; the running mark breathes unless `animate: false` or the platform
-reduces motion. `StatusMark.work(WorkState)` maps child agents and jobs.
+`StatusMark.pill(status)` is the header form. `label` replaces the label and `detail` follows it after " · "; the running mark breathes unless `animate: false` or the platform
+reduces motion. `StatusMark.work(WorkState)` maps a child agent's work state; `StatusMark.askingParent()` marks a child waiting for its parent's answer (see [StatusMark](components/status/StatusMark.md)).
 
 | Status | Role | Dot form | Pill form |
 |---|---|---|---|
@@ -229,7 +228,9 @@ time.
    `test/harness.dart`, light and dark).
 4. Render the golden (below), look at the PNG next to the mockup shot, and
    commit it under `test/goldens/`.
-5. Update the folder's `README.md` and the table above.
+5. Add a crop of the specimen to `apps/gallery/test/component_shots_test.dart` (its type and position in the scene, see the file header), render it, and copy the PNGs to `docs/components/<folder>/shots/` as `<name>-light.png` and `<name>-dark.png`.
+6. Write the widget's sheet in `docs/components/<folder>/<Widget>.md` (copy a neighbour: demo, parameters, theme roles, size classes, accessibility, gallery and tests) and add it to the index in [README.md](README.md).
+7. Update the folder's `README.md` and the table above.
 
 ## Goldens and how to view the shots
 
@@ -240,7 +241,7 @@ Golden tests are tagged `golden`; the normal test job excludes them and the
 G outline at 1600 and 390, and the whole Components sheet at 1000 px, light and
 dark;
 `test/goldens/<scene>_<width>_<theme>.png`), with the scripted chat played to
-its end. Text is real because the bundled fonts are loaded in the tests.
+its end. `apps/gallery/test/component_shots_test.dart` renders the Components, History and Outline scenes again and keeps one crop per widget state as `test/goldens/shots/<name>_<theme>.png`; the [component sheets](components/) show those crops. Text is real because the bundled fonts are loaded in the tests.
 Rendering happens only in CI, on `ubuntu-latest` with Flutter pinned to the
 version this repo's CI pins (3.47.5); goldens rendered elsewhere will not match.
 
@@ -249,10 +250,10 @@ version this repo's CI pins (3.47.5); goldens rendered elsewhere will not match.
 - Manual run: `gh workflow run ci.yml --ref <branch>` re-renders without
   comparing.
 - Either way the job uploads the PNGs as the `gallery-shots` artifact:
-  `gh run download <run id> -n gallery-shots` gives `components/` and
-  `scenes/`. Compare them with `lab/design/scratch-skin/shots/`.
+  `gh run download <run id> -n gallery-shots` gives `components/`,
+  `scenes/` and `crops/` (the widget crops of the component sheets). Compare them with `lab/design/scratch-skin/shots/`.
 - To accept new renders, download the artifact from a manual run, copy
   `components/*.png` to `packages/agent_kit/test/goldens/` and `scenes/*.png`
-  to `apps/gallery/test/goldens/`, and commit them.
+  to `apps/gallery/test/goldens/` (`crops/*.png` to `goldens/shots/`, and copy them to `docs/components/<folder>/shots/` as in "Adding a widget"), and commit them.
 - Formatting is not run on the PC either: when the format job fails it uploads
   `format-patch`; `git apply format.patch` fixes it.

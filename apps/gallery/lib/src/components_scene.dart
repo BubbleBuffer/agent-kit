@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import '../components/chrome.dart';
 import '../components/composer.dart';
 import '../components/context.dart';
+import '../components/providers.dart';
 import '../components/transcript.dart';
 import '../components/workspace.dart';
 
@@ -37,6 +38,9 @@ class ComponentsScene extends StatelessWidget {
         SizedBox(height: t.spacing.xl),
         const _Heading('Chrome'),
         const ChromeSpecimens(),
+        SizedBox(height: t.spacing.xl),
+        const _Heading('Providers'),
+        const ProviderSpecimens(),
       ],
     );
     final scene = ColoredBox(
