@@ -25,19 +25,19 @@ work does not collide. Each has one barrel (`<folder>/<folder>.dart`)
 re-exported from `lib/agent_kit.dart`, and a `README.md` saying what goes
 there and which mockup parts it covers.
 
-| Folder | Holds | State |
-|---|---|---|
-| `theme/` | `BbTheme`, `BbThemeScope`, `SizeClass`, `SizeClassBuilder` | built |
-| `status/` | `StatusMark` | built |
-| `transcript/` | items, activity and evidence rows, edits, diff, plan | built |
-| `composer/` | composer, approval bar, queue row, picks | built |
-| `chrome/` | rail, header, crew strip, ledger | built |
-| `context/` | Context pane, meter bar, compaction marker | built |
-| `outline/` | chapter cards, headings, dividers, where-am-I strip, contents, `OutlineController` | built |
-| `history/` | compacted history: chapter, episode and legacy cards, the boundary hairline, `HistoryController` | built |
-| `workspace/` | split tree, panes, docking, edge tabs | built |
-| `compositions/` | `AgentWorkbench`, `AgentChatPane` | built |
-| `shared/` | internal helpers: path segments, the one icon drawing (`kit_icon.dart`) | built |
+| Folder | Holds |
+|---|---|
+| `theme/` | `BbTheme`, `BbThemeScope`, `SizeClass`, `SizeClassBuilder` |
+| `status/` | `StatusMark` |
+| `transcript/` | items, activity and evidence rows, edits, diff, plan |
+| `composer/` | composer, approval bar, queue row, picks |
+| `chrome/` | rail, header, crew strip, ledger |
+| `context/` | Context pane, meter bar, compaction marker |
+| `outline/` | chapter cards, headings, dividers, where-am-I strip, contents, `OutlineController` |
+| `history/` | compacted history: chapter, episode and legacy cards, the boundary hairline, `HistoryController` |
+| `workspace/` | split tree, panes, docking, edge tabs |
+| `compositions/` | `AgentWorkbench`, `AgentChatPane` |
+| `shared/` | internal helpers: path segments, the one icon drawing (`kit_icon.dart`) |
 
 ## Compositions
 
@@ -205,7 +205,7 @@ boundary.
 
 `apps/gallery` (`flutter run -d chrome` in that folder). The toolbar switches
 scene (the mockup's A workbench, C phone, D workspace and F context as
-`AgentWorkbench` on the fake backend, B Scratch pane still a placeholder, G Outline
+`AgentWorkbench` on the fake backend, B Scratch pane as a placeholder, G Outline
 as a hand-built chat in chapters on an `OutlineController`, H Compacted history as the
 cards over a boundary, plus Components, which
 lists each widget in each state), light or

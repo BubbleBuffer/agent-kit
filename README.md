@@ -102,7 +102,7 @@ The goldens are rendered by Linux CI. The adapter's workflow also checks it agai
 
 ## Documentation
 
-The wiki is [`docs/`](docs/README.md): how the kit works now, package by package.
+The wiki is [`docs/`](docs/README.md): how the kit works now, package by package. The same pages are on the [GitHub wiki](https://github.com/BubbleBuffer/agent-kit/wiki).
 
 ## Licence
 
