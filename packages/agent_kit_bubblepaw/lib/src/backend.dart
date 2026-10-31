@@ -177,6 +177,15 @@ final class BubblePawBackend
       // Preserve typed lifecycle diagnostics; raw host/provider error messages
       // never enter a KitError's user-facing message.
       if (error is BubblePawHostExited) rethrow;
+      final hostCode = error.rpcCode;
+      if (hostCode != null) {
+        // A typed host refusal keeps the host's code, message and data. A
+        // refused key, type or value is invalid input; a failed write is not.
+        final message = error.rpcMessage ?? error.message;
+        throw hostCode == -32013
+            ? KitFailed(message, hostCode, error.rpcData)
+            : KitInvalid(message, hostCode, error.rpcData);
+      }
       throw switch (error.code) {
         'busy' => const KitBusy(),
         'notFound' => const KitNotFound(),

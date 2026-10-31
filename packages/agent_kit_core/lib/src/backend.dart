@@ -287,6 +287,13 @@ sealed class KitError implements Exception {
   /// `invalid`, `unavailable`, `denied`, `needsSetup` or `failed`.
   String get code;
 
+  /// The backend's own error code when it returned a typed one (for a
+  /// BubblePaw host, the JSON-RPC code such as `-32011`), else null.
+  int? get hostCode => null;
+
+  /// The backend's structured error data for a typed error, else null.
+  Object? get hostData => null;
+
   @override
   String toString() => 'KitError.$code: $message';
 }
@@ -335,7 +342,17 @@ final class KitConflict extends KitError {
 /// The arguments are invalid, such as an empty message.
 final class KitInvalid extends KitError {
   /// Creates the error.
-  const KitInvalid([super.message = 'Invalid input.']);
+  const KitInvalid([
+    super.message = 'Invalid input.',
+    this.hostCode,
+    this.hostData,
+  ]);
+
+  @override
+  final int? hostCode;
+
+  @override
+  final Object? hostData;
 
   @override
   String get code => 'invalid';
@@ -373,7 +390,17 @@ final class KitNeedsSetup extends KitError {
 /// Any other failure, with a generic or adapter-written message.
 final class KitFailed extends KitError {
   /// Creates the error.
-  const KitFailed([super.message = 'Something went wrong.']);
+  const KitFailed([
+    super.message = 'Something went wrong.',
+    this.hostCode,
+    this.hostData,
+  ]);
+
+  @override
+  final int? hostCode;
+
+  @override
+  final Object? hostData;
 
   @override
   String get code => 'failed';

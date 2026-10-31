@@ -309,6 +309,7 @@ class StdioBubblePawTransport implements BubblePawTransport {
         _classifyRpcError(
           (error as Map<String, Object?>)['code']! as int,
           error['message']! as String,
+          error['data'],
         ),
       );
     } else {
@@ -321,9 +322,24 @@ class StdioBubblePawTransport implements BubblePawTransport {
   /// host methods, never credentials, so it is kept for the user.
   static const _noProviderCode = -32004;
 
-  static BubblePawException _classifyRpcError(int code, String message) {
+  static BubblePawException _classifyRpcError(
+    int code,
+    String message,
+    Object? data,
+  ) {
     if (code == _noProviderCode) {
       return BubblePawException('noProvider', message);
+    }
+    if (BubblePawException.typedHostErrorCodes.contains(code)) {
+      // Typed config refusals keep the host's code, message and data. The
+      // fixed message and `rpcError` code stay for existing callers.
+      return BubblePawException(
+        'rpcError',
+        'The BubblePaw host rejected the request.',
+        rpcCode: code,
+        rpcMessage: message,
+        rpcData: data,
+      );
     }
     // v0.2.2 uses -32000 for all command errors. Inspect its known error
     // phrases privately, then discard arbitrary host text and identifiers.

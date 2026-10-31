@@ -122,6 +122,7 @@ message, except code `-32004` (Core v0.5.1, a run with no provider configured): 
 becomes `KitNeedsSetup` carrying the host's message, which names the config keys and
 host methods to set up. Raw provider/command errors are not logged. A busy send alone is retried
 as follow-up, preventing duplicate admission after unrelated failures.
+The host's typed `config.set` refusals (`-32010` unknown key, `-32011` wrong type, `-32012` invalid value, `-32013` write failed) keep their code, message and data: the transport's `BubblePawException` keeps its fixed `code`/`message` and adds `rpcCode`, `rpcMessage` and `rpcData`; the backend throws `KitInvalid` (`-32010..-32012`) or `KitFailed` (`-32013`) with `message` = the host's text and `hostCode`/`hostData` set. No other host text is exposed.
 
 Protocol mismatch is typed with expected and actual versions. Child exit is typed
 `BubblePawHostExited` (`hostExited`) with exit code and a bounded fully redacted

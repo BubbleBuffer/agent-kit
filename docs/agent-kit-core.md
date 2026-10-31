@@ -160,6 +160,7 @@ Commands return futures and fail with a `KitError` subclass whose `message`
 is safe to show: `KitUnsupported`, `KitNotFound`, `KitBusy`, `KitConflict`,
 `KitInvalid`, `KitUnavailable`, `KitDenied`, `KitNeedsSetup`, `KitFailed`.
 `KitNeedsSetup` means the backend cannot do this until something is configured (a model provider, say); its `message` is the backend's own text and says what, and a retry works after the setup.
+Any `KitError` has `hostCode` and `hostData`, null unless the backend returned a typed error; `KitInvalid` and `KitFailed` can carry them (a BubblePaw `config.set` refusal: `hostCode` is the JSON-RPC code, `hostData` the host's `data`, `message` the host's text).
 
 Besides the reads, the port has `createChat`, `send` (starts a run or
 queues), `steer`, `followup`, `sendQueuedNow`, `editQueued`, `removeQueued`,

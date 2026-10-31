@@ -614,6 +614,43 @@ void main() {
     await expectLater(backend.send('s1', 'hello'), throwsA(isA<KitFailed>()));
   });
 
+  test('config.set typed errors reach the caller with code and data', () async {
+    final peer = _BackendPeer();
+    final backend = await peer.connect();
+    addTearDown(() => peer.close(backend));
+    final data = {'key': 'models.main'};
+    peer.handler = (method, params) => switch (method) {
+      'run.start' => _RpcFailure('wrong type', -32011, data),
+      _ => peer.defaultResponse(method, params),
+    };
+    await expectLater(
+      backend.send('s1', 'hello'),
+      throwsA(
+        isA<KitInvalid>()
+            .having((error) => error.hostCode, 'hostCode', -32011)
+            .having((error) => error.hostData, 'hostData', data)
+            .having((error) => error.message, 'message', 'wrong type'),
+      ),
+    );
+    peer.handler = (method, params) => switch (method) {
+      'run.start' => const _RpcFailure('write failed', -32013),
+      _ => peer.defaultResponse(method, params),
+    };
+    await expectLater(
+      backend.send('s1', 'hello'),
+      throwsA(
+        isA<KitFailed>()
+            .having((error) => error.hostCode, 'hostCode', -32013)
+            .having((error) => error.hostData, 'hostData', isNull),
+      ),
+    );
+    peer.handler = (method, params) => const _RpcFailure('boom', -32003);
+    await expectLater(
+      backend.send('s1', 'hello'),
+      throwsA(isA<KitFailed>().having((e) => e.hostCode, 'hostCode', isNull)),
+    );
+  });
+
   test('send preserves busy when follow-up was not negotiated', () async {
     final peer = _BackendPeer()..features = ['sessions', 'events'];
     final backend = await peer.connect();
@@ -1629,9 +1666,10 @@ class _Call {
 }
 
 class _RpcFailure {
-  const _RpcFailure(this.message, [this.code = -32000]);
+  const _RpcFailure(this.message, [this.code = -32000, this.data]);
   final String message;
   final int code;
+  final Object? data;
 }
 
 class _BackendPeer {
@@ -1726,7 +1764,11 @@ class _BackendPeer {
       'jsonrpc': '2.0',
       'id': request['id'],
       if (response is _RpcFailure)
-        'error': {'code': response.code, 'message': response.message}
+        'error': {
+          'code': response.code,
+          'message': response.message,
+          if (response.data != null) 'data': response.data,
+        }
       else
         'result': response,
     });

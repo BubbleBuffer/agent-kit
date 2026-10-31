@@ -158,6 +158,43 @@ void main() {
     );
   });
 
+  test('typed config codes keep the host code, message and data', () async {
+    final peer = _Peer();
+    final transport = peer.transport();
+    addTearDown(() => _cleanup(transport, peer));
+    peer.onRequest = (request) => peer.send({
+      'jsonrpc': '2.0',
+      'id': request['id'],
+      'error': {
+        'code': -32011,
+        'message': 'models.main must be a string',
+        'data': {'key': 'models.main', 'expected': 'string'},
+      },
+    });
+    await expectLater(
+      transport.request('config.set'),
+      throwsA(
+        isA<BubblePawException>()
+            .having((error) => error.code, 'code', 'rpcError')
+            .having(
+              (error) => error.message,
+              'message',
+              'The BubblePaw host rejected the request.',
+            )
+            .having((error) => error.rpcCode, 'rpcCode', -32011)
+            .having(
+              (error) => error.rpcMessage,
+              'rpcMessage',
+              'models.main must be a string',
+            )
+            .having((error) => error.rpcData, 'rpcData', {
+              'key': 'models.main',
+              'expected': 'string',
+            }),
+      ),
+    );
+  });
+
   test('other codes keep classifying by message', () async {
     final peer = _Peer();
     final transport = peer.transport();
