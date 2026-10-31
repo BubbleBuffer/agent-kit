@@ -603,8 +603,11 @@ void main() {
       throwsA(
         isA<KitNeedsSetup>()
             .having((error) => error.code, 'code', 'needsSetup')
-            .having((error) => error.message, 'message',
-                'No provider is configured.'),
+            .having(
+              (error) => error.message,
+              'message',
+              'No provider is configured.',
+            ),
       ),
     );
     peer.handler = (method, params) => switch (method) {
