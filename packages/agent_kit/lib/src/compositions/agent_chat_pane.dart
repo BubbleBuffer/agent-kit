@@ -143,6 +143,79 @@ class PaneTranscriptSlot {
   final Widget? trailing;
 }
 
+/// What [AgentChatPane.composerBuilder] gets: the pane's state and its wired
+/// commands, so a host composer keeps sending, stopping and the picks working
+/// through the backend. A host that draws a different composer passes these
+/// to [AgentComposer] and adds its own chips, pickers and keys.
+@immutable
+class PaneComposerSlot {
+  /// Creates the slot values.
+  const PaneComposerSlot({
+    required this.snapshot,
+    required this.draft,
+    required this.running,
+    required this.canSend,
+    required this.submit,
+    required this.onStop,
+    required this.models,
+    required this.modelId,
+    required this.onModelChanged,
+    required this.modelTitle,
+    required this.profiles,
+    required this.profileId,
+    required this.onProfileChanged,
+    required this.mode,
+    required this.showModeToggle,
+    required this.onModeChanged,
+    required this.controller,
+    required this.placeholder,
+  });
+
+  /// The chat's snapshot; an empty one for a draft.
+  final ChatSnapshot snapshot;
+
+  /// Whether this is a draft: no chat yet. The first [submit] creates it.
+  final bool draft;
+
+  /// Whether the agent is running.
+  final bool running;
+
+  /// Whether the composer can send ([AgentPaneActions.send], and for a
+  /// draft the `createChat` capability).
+  final bool canSend;
+
+  /// Sends the submission: creates the chat first for a draft. Gives back
+  /// whether it worked; on a failure the pane shows its error line.
+  final Future<bool> Function(ComposerSubmission submission) submit;
+
+  /// Stops the run; null when stopping is off.
+  final VoidCallback? onStop;
+
+  /// The model choices (the current one included); empty when the backend
+  /// has no model pick.
+  final List<KitChoice> models;
+  final String? modelId;
+  final ValueChanged<KitChoice>? onModelChanged;
+  final String modelTitle;
+
+  /// The profile choices (the pane draws them in the composer's workspace
+  /// slot); empty when the backend has none.
+  final List<KitChoice> profiles;
+  final String? profileId;
+  final ValueChanged<KitChoice>? onProfileChanged;
+
+  /// Steer or queue, and whether the toggle shows (the `steer` capability).
+  final ComposerMode mode;
+  final bool showModeToggle;
+  final ValueChanged<ComposerMode> onModeChanged;
+
+  /// The draft text. The pane clears it when it switches chats.
+  final TextEditingController controller;
+
+  /// The pane's own placeholder text.
+  final String placeholder;
+}
+
 /// A chat: header, transcript and dock, driven by [backend].
 class AgentChatPane extends StatefulWidget {
   /// Creates the pane for [chatId].
@@ -150,6 +223,9 @@ class AgentChatPane extends StatefulWidget {
     super.key,
     required this.backend,
     required this.chatId,
+    this.onChatCreated,
+    this.draftTitle,
+    this.composerBuilder,
     this.now,
     this.showCrewStrip = true,
     this.sideBuilder,
@@ -178,8 +254,26 @@ class AgentChatPane extends StatefulWidget {
   /// Where the chat lives.
   final AgentBackend backend;
 
-  /// The chat to show. Changing it switches feeds.
-  final String chatId;
+  /// The chat to show. Changing it switches feeds. Null is a draft: no chat
+  /// yet, an empty transcript and a working composer; the first send creates
+  /// the chat (`createChat`, then `send`) and calls [onChatCreated], and the
+  /// host then shows the pane with that id. A draft needs the `createChat`
+  /// capability to send.
+  final String? chatId;
+
+  /// A draft's first send created chat [id] (and sent the message): show it.
+  final ValueChanged<String>? onChatCreated;
+
+  /// The title for a chat created from a draft, from the first message. By
+  /// default the first line, cut at 60 characters with an ellipsis.
+  final String Function(String text)? draftTitle;
+
+  /// Replaces the composer in the dock (chips, pickers, placeholders and keys
+  /// of the host's own). Gets the pane's state and wired commands as a
+  /// [PaneComposerSlot]. The approval bars, the question prompt, the queue
+  /// and the error line stay the pane's.
+  final Widget Function(BuildContext context, PaneComposerSlot slot)?
+  composerBuilder;
 
   /// Replaces the wall clock for ages (tests, the gallery).
   final DateTime? now;
@@ -302,6 +396,9 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       widget.transcriptController ??
       (_ownTranscript ??= TranscriptController());
 
+  String get _id => widget.chatId ?? '';
+  bool get _draft => widget.chatId == null;
+
   KitCapabilities get _caps => widget.backend.capabilities;
   bool get _canSteer => _caps.has(KitCapability.steer);
   AgentPaneActions get _paneActions => widget.paneActions;
@@ -325,7 +422,8 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       _loadChoices();
     } else if (old.chatId != widget.chatId) {
       _close();
-      _text.clear();
+      // A draft that became its chat keeps the text a failed send gave back.
+      if (old.chatId != null) _text.clear();
       _open();
     }
   }
@@ -341,7 +439,14 @@ class _AgentChatPaneState extends State<AgentChatPane> {
   // ----------------------------------------------------------------- feed
 
   void _open() {
-    final feed = ChatFeed(widget.backend, widget.chatId);
+    final id = widget.chatId;
+    if (id == null) {
+      _snapshot = ChatSnapshot(chatId: '');
+      _loadError = null;
+      _error = null;
+      return;
+    }
+    final feed = ChatFeed(widget.backend, id);
     _feed = feed;
     _snapshot = null;
     _loadError = null;
@@ -425,30 +530,56 @@ class _AgentChatPaneState extends State<AgentChatPane> {
 
   // ------------------------------------------------------------- commands
 
+  static String _firstLine(String text) {
+    final first = text.split('\n').first.trim();
+    return first.length > 60 ? '${first.substring(0, 60)}…' : first;
+  }
+
   Future<bool> _submit(ComposerSubmission s) {
     if (!_paneActions.send) return Future.value(false);
     final backend = widget.backend;
-    final id = widget.chatId;
+    var id = widget.chatId;
+    String? created;
     return _run(
       () async {
+        if (id == null) {
+          if (!_caps.has(KitCapability.createChat)) {
+            throw const KitUnsupported(
+              KitCapability.createChat,
+              'Starting a chat isn’t available.',
+            );
+          }
+          final chat = await backend.createChat(
+            title: (widget.draftTitle ?? _firstLine)(s.text),
+          );
+          created = id = chat.id;
+        }
+        final chatId = id!;
         switch (s.delivery) {
           case ComposerDelivery.send:
-            await backend.send(id, s.text, refs: s.refs);
+            await backend.send(chatId, s.text, refs: s.refs);
           case ComposerDelivery.steer:
             if (_canSteer) {
-              await backend.steer(id, s.text, refs: s.refs);
+              await backend.steer(chatId, s.text, refs: s.refs);
             } else {
-              await backend.followup(id, s.text, refs: s.refs);
+              await backend.followup(chatId, s.text, refs: s.refs);
             }
           case ComposerDelivery.followup:
-            await backend.followup(id, s.text, refs: s.refs);
+            await backend.followup(chatId, s.text, refs: s.refs);
         }
       },
       onFail: () {
         // Give the text back instead of losing it.
         if (_text.text.isEmpty) _text.text = s.text;
+        // The chat exists even though the send failed: show it.
+        final made = created;
+        if (made != null) widget.onChatCreated?.call(made);
       },
-    );
+    ).then((worked) {
+      final made = created;
+      if (worked && made != null) widget.onChatCreated?.call(made);
+      return worked;
+    });
   }
 
   TranscriptActions _actions() {
@@ -460,7 +591,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       onUndo: _caps.has(KitCapability.editUndo)
           ? (edit) async {
               final worked = await _run(
-                () => backend.undoEdit(widget.chatId, edit.id),
+                () => backend.undoEdit(_id, edit.id),
               );
               if (!worked) throw StateError('Undo failed');
             }
@@ -474,7 +605,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       onAnswerChildQuestion: _caps.has(KitCapability.answerChildQuestion)
           ? (childId, questionId, text) => _run(
               () => backend.answerChildQuestion(
-                widget.chatId,
+                _id,
                 childId,
                 questionId,
                 text,
@@ -482,10 +613,10 @@ class _AgentChatPaneState extends State<AgentChatPane> {
             )
           : null,
       onResume: _caps.has(KitCapability.resume)
-          ? () => _run(() => backend.resume(widget.chatId))
+          ? () => _run(() => backend.resume(_id))
           : null,
       onRewind: _caps.has(KitCapability.rewind)
-          ? (message) => _run(() => backend.rewind(widget.chatId, message.id))
+          ? (message) => _run(() => backend.rewind(_id, message.id))
           : null,
       now: widget.now ?? a.now,
     );
@@ -496,7 +627,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       ChromeMenuItem(
         'Fork chat',
         () => _run(() async {
-          final chat = await widget.backend.fork(widget.chatId);
+          final chat = await widget.backend.fork(_id);
           widget.onOpenChat?.call(chat.id);
         }),
       ),
@@ -504,7 +635,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       ChromeMenuItem(
         'Archive chat',
         () => _run(() async {
-          await widget.backend.archive(widget.chatId);
+          await widget.backend.archive(_id);
           widget.onChatsChanged?.call();
         }),
         separatorBefore: true,
@@ -673,7 +804,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
     final trailing = interrupted
         ? InterruptedNotice(
             onResume: _caps.has(KitCapability.resume)
-                ? () => _run(() => widget.backend.resume(widget.chatId))
+                ? () => _run(() => widget.backend.resume(_id))
                 : null,
           )
         : null;
@@ -693,7 +824,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
             ),
           )
         : TranscriptList(
-            key: ValueKey('transcript-${widget.chatId}'),
+            key: ValueKey('transcript-$_id'),
             items: snap.items,
             plan: snap.plan,
             inserts: _inserts(snap),
@@ -762,7 +893,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
     bool running,
   ) {
     final backend = widget.backend;
-    final id = widget.chatId;
+    final id = _id;
     final approvals = snap.pendingApprovals.toList();
     final question = _caps.has(KitCapability.questions)
         ? snap.pendingQuestions.firstOrNull
@@ -833,37 +964,71 @@ class _AgentChatPaneState extends State<AgentChatPane> {
           ),
           const SizedBox(height: 8),
         ],
-        AgentComposer(
-          onSubmit: _submit,
-          running: running,
-          canSend: _paneActions.send,
-          placeholder: _paneActions.send
-              ? 'Steer the agent…'
-              : 'This chat is read-only.',
-          onStop: _paneActions.stop
-              ? () {
-                  if (!_paneActions.stop) return;
-                  _run(() => backend.cancel(id));
-                }
-              : null,
-          models: models,
-          modelId: snap.model,
-          showModelPick: models.isNotEmpty,
-          // A host with one default model sets it for every chat.
-          modelTitle: _caps.has(KitCapability.defaultModel)
-              ? 'Default model'
-              : 'Model',
-          onModelChanged: (c) => _run(() => backend.setModel(id, c.id)),
-          workspaces: profiles,
-          workspaceId: snap.profile,
-          onWorkspaceChanged: (c) => _run(() => backend.setProfile(id, c.id)),
-          mentions: widget.mentions,
-          mode: _mode,
-          showModeToggle: _canSteer,
-          onModeChanged: (m) => setState(() => _mode = m),
-          controller: _text,
-        ),
+        _composer(context, snap, running, models, profiles),
       ],
+    );
+  }
+
+  Widget _composer(
+    BuildContext context,
+    ChatSnapshot snap,
+    bool running,
+    List<KitChoice> models,
+    List<KitChoice> profiles,
+  ) {
+    final backend = widget.backend;
+    final id = _id;
+    final canSend =
+        _paneActions.send && (!_draft || _caps.has(KitCapability.createChat));
+    final slot = PaneComposerSlot(
+      snapshot: snap,
+      draft: _draft,
+      running: running,
+      canSend: canSend,
+      submit: _submit,
+      onStop: _paneActions.stop
+          ? () {
+              if (!_paneActions.stop) return;
+              _run(() => backend.cancel(id));
+            }
+          : null,
+      models: models,
+      modelId: snap.model,
+      onModelChanged: (c) => _run(() => backend.setModel(id, c.id)),
+      // A host with one default model sets it for every chat.
+      modelTitle: _caps.has(KitCapability.defaultModel)
+          ? 'Default model'
+          : 'Model',
+      profiles: profiles,
+      profileId: snap.profile,
+      onProfileChanged: (c) => _run(() => backend.setProfile(id, c.id)),
+      mode: _mode,
+      showModeToggle: _canSteer,
+      onModeChanged: (m) => setState(() => _mode = m),
+      controller: _text,
+      placeholder: canSend ? 'Steer the agent…' : 'This chat is read-only.',
+    );
+    final build = widget.composerBuilder;
+    if (build != null) return build(context, slot);
+    return AgentComposer(
+      onSubmit: slot.submit,
+      running: slot.running,
+      canSend: slot.canSend,
+      placeholder: slot.placeholder,
+      onStop: slot.onStop,
+      models: slot.models,
+      modelId: slot.modelId,
+      showModelPick: slot.models.isNotEmpty,
+      modelTitle: slot.modelTitle,
+      onModelChanged: slot.onModelChanged,
+      workspaces: slot.profiles,
+      workspaceId: slot.profileId,
+      onWorkspaceChanged: slot.onProfileChanged,
+      mentions: widget.mentions,
+      mode: slot.mode,
+      showModeToggle: slot.showModeToggle,
+      onModeChanged: slot.onModeChanged,
+      controller: slot.controller,
     );
   }
 
