@@ -71,6 +71,78 @@ class AgentPaneActions {
   final bool decide;
 }
 
+/// The pane's spacing. The defaults are the kit's own; a host whose screens
+/// have their own rhythm passes its values so the pane lays out the same.
+@immutable
+class PaneMetrics {
+  /// Creates metrics; every field defaults to the kit's value.
+  const PaneMetrics({
+    this.gutter = 16,
+    this.rowGap = 14,
+    this.listPadding,
+    this.gapBefore,
+    this.dockPadding = const EdgeInsets.only(top: 10, bottom: 14),
+    this.dockGutter = 16,
+  });
+
+  /// The space left and right of the transcript column, inside the content
+  /// width.
+  final double gutter;
+
+  /// The space above every transcript row after the first.
+  final double rowGap;
+
+  /// The transcript's padding; null keeps the list's own default.
+  final EdgeInsets? listPadding;
+
+  /// A different gap above a row (see `TranscriptList.gapBefore`).
+  final double? Function(String? previousId, String id)? gapBefore;
+
+  /// The padding around the dock (approvals, queue, composer).
+  final EdgeInsets dockPadding;
+
+  /// The space left and right of the dock, outside the content width.
+  final double dockGutter;
+}
+
+/// What [AgentChatPane.transcriptBuilder] gets besides the snapshot: the
+/// pane's wiring, so a host that draws its own transcript keeps it.
+@immutable
+class PaneTranscriptSlot {
+  /// Creates the slot values.
+  const PaneTranscriptSlot({
+    required this.actions,
+    required this.controller,
+    required this.contentWidth,
+    required this.metrics,
+    required this.layout,
+    required this.inserts,
+    required this.trailing,
+  });
+
+  /// The transcript actions with the backend's commands wired in.
+  final TranscriptActions actions;
+
+  /// The controller the pane's own list would use. A list that takes it
+  /// reports the follow state and anchor to it.
+  final TranscriptController controller;
+
+  /// The width of the content column.
+  final double contentWidth;
+
+  /// The pane's metrics.
+  final PaneMetrics metrics;
+
+  /// The pane's turn layout.
+  final TurnLayout layout;
+
+  /// The pane's extra entries (resolved questions).
+  final List<TranscriptInsert> inserts;
+
+  /// The pane's trailing notice (an interrupted run), or null.
+  final Widget? trailing;
+}
+
 /// A chat: header, transcript and dock, driven by [backend].
 class AgentChatPane extends StatefulWidget {
   /// Creates the pane for [chatId].
@@ -95,6 +167,11 @@ class AgentChatPane extends StatefulWidget {
     this.onOpenContext,
     this.contentWidth = 720,
     this.turnLayout = TurnLayout.chronological,
+    this.metrics = const PaneMetrics(),
+    this.showHeader = true,
+    this.headerBuilder,
+    this.transcriptBuilder,
+    this.transcriptController,
     AgentPaneActions? paneActions,
   }) : _paneActionsOverride = paneActions;
 
@@ -162,6 +239,33 @@ class AgentChatPane extends StatefulWidget {
   /// How a turn's items are ordered in the transcript.
   final TurnLayout turnLayout;
 
+  /// The pane's spacing.
+  final PaneMetrics metrics;
+
+  /// Whether the pane draws its [ChatHeader]. A host that has its own header
+  /// above the pane turns it off.
+  final bool showHeader;
+
+  /// Replaces the [ChatHeader] (when [showHeader] is on). Gets the snapshot.
+  final Widget Function(BuildContext context, ChatSnapshot snapshot)?
+  headerBuilder;
+
+  /// Replaces the transcript list: a host that draws the history another way
+  /// (an outline, a compacted view) builds it here. The dock, the header and
+  /// the pane's commands stay the pane's. Gets the snapshot and the pane's
+  /// wiring ([PaneTranscriptSlot]).
+  final Widget Function(
+    BuildContext context,
+    ChatSnapshot snapshot,
+    PaneTranscriptSlot slot,
+  )?
+  transcriptBuilder;
+
+  /// A transcript controller the host owns (to read the anchor, or jump to
+  /// the latest). The pane never disposes it. Without one, the pane makes its
+  /// own.
+  final TranscriptController? transcriptController;
+
   /// Overrides which actions work. When omitted, send, stop and approval
   /// decisions follow the backend's send, cancel and approve capabilities.
   /// [AgentPaneActions.readOnly] disables all three; [AgentPaneActions.all]
@@ -193,7 +297,10 @@ class _AgentChatPaneState extends State<AgentChatPane> {
   List<KitChoice> _models = const [];
   List<KitChoice> _profiles = const [];
   final TextEditingController _text = TextEditingController();
-  final TranscriptController _transcript = TranscriptController();
+  TranscriptController? _ownTranscript;
+  TranscriptController get _transcript =>
+      widget.transcriptController ??
+      (_ownTranscript ??= TranscriptController());
 
   KitCapabilities get _caps => widget.backend.capabilities;
   bool get _canSteer => _caps.has(KitCapability.steer);
@@ -227,7 +334,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
   void dispose() {
     _close();
     _text.dispose();
-    _transcript.dispose();
+    _ownTranscript?.dispose();
     super.dispose();
   }
 
@@ -425,18 +532,22 @@ class _AgentChatPaneState extends State<AgentChatPane> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ChatHeader(
-          chat: _summary(snap),
-          branch: snap.workspace?.branch,
-          worktree: snap.workspace?.worktree,
-          usage: snap.usage,
-          statusDetail: _detail(snap),
-          workspaceShown: widget.workspaceShown,
-          onToggleWorkspace: widget.onToggleWorkspace,
-          menuItems: _menu(),
-          hideEmptyMenu: true,
-          onOpenContext: snap.context == null ? null : widget.onOpenContext,
-        ),
+        if (widget.showHeader)
+          widget.headerBuilder?.call(context, snap) ??
+              ChatHeader(
+                chat: _summary(snap),
+                branch: snap.workspace?.branch,
+                worktree: snap.workspace?.worktree,
+                usage: snap.usage,
+                statusDetail: _detail(snap),
+                workspaceShown: widget.workspaceShown,
+                onToggleWorkspace: widget.onToggleWorkspace,
+                menuItems: _menu(),
+                hideEmptyMenu: true,
+                onOpenContext: snap.context == null
+                    ? null
+                    : widget.onOpenContext,
+              ),
         if (strip)
           CrewStrip(
             agents: snap.children,
@@ -558,23 +669,44 @@ class _AgentChatPaneState extends State<AgentChatPane> {
         !running &&
         snap.run?.outcome == RunOutcome.interrupted &&
         !snap.items.any((i) => i is InterruptedItem);
-    final transcript = TranscriptList(
-      key: ValueKey('transcript-${widget.chatId}'),
-      items: snap.items,
-      plan: snap.plan,
-      inserts: _inserts(snap),
-      actions: _actions(),
-      controller: _transcript,
-      layout: widget.turnLayout,
-      contentWidth: contentWidth,
-      trailing: interrupted
-          ? InterruptedNotice(
-              onResume: _caps.has(KitCapability.resume)
-                  ? () => _run(() => widget.backend.resume(widget.chatId))
-                  : null,
-            )
-          : null,
-    );
+    final m = widget.metrics;
+    final trailing = interrupted
+        ? InterruptedNotice(
+            onResume: _caps.has(KitCapability.resume)
+                ? () => _run(() => widget.backend.resume(widget.chatId))
+                : null,
+          )
+        : null;
+    final slot = widget.transcriptBuilder;
+    final transcript = slot != null
+        ? slot(
+            context,
+            snap,
+            PaneTranscriptSlot(
+              actions: _actions(),
+              controller: _transcript,
+              contentWidth: contentWidth,
+              metrics: m,
+              layout: widget.turnLayout,
+              inserts: _inserts(snap),
+              trailing: trailing,
+            ),
+          )
+        : TranscriptList(
+            key: ValueKey('transcript-${widget.chatId}'),
+            items: snap.items,
+            plan: snap.plan,
+            inserts: _inserts(snap),
+            actions: _actions(),
+            controller: _transcript,
+            layout: widget.turnLayout,
+            contentWidth: contentWidth,
+            gutter: m.gutter,
+            rowGap: m.rowGap,
+            gapBefore: m.gapBefore,
+            padding: m.listPadding,
+            trailing: trailing,
+          );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -584,12 +716,14 @@ class _AgentChatPaneState extends State<AgentChatPane> {
               : transcript,
         ),
         Padding(
-          padding: const EdgeInsets.only(top: 10, bottom: 14),
+          padding: m.dockPadding,
           child: Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: contentWidth + 32),
+              constraints: BoxConstraints(
+                maxWidth: contentWidth + 2 * m.dockGutter,
+              ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: m.dockGutter),
                 child: _dock(context, t, snap, running),
               ),
             ),
