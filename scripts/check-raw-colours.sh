@@ -4,7 +4,7 @@
 # AppColors.
 #
 # Vendored from BubbleBuffer/bb-ui, scripts/check-raw-colours.sh at tag
-# v0.6.0. Sync: when the bb-ui pin changes, diff this file against that tag.
+# v0.7.1. Sync: when the bb-ui pin changes, diff this file against that tag.
 # Only the checked paths differ (bb-ui checks packages/bb_ui and apps; here
 # the kit's own packages and the gallery app are checked).
 #
