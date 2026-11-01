@@ -71,7 +71,10 @@ void main() {
         s.clock,
         transcriptBuilder: (context, snap, slot) {
           seen = slot;
-          return const Text('host transcript', textDirection: TextDirection.ltr);
+          return const Text(
+            'host transcript',
+            textDirection: TextDirection.ltr,
+          );
         },
       ),
     );
