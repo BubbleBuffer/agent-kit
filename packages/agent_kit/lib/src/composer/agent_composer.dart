@@ -726,22 +726,29 @@ class _Field extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    // One text-field node: the editable's own node merges this label, hint
+    // and the tap and focus actions, so it can be found and focused while
+    // unfocused. Flags (textField, multiline) stay on the editable alone.
     return Semantics(
       label: 'Message to the agent',
-      textField: true,
-      multiline: true,
+      hint: placeholder,
+      onTap: focusNode.requestFocus,
+      onFocus: focusNode.requestFocus,
       child: Focus(
         canRequestFocus: false,
         skipTraversal: true,
+        includeSemantics: false,
         onKeyEvent: onKey,
         child: Stack(
           children: [
             if (controller.text.isEmpty)
               Positioned.fill(
-                child: IgnorePointer(
-                  child: Text(
-                    placeholder,
-                    style: ts(context.type.body, c.textTertiary),
+                child: ExcludeSemantics(
+                  child: IgnorePointer(
+                    child: Text(
+                      placeholder,
+                      style: ts(context.type.body, c.textTertiary),
+                    ),
                   ),
                 ),
               ),

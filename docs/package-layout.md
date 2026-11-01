@@ -40,7 +40,7 @@ the gallery directly declare exactly this source:
   bb_ui:
     git:
       url: https://github.com/BubbleBuffer/bb-ui
-      ref: v0.7.1
+      ref: v0.7.2
       path: packages/bb_ui
 ```
 
@@ -53,7 +53,7 @@ resolved commit, so leave it transitive. The public token APIs, including
 The bb-ui repository owns the vendored palette, colour generator, generated
 colours, neutral package tests and neutral component gallery. Agent widgets
 continue to read `BbTheme` roles derived from that palette. See
-[bb_tokens colour workflow](https://github.com/BubbleBuffer/bb-ui/blob/v0.7.1/packages/bb_tokens/README.md).
+[bb_tokens colour workflow](https://github.com/BubbleBuffer/bb-ui/blob/v0.7.2/packages/bb_tokens/README.md).
 
 ## Consuming the kit
 
@@ -79,7 +79,7 @@ declare `bb_ui` with the exact external source above; do not copy its sources
 into an application.
 
 CI's Git consumer check pins `agent_kit` at the pushed commit, leaves core
-transitive and declares `bb_ui` directly using its `v0.7.1` source. It analyzes
+transitive and declares `bb_ui` directly using its `v0.7.2` source. It analyzes
 imports from the agent widgets, primitives and token re-export.
 
 ## Fonts and goldens
@@ -93,10 +93,10 @@ all existing golden PNGs stay here; neutral-gallery goldens live in bb-ui.
 ## Releasing
 
 1. Release the required bb-ui tag before updating its Git pin here. This split
-   requires `bb-ui` tag `v0.7.1` to exist before dependency resolution can pass.
+   requires `bb-ui` tag `v0.7.2` to exist before dependency resolution can pass.
 2. Merge the agent-kit change with hosted CI green. Bump the three library
-   versions together; the current release is `0.17.2`.
-3. Tag the green commit on `main` as `v0.17.2` and push the tag.
+   versions together; the current release is `0.17.3`.
+3. Tag the green commit on `main` as `v0.17.3` and push the tag.
 
 Applications update their pins and lockfiles when adopting a release. This
 workspace ignores its generated `pubspec.lock`.
