@@ -70,6 +70,20 @@ interrupted notice), so a host that draws the history another way (an outline,
 compacted summaries) keeps the pane's commands, dock and feed.
 `transcriptController` hands the host the pane's scroll controller; the pane
 never disposes it.
+`composerBuilder` replaces the composer in the dock. It gets a
+`PaneComposerSlot`: the snapshot, whether the chat is a draft, `running`,
+`canSend`, `submit` (the pane's wired send), `onStop`, the model and profile
+picks with their change callbacks, the steer or queue mode, the draft
+controller and the pane's placeholder. The host adds its own chips, pickers,
+placeholder and keys and sends through `slot.submit`. Approvals, the question
+prompt, queued rows and the error line stay the pane's.
+
+`chatId: null` is a draft: an empty "New chat" with a working composer and no
+feed. The first send runs `createChat` (titled from the first line, 60
+characters, or `draftTitle`), then `send`, then calls `onChatCreated` with the
+new id so the host can show the pane with it. If the send fails, the chat still
+exists and `onChatCreated` is called, and the text goes back to the composer.
+A draft needs the `createChat` capability to send.
 
 `AgentWorkbench(backend)` is the app shell: the session rail (chats grouped
 by day, from `listChats`), an `AgentChatPane` in the sheet, the ledger or crew
