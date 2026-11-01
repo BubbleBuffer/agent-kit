@@ -1,6 +1,6 @@
 name: agent_kit_bubblepaw
 description: Pure Dart BubblePaw stdio JSON-RPC backend for the BubbleBuffer agent kit.
-version: 0.17.1
+version: 0.17.2
 publish_to: none
 resolution: workspace
 

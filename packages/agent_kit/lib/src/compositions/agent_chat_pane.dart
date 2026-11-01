@@ -611,6 +611,10 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       onRewind: _caps.has(KitCapability.rewind)
           ? (message) => _run(() => backend.rewind(_id, message.id))
           : null,
+      summaryOf: a.summaryOf,
+      activityFooter: a.activityFooter,
+      openEveryEdit: a.openEveryEdit,
+      itemBuilder: a.itemBuilder,
       now: widget.now ?? a.now,
     );
   }

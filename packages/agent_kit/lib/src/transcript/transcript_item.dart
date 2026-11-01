@@ -49,6 +49,7 @@ class TranscriptActions {
     this.summaryOf,
     this.activityFooter,
     this.openEveryEdit = false,
+    this.itemBuilder,
     this.now,
   });
 
@@ -100,6 +101,18 @@ class TranscriptActions {
   /// Shows "Open" ([onOpenFile]) on every edit row, not only a created file's.
   final bool openEveryEdit;
 
+  /// Draws one item the host's way: gets the kit's own widget for [item] and
+  /// returns what to show instead (the kit's widget wrapped, or a different
+  /// one, such as a user message with chips that look up live titles).
+  /// Null keeps the kit's widget for every item. A host that wants the kit's
+  /// widget for an item returns it as given.
+  final Widget Function(
+    BuildContext context,
+    TranscriptItem item,
+    Widget kitWidget,
+  )?
+  itemBuilder;
+
   /// Replaces the wall clock for waiting times (tests, the gallery).
   final DateTime? now;
 }
@@ -116,7 +129,12 @@ class TranscriptItemView extends StatelessWidget {
   final TranscriptActions actions;
 
   @override
-  Widget build(BuildContext context) => switch (item) {
+  Widget build(BuildContext context) {
+    final kitWidget = _kit(context);
+    return actions.itemBuilder?.call(context, item, kitWidget) ?? kitWidget;
+  }
+
+  Widget _kit(BuildContext context) => switch (item) {
     final UserMessage m => UserBubble(
       m,
       onRefTap: actions.onRefTap,
