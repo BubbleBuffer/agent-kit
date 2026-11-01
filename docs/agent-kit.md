@@ -60,6 +60,17 @@ read-only). Resolved questions
 show their answer lines in the transcript; an interrupted run ends with the
 interrupted notice and a Resume action.
 
+A host can fit the pane into its own screen. `metrics` (`PaneMetrics`) sets the
+transcript gutter, row gap, list padding and the dock's padding and gutter; the
+defaults are the kit's own spacing. `showHeader: false` leaves the `ChatHeader`
+out and `headerBuilder` replaces it. `transcriptBuilder` replaces the transcript
+list: it gets the snapshot and a `PaneTranscriptSlot` (the wired actions, the
+controller, the content width, the metrics, the layout, the inserts and the
+interrupted notice), so a host that draws the history another way (an outline,
+compacted summaries) keeps the pane's commands, dock and feed.
+`transcriptController` hands the host the pane's scroll controller; the pane
+never disposes it.
+
 `AgentWorkbench(backend)` is the app shell: the session rail (chats grouped
 by day, from `listChats`), an `AgentChatPane` in the sheet, the ledger or crew
 strip, and an optional `AgentWorkspace` beside the chat. The whole width picks
