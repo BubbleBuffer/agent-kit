@@ -590,9 +590,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       onReviewDiff: a.onReviewDiff,
       onUndo: _caps.has(KitCapability.editUndo)
           ? (edit) async {
-              final worked = await _run(
-                () => backend.undoEdit(_id, edit.id),
-              );
+              final worked = await _run(() => backend.undoEdit(_id, edit.id));
               if (!worked) throw StateError('Undo failed');
             }
           : null,
@@ -604,12 +602,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       onViewContext: widget.onOpenContext ?? a.onViewContext,
       onAnswerChildQuestion: _caps.has(KitCapability.answerChildQuestion)
           ? (childId, questionId, text) => _run(
-              () => backend.answerChildQuestion(
-                _id,
-                childId,
-                questionId,
-                text,
-              ),
+              () => backend.answerChildQuestion(_id, childId, questionId, text),
             )
           : null,
       onResume: _caps.has(KitCapability.resume)
