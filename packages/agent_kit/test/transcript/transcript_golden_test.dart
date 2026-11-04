@@ -231,7 +231,7 @@ void main() {
     ('turn', 1000): 1680.0,
     ('states', 390): 1500.0,
     ('states', 1000): 1250.0,
-    ('rows', 390): 1000.0,
+    ('rows', 390): 1100.0,
     ('rows', 1000): 800.0,
   };
   final sheets = <String, Widget Function()>{
