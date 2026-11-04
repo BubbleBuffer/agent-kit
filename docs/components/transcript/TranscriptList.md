@@ -73,6 +73,7 @@ import 'package:agent_kit/agent_kit.dart';
 | `summaryOf` | `ActivitySummaryBuilder?` | Replaces the summary line of activity groups. |
 | `activityFooter` | `Widget? Function(ActivityGroup)?` | A host disclosure under an open activity group. |
 | `openEveryEdit` | `bool` | Default false. Shows "Open" on every edit row. |
+| `finishedActivityOpen` | `bool` | Default false. Whether a finished activity group starts open; a running group is always open and a group the person toggled keeps its state. |
 | `now` | `DateTime?` | Replaces the wall clock for waiting times. |
 
 **JumpToLatestButton**

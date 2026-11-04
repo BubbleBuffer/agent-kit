@@ -1,8 +1,11 @@
 // The activity group (`.activity` in the mockup): one summary line
 // ("Worked 48s · thought 6s · 7 tool calls") that opens into evidence rows
 // (think, read, grep, exec, spawn), each with a right-aligned meta. One row is
-// open at a time. An exec row opens into its clamped output, a thinking row
-// into its reasoning text when the backend sends it.
+// open at a time. A row that opens has a chevron: a tool call opens into its
+// whole target, arguments and clamped output, a thinking row into its
+// reasoning text when the backend sends it.
+
+import 'dart:convert';
 
 import 'package:agent_kit_core/agent_kit_core.dart'
     show
@@ -96,12 +99,19 @@ class ActivityGroupView extends StatefulWidget {
     this.onOpenChild,
     this.summaryOf,
     this.footer,
+    this.finishedOpen = false,
   });
 
   final ActivityGroup group;
 
-  /// Whether the evidence starts open; by default while the group runs.
+  /// Whether the evidence starts open, whatever the group's state. Without
+  /// it a running group is open and a finished one follows [finishedOpen].
   final bool? initiallyOpen;
+
+  /// Whether a finished group shows its rows. A running group stays open;
+  /// when it finishes it follows this, and a change applies to every group
+  /// the person has not opened or closed themselves.
+  final bool finishedOpen;
 
   /// The id of the row that starts open.
   final String? initiallyOpenRow;
@@ -124,7 +134,14 @@ class ActivityGroupView extends StatefulWidget {
 }
 
 class _ActivityGroupViewState extends State<ActivityGroupView> {
-  late bool _open = widget.initiallyOpen ?? widget.group.isRunning;
+  /// What the person chose by tapping the summary; null until they do.
+  bool? _toggled;
+
+  bool get _open =>
+      _toggled ??
+      widget.initiallyOpen ??
+      (widget.group.isRunning || widget.finishedOpen);
+
   late String? _openRow = widget.initiallyOpenRow;
 
   @override
@@ -147,7 +164,7 @@ class _ActivityGroupViewState extends State<ActivityGroupView> {
               label: summary,
               excludeSemantics: true,
               child: Hover(
-                onTap: () => setState(() => _open = !_open),
+                onTap: () => setState(() => _toggled = !_open),
                 lift: 0,
                 padding: EdgeInsets.symmetric(
                   horizontal: 6,
@@ -211,8 +228,11 @@ class _ActivityGroupViewState extends State<ActivityGroupView> {
   }
 }
 
-/// One evidence row: a mono verb, the target, and a right-aligned meta.
-/// Expands when it has a body (output, reasoning text).
+/// One evidence row: a chevron when the row opens, a mono verb, the target and
+/// a right-aligned meta. A row opens when it has a body: a tool call's
+/// arguments or output, a thinking row's reasoning text. Open, a tool row shows
+/// its whole target on its own line, then the arguments, then the output.
+/// A spawn row opens the child chat instead and has no chevron.
 class EvidenceRow extends StatelessWidget {
   const EvidenceRow({
     super.key,
@@ -231,11 +251,16 @@ class EvidenceRow extends StatelessWidget {
   final ValueChanged<ToolRow>? onOpenOutput;
   final ValueChanged<String>? onOpenChild;
 
+  /// The chevron's slot, kept empty on rows that do not open so the verbs
+  /// line up.
+  static const _chevronSlot = 18.0;
+  static const _lineHeight = 16.0;
+
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
     final spec = _specOf(row);
-    final expandable = spec.body != null;
+    final expandable = spec.canOpen;
     final tap = switch (row) {
       SpawnRow(:final childId) =>
         onOpenChild == null ? null : () => onOpenChild!(childId),
@@ -244,10 +269,18 @@ class EvidenceRow extends StatelessWidget {
     final metaStyle = ts(t.typeScale.uiSmall, t.faint);
     final meta = spec.meta(context, metaStyle);
     final targetStyle = ts(const TypeSpec(13, 16, 500), open ? t.ink : t.muted);
+    final verbWidth = compact ? 40.0 : 44.0;
+    final showWhole = open && row is ToolRow;
     Widget? body;
-    if (open && expandable) {
+    if (open && spec.body != null) {
       body = Padding(
-        padding: EdgeInsets.fromLTRB(compact ? 0 : 58, 2, 0, 8),
+        padding: EdgeInsets.fromLTRB(
+          // Under the target; under the verb on a phone.
+          6 + _chevronSlot + (compact ? 0 : verbWidth + 8),
+          2,
+          0,
+          8,
+        ),
         child: spec.body!(context),
       );
     }
@@ -264,26 +297,43 @@ class EvidenceRow extends StatelessWidget {
             onTap: tap,
             lift: 0,
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: isTouch(context) ? 36 : 20,
+            child: Padding(
+              // Centres a one-line row in the 20 px (36 px touch) minimum.
+              padding: EdgeInsets.symmetric(
+                vertical: ((isTouch(context) ? 36 : 20) - _lineHeight) / 2,
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: compact ? 40 : 44,
+                    width: _chevronSlot,
+                    height: _lineHeight,
+                    child: expandable && tap != null
+                        ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: DisclosureChevron(open: open, size: 12),
+                          )
+                        : null,
+                  ),
+                  SizedBox(
+                    width: verbWidth,
                     child: Text(
                       spec.verb,
                       maxLines: 1,
-                      style: monoStyle(const TypeSpec(12, 16, 400), t.faint),
+                      style: monoStyle(
+                        const TypeSpec(12, _lineHeight, 400),
+                        t.faint,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       spec.target,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: showWhole ? null : 1,
+                      overflow: showWhole
+                          ? TextOverflow.visible
+                          : TextOverflow.ellipsis,
                       style: targetStyle,
                     ),
                   ),
@@ -325,6 +375,7 @@ class EvidenceRow extends StatelessWidget {
         if (ms == null) return null;
         return Text(formatDuration(ms), maxLines: 1, style: style);
       },
+      canOpen: hasText,
       body: hasText
           ? (context) {
               final t = context.bb;
@@ -341,6 +392,15 @@ class EvidenceRow extends StatelessWidget {
     final target = r.target ?? r.arguments ?? r.name;
     final exit = r.exitCode;
     final output = r.output;
+    final hasOutput = output != null && output.text.isNotEmpty;
+    final parsed = _toolArguments(r.arguments);
+    final hasArguments = parsed != null && !parsed.isEmpty;
+    // Without a target the arguments are the target, shown above in full.
+    final arguments = r.target == null ? null : parsed;
+    final shown = r.kind == ToolKind.exec
+        ? arguments?.without(target)
+        : arguments;
+    final showArguments = shown != null && !shown.isEmpty;
     return _RowSpec(
       verb: switch (r.kind) {
         ToolKind.read => 'read',
@@ -378,11 +438,23 @@ class EvidenceRow extends StatelessWidget {
             r.meta == null ? null : Text(r.meta!, maxLines: 1, style: style),
         };
       },
-      body: output != null && output.text.isNotEmpty
-          ? (context) => ExecOutput(
-              output: output,
-              exitCode: exit,
-              onOpenFull: onOpenOutput == null ? null : () => onOpenOutput!(r),
+      canOpen: hasArguments || hasOutput,
+      body: showArguments || hasOutput
+          ? (context) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showArguments) _ArgumentLines(shown),
+                if (showArguments && hasOutput) const SizedBox(height: 6),
+                if (hasOutput)
+                  ExecOutput(
+                    output: output,
+                    exitCode: exit,
+                    onOpenFull: onOpenOutput == null
+                        ? null
+                        : () => onOpenOutput!(r),
+                  ),
+              ],
             )
           : null,
     );
@@ -402,11 +474,100 @@ class _RowSpec {
     required this.verb,
     required this.target,
     required this.meta,
+    this.canOpen = false,
     this.body,
   });
 
   final String verb;
   final String target;
   final Widget? Function(BuildContext context, TextStyle style) meta;
+
+  /// Whether the row has something to open into (shown with a chevron).
+  final bool canOpen;
+
+  /// What shows under the row when it is open; null when the open row only
+  /// shows its whole target.
   final Widget Function(BuildContext context)? body;
+}
+
+/// A tool call's arguments for display: the entries of a JSON object, or the
+/// text as given when it is not one.
+class _ToolArguments {
+  const _ToolArguments.entries(this.entries) : text = null;
+  const _ToolArguments.text(String this.text) : entries = const [];
+
+  /// One `(key, value)` per member of the JSON object; a value that is not a
+  /// string is its JSON.
+  final List<(String, String)> entries;
+
+  /// The arguments that are not a JSON object.
+  final String? text;
+
+  bool get isEmpty => text == null && entries.isEmpty;
+
+  /// Without the members whose value is [target] (an exec row's command).
+  _ToolArguments without(String target) => text != null
+      ? (text!.trim() == target.trim() ? const _ToolArguments.entries([]) : this)
+      : _ToolArguments.entries([
+          for (final e in entries)
+            if (e.$2.trim() != target.trim()) e,
+        ]);
+}
+
+/// Reads the arguments string of a tool row; null when there are none.
+_ToolArguments? _toolArguments(String? raw) {
+  final text = raw?.trim();
+  if (text == null || text.isEmpty) return null;
+  Object? decoded;
+  try {
+    decoded = jsonDecode(text);
+  } on FormatException {
+    return _ToolArguments.text(text);
+  }
+  if (decoded is! Map) return _ToolArguments.text(text);
+  return _ToolArguments.entries([
+    for (final e in decoded.entries)
+      (
+        '${e.key}',
+        e.value is String ? e.value as String : jsonEncode(e.value),
+      ),
+  ]);
+}
+
+/// The arguments of an open tool row: small mono key/value lines, or the text.
+class _ArgumentLines extends StatelessWidget {
+  const _ArgumentLines(this.arguments);
+
+  final _ToolArguments arguments;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.bb;
+    const spec = TypeSpec(12, 17, 400);
+    final key = monoStyle(spec, t.faint);
+    final value = monoStyle(spec, t.ink);
+    final text = arguments.text;
+    if (text != null) return Text(text, style: value);
+    return Table(
+      columnWidths: const {
+        0: IntrinsicColumnWidth(),
+        1: FlexColumnWidth(),
+      },
+      children: [
+        for (final (k, v) in arguments.entries)
+          TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 10, bottom: 2),
+                child: Text(k, style: key),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(v, style: value),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
 }

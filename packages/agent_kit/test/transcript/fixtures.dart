@@ -223,3 +223,69 @@ List<TranscriptItem> longTranscript(int turns) => [
     ),
   ],
 ];
+
+const longCommand =
+    'cd crates/harbor-runtime && cargo test -p harbor-runtime usage '
+    '--no-fail-fast -- --test-threads=1 --nocapture snapshot_survives_reconnect';
+
+/// A finished group of tool calls with arguments: a read with only
+/// arguments, an exec whose command is long and whose arguments add a
+/// timeout, a fetch with arguments that are not JSON, a read with neither
+/// and a spawn.
+ActivityGroup toolRowsGroup() => ActivityGroup(
+  id: 'a2',
+  at: t0,
+  rows: [
+    ToolRow(
+      id: 'p1',
+      name: 'read',
+      kind: ToolKind.read,
+      target: 'usage/mod.rs',
+      arguments: '{"path":"crates/harbor-runtime/src/usage/mod.rs","limit":80}',
+      state: WorkState.done,
+      meta: '80 lines',
+      startedAt: t0,
+      endedAt: t0.add(const Duration(seconds: 1)),
+    ),
+    ToolRow(
+      id: 'p2',
+      name: 'bash',
+      kind: ToolKind.exec,
+      target: longCommand,
+      arguments: '{"command":"$longCommand","timeout":120000}',
+      state: WorkState.failed,
+      exitCode: 101,
+      output: ToolOutput(
+        text: [
+          ...execOutput,
+          '    --> crates/harbor-runtime/src/usage/mod.rs:183:9 a very long line that scrolls sideways instead of wrapping onto the next line',
+        ].join('\n'),
+        totalBytes: 2300,
+        totalLines: 21,
+      ),
+      startedAt: t0.add(const Duration(seconds: 1)),
+      endedAt: t0.add(const Duration(seconds: 9)),
+    ),
+    ToolRow(
+      id: 'p3',
+      name: 'fetch',
+      kind: ToolKind.web,
+      target: 'docs.rs/tokio',
+      arguments: 'GET https://docs.rs/tokio/latest',
+      state: WorkState.done,
+      startedAt: t0.add(const Duration(seconds: 9)),
+      endedAt: t0.add(const Duration(seconds: 10)),
+    ),
+    ToolRow(
+      id: 'p4',
+      name: 'read',
+      kind: ToolKind.read,
+      target: 'web/src/quota-bar.tsx',
+      state: WorkState.done,
+      meta: '88 lines',
+      startedAt: t0.add(const Duration(seconds: 10)),
+      endedAt: t0.add(const Duration(seconds: 11)),
+    ),
+    const SpawnRow(id: 'p5', childId: 'child-c7e2', task: 'Survey Codex'),
+  ],
+);

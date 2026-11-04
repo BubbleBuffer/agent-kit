@@ -613,6 +613,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
           : null,
       summaryOf: a.summaryOf,
       activityFooter: a.activityFooter,
+      finishedActivityOpen: a.finishedActivityOpen,
       openEveryEdit: a.openEveryEdit,
       itemBuilder: a.itemBuilder,
       now: widget.now ?? a.now,

@@ -69,7 +69,8 @@ controller, the content width, the metrics, the layout, the inserts and the
 interrupted notice), so a host that draws the history another way (an outline,
 compacted summaries) keeps the pane's commands, dock and feed.
 The pane passes `transcriptActions` through whole, so a host's `summaryOf`,
-`activityFooter`, `openEveryEdit` and `itemBuilder` reach the transcript.
+`activityFooter`, `openEveryEdit`, `finishedActivityOpen` and `itemBuilder` reach the
+transcript.
 `TranscriptActions.itemBuilder` draws one item the host's way: it gets the kit's
 widget for the item and returns what to show (the same widget wrapped, or
 another one, such as a user message whose chips look up live titles).
