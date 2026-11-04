@@ -2,6 +2,8 @@
 // open tool row shows, and how a group starts when it has finished.
 
 import 'package:agent_kit/agent_kit.dart';
+import 'package:agent_kit/src/transcript/transcript_support.dart'
+    show DisclosureChevron;
 import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,10 +25,8 @@ double chevronTurns(WidgetTester tester, String rowId) => tester
     )
     .turns;
 
-Finder verbIn(String rowId, String verb) => find.descendant(
-  of: find.byKey(ValueKey(rowId)),
-  matching: find.text(verb),
-);
+Finder verbIn(String rowId, String verb) =>
+    find.descendant(of: find.byKey(ValueKey(rowId)), matching: find.text(verb));
 
 ActivityGroup groupOf(List<ActivityRow> rows) =>
     ActivityGroup(id: 'g', at: t0, rows: rows);
@@ -276,9 +276,7 @@ void main() {
       expect(find.text('exec'), findsWidgets);
     });
 
-    testWidgets('a running group is open whatever the setting', (
-      tester,
-    ) async {
+    testWidgets('a running group is open whatever the setting', (tester) async {
       await pump(tester, running);
       expect(find.text('read'), findsOneWidget);
     });

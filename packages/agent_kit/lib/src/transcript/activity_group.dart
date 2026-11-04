@@ -507,7 +507,9 @@ class _ToolArguments {
 
   /// Without the members whose value is [target] (an exec row's command).
   _ToolArguments without(String target) => text != null
-      ? (text!.trim() == target.trim() ? const _ToolArguments.entries([]) : this)
+      ? (text!.trim() == target.trim()
+            ? const _ToolArguments.entries([])
+            : this)
       : _ToolArguments.entries([
           for (final e in entries)
             if (e.$2.trim() != target.trim()) e,
@@ -527,10 +529,7 @@ _ToolArguments? _toolArguments(String? raw) {
   if (decoded is! Map) return _ToolArguments.text(text);
   return _ToolArguments.entries([
     for (final e in decoded.entries)
-      (
-        '${e.key}',
-        e.value is String ? e.value as String : jsonEncode(e.value),
-      ),
+      ('${e.key}', e.value is String ? e.value as String : jsonEncode(e.value)),
   ]);
 }
 
@@ -549,10 +548,7 @@ class _ArgumentLines extends StatelessWidget {
     final text = arguments.text;
     if (text != null) return Text(text, style: value);
     return Table(
-      columnWidths: const {
-        0: IntrinsicColumnWidth(),
-        1: FlexColumnWidth(),
-      },
+      columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
       children: [
         for (final (k, v) in arguments.entries)
           TableRow(
