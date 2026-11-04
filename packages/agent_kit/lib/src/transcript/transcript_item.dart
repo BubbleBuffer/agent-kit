@@ -49,6 +49,7 @@ class TranscriptActions {
     this.summaryOf,
     this.activityFooter,
     this.openEveryEdit = false,
+    this.finishedActivityOpen = false,
     this.itemBuilder,
     this.now,
   });
@@ -97,6 +98,10 @@ class TranscriptActions {
 
   /// A host disclosure under an open activity group (Scratch's "Show code").
   final Widget? Function(ActivityGroup)? activityFooter;
+
+  /// Whether a finished activity group shows its rows. A running group is
+  /// open either way; a group the person has opened or closed keeps that.
+  final bool finishedActivityOpen;
 
   /// Shows "Open" ([onOpenFile]) on every edit row, not only a created file's.
   final bool openEveryEdit;
@@ -153,6 +158,7 @@ class TranscriptItemView extends StatelessWidget {
       onOpenChild: actions.onOpenChild,
       summaryOf: actions.summaryOf,
       footer: actions.activityFooter?.call(g),
+      finishedOpen: actions.finishedActivityOpen,
     ),
     final FileEdit e => FileEditRow(
       e,

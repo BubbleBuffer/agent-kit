@@ -28,9 +28,12 @@ callbacks, never a backend.
 - **Anchor restore.** `controller.anchor` is the first visible item's id and
   how many px of it are above the top edge; pass it back as
   `TranscriptList.initialAnchor` (or `controller.restore`) to reopen there.
-- **One evidence row open at a time** in an activity group. An exec row opens
-  into its output, a thinking row into its reasoning text (only when the
+- **One evidence row open at a time** in an activity group. A row that opens has a
+  chevron: a tool call opens into its whole target, its arguments and its output,
+  a thinking row into its reasoning text (only when the
   backend sent it), a spawn row calls `onOpenChild`.
+- **Finished groups** start shut; `finishedOpen` (`TranscriptActions.finishedActivityOpen`) opens
+  them, a running group is always open, and a group the person toggled keeps its state.
 - **Host hooks.** `ActivityGroupView.footer` (`TranscriptActions.activityFooter`) sits under
   an open group; `FileEdit.label` replaces the row's wording; `openEveryEdit`
   shows Open on every edit; an undo callback that throws `UndoRefused(message)`
@@ -40,7 +43,7 @@ callbacks, never a backend.
   appended only when the backend sent durations. A host replaces the line with
   `summaryOf` (`ActivityGroupView`, or `TranscriptActions`).
 - **Layout by `SizeClass`** of the list's own width: item gaps 28 (22
-  compact), evidence indent 58 (0 compact), edit rows drop the verb when
+  compact), open body indent 76 (24 compact), edit rows drop the verb when
   compact.
 - Expansion state lives in each row's `State`, keyed by item id, so it
   survives rebuilds but not scrolling the row far off screen.

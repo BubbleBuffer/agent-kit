@@ -201,14 +201,44 @@ Widget _states() {
   ]);
 }
 
+/// Tool calls that open: the whole target, the arguments, the output; then one
+/// with arguments only.
+Widget _rows() => _Sheet([
+  (
+    null,
+    ActivityGroupView(
+      toolRowsGroup(),
+      initiallyOpen: true,
+      initiallyOpenRow: 'p2',
+      onOpenOutput: (_) {},
+      onOpenChild: (_) {},
+    ),
+  ),
+  (
+    28,
+    ActivityGroupView(
+      toolRowsGroup(),
+      initiallyOpen: true,
+      initiallyOpenRow: 'p1',
+      onOpenChild: (_) {},
+    ),
+  ),
+]);
+
 void main() {
   const heights = {
     ('turn', 390): 2120.0,
     ('turn', 1000): 1680.0,
     ('states', 390): 1500.0,
     ('states', 1000): 1250.0,
+    ('rows', 390): 1100.0,
+    ('rows', 1000): 800.0,
   };
-  final sheets = <String, Widget Function()>{'turn': _turn, 'states': _states};
+  final sheets = <String, Widget Function()>{
+    'turn': _turn,
+    'states': _states,
+    'rows': _rows,
+  };
   for (final entry in sheets.entries) {
     for (final width in [390, 1000]) {
       for (final brightness in Brightness.values) {

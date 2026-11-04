@@ -1,6 +1,6 @@
 # ActivityGroupView
 
-One summary line for a run of agent work ("Searched 1× · Read 2 files · Ran 1 command · Worked 48s") that opens into evidence rows. One row is open at a time. This sheet also covers `EvidenceRow` (one row: thinking, tool, or spawn) and `activitySummary` (the default summary line).
+One summary line for a run of agent work ("Searched 1× · Read 2 files · Ran 1 command · Worked 48s") that opens into evidence rows. One row is open at a time, and every row that opens has a chevron. This sheet also covers `EvidenceRow` (one row: thinking, tool, or spawn) and `activitySummary` (the default summary line).
 
 ```dart
 import 'package:agent_kit/agent_kit.dart';
@@ -43,7 +43,8 @@ import 'package:agent_kit/agent_kit.dart';
 | Parameter | Type | Notes |
 |---|---|---|
 | `group` | `ActivityGroup` | Required, positional. Its `rows` are the evidence. |
-| `initiallyOpen` | `bool?` | Whether the evidence starts open. Default: `group.isRunning`. |
+| `initiallyOpen` | `bool?` | Pins whether the evidence starts open, whatever the group's state. Default: open while the group runs, else `finishedOpen`. |
+| `finishedOpen` | `bool` | Default false. Whether a finished group shows its rows. A running group is open either way. When a group finishes it follows this, and a change applies to every group the person has not opened or closed themselves; a group they toggled keeps its state. `TranscriptActions.finishedActivityOpen` sets it. |
 | `initiallyOpenRow` | `String?` | Id of the row that starts open. |
 | `onOpenOutput` | `ValueChanged<ToolRow>?` | "Open full output" on an exec row. Not drawn when null. |
 | `onOpenChild` | `ValueChanged<String>?` | Gets the child's id when a spawn row is tapped. A spawn row is not tappable without it. |
@@ -58,7 +59,8 @@ import 'package:agent_kit/agent_kit.dart';
 **EvidenceRow** (one row; `row` is an `ActivityRow`)
 
 - Thinking row: verb `think`; target is the first line of the reasoning text, or "Thinking…" while streaming, or "Thought"; the reasoning text opens below it when the backend sent it. The meta is a running mark while streaming, otherwise the duration.
-- Tool row: verb from the kind (`read`, `grep` for search, `exec`, `edit`, `write`, `web`, or the tool's name for other); target is `target`, else `arguments`, else `name`. The meta is `exit N` in danger when the exit code is not zero, else a status mark for running, failed, timed out and cancelled, else the meta text. A tool row with non-empty output opens into `ExecOutput`, whatever its kind.
+- Tool row: verb from the kind (`read`, `grep` for search, `exec`, `edit`, `write`, `web`, or the tool's name for other); target is `target`, else `arguments`, else `name`. The meta is `exit N` in danger when the exit code is not zero, else a status mark for running, failed, timed out and cancelled, else the meta text. A tool row opens when it has arguments (a JSON object with members, or any other text) or non-empty output, whatever its kind. Open, the target shows in full and wrapped on the row's own line and is not repeated below. Under it come the arguments as small mono key/value lines (text that is not a JSON object shows as given; an exec row leaves out the members that only repeat its command, and a row with no `target` shows no argument lines because the arguments are its target), then `ExecOutput` with its footer. Long output lines scroll sideways in the block.
+- Chevron: a `DisclosureChevron` (size 12) in an 18 px slot before the verb on every thinking or tool row that opens, turned when open. A row that does not open keeps the empty slot so the verbs line up. A spawn row has no chevron; it opens the child chat.
 - Spawn row: verb `spawn`; target is the task; meta `child <last four characters of the child id>`. Tapping calls `onOpenChild`.
 
 ## Theme roles
@@ -71,7 +73,7 @@ import 'package:agent_kit/agent_kit.dart';
 
 `ActivityGroupView` and `EvidenceRow` read `sizeClassOf(context).isCompact`, which is the class of the nearest `SizeClassBuilder` (the transcript list's own width).
 
-- Compact: the verb column is 40 px (44 px otherwise), and the evidence body is not indented (0 px; 58 px otherwise).
+- Compact: the verb column is 40 px (44 px otherwise), and the open body starts under the verb (24 px) instead of under the target (76 px).
 - The summary line is one line with an ellipsis, in every class.
 
 ## Accessibility
@@ -86,5 +88,6 @@ import 'package:agent_kit/agent_kit.dart';
 
 - Gallery scene: Components. Specimens in `TranscriptSpecimens` (`apps/gallery/lib/components/transcript.dart`): "Activity group: collapsed" (line 70), "open, exec output clamped" (72), "running, thinking streaming" (80), "thinking text open, failed and cancelled rows" (82), and the mixed group that follows it with no label of its own (91).
 - Golden: `apps/gallery/test/component_shots_test.dart` writes `activity_group_collapsed` (index 1), `activity_group_open` (2), `activity_group_running` (3) and `activity_group_mixed` (5), light and dark. Index 0 is the group inside the transcript list.
+- Chevrons, open tool rows (arguments, whole target, output) and how finished groups start are tested in `packages/agent_kit/test/transcript/activity_rows_test.dart`; the `transcript_rows_*` goldens show an open exec row and an open read row.
 - Other tests, in `packages/agent_kit/test/transcript/transcript_test.dart`: "summary line" (line 132), "a footer shows under the rows only while open" (172), "a host can replace the summary line" (185), "Enter on the focused summary expands it" (196), "opens into rows, one at a time" (219), "the exit status is in danger" (253), "a spawn row opens the child" (262), and "running and failed tool rows use the status mark" (276).
 - Transcript goldens in `packages/agent_kit/test/goldens/transcript_turn_*.png` and `transcript_states_*.png`.
