@@ -147,6 +147,7 @@ void main() {
         tester,
         ActivityGroupView(toolRowsGroup(), initiallyOpen: true),
         width: 390,
+        height: 1200,
       );
       Text target() => tester.widget<Text>(find.text(longCommand));
       expect(target().maxLines, 1);
@@ -210,6 +211,7 @@ void main() {
         tester,
         ActivityGroupView(toolRowsGroup(), initiallyOpen: true),
         width: 390,
+        height: 1200,
       );
       await tester.tap(find.text(longCommand));
       await tester.pump();
