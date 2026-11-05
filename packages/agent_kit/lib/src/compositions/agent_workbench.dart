@@ -50,6 +50,8 @@ class AgentWorkbench extends StatefulWidget {
     this.initialWorkspaceShown = false,
     this.onNewChat,
     this.onSearch,
+    this.railSearch,
+    this.railSearchResults,
     this.onSwitchWorkspace,
     this.onSettings,
     this.transcriptActions = const TranscriptActions(),
@@ -101,6 +103,12 @@ class AgentWorkbench extends StatefulWidget {
   /// through the backend and opens it.
   final VoidCallback? onNewChat;
   final VoidCallback? onSearch;
+
+  /// The host's own search field for the rail, in place of the Search row.
+  final Widget? railSearch;
+
+  /// Lets the host show search results where the rail's session list is.
+  final RailSearchResults? railSearchResults;
   final VoidCallback? onSwitchWorkspace;
   final VoidCallback? onSettings;
 
@@ -377,6 +385,8 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
           onSelect: (chat) => _select(chat.id),
           onNewChat: _newChat,
           onSearch: widget.onSearch,
+          search: widget.railSearch,
+          searchResults: widget.railSearchResults,
           onSwitchWorkspace: widget.onSwitchWorkspace,
           onSettings: widget.onSettings,
           hasMore: _nextCursor != null,
