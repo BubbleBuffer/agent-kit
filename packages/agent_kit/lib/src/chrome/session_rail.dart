@@ -15,6 +15,18 @@ import 'chrome_icons.dart';
 import 'command_key.dart';
 import 'rail_model.dart';
 
+/// Builds what the rail shows where the session list goes. [sessions] is the
+/// list itself: return it to leave the rail as it is, or the host's own
+/// content (search results) in its place. [select] picks a chat the way a
+/// row does, and [selectedId] is the open chat.
+typedef RailSearchResults =
+    Widget Function(
+      BuildContext context,
+      Widget sessions,
+      String? selectedId,
+      ValueChanged<ChatSummary> select,
+    );
+
 /// The rail, as wide as its parent makes it (240 px beside the sheet, the
 /// full width as a sliding screen).
 ///
@@ -22,6 +34,9 @@ import 'rail_model.dart';
 /// after a row's status label, `railDetail` by default. Inside a
 /// `RailLayout` the hide button hides the rail and, in compact, picking a
 /// row closes the sliding screen; outside one, pass [onHide].
+///
+/// A host that searches its chats passes [search], which takes the place of
+/// the Search row, and [searchResults], which may swap the list for results.
 class SessionRail extends StatelessWidget {
   const SessionRail({
     super.key,
@@ -34,6 +49,8 @@ class SessionRail extends StatelessWidget {
     this.onSelect,
     this.onNewChat,
     this.onSearch,
+    this.search,
+    this.searchResults,
     this.onSwitchWorkspace,
     this.onSettings,
     this.onHide,
@@ -62,6 +79,14 @@ class SessionRail extends StatelessWidget {
   final ValueChanged<ChatSummary>? onSelect;
   final VoidCallback? onNewChat;
   final VoidCallback? onSearch;
+
+  /// The host's own search field, in place of the Search row (then
+  /// [onSearch] is not used).
+  final Widget? search;
+
+  /// Called with the session list; may return search results in its place.
+  /// Unset, the rail shows the list.
+  final RailSearchResults? searchResults;
   final VoidCallback? onSwitchWorkspace;
   final VoidCallback? onSettings;
 
@@ -140,44 +165,16 @@ class SessionRail extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: _SearchRow(onTap: onSearch),
+              child: search ?? _SearchRow(onTap: onSearch),
             ),
             Expanded(
               child: Builder(
                 builder: (context) {
-                  // Flattened so the list builds only the rows in view.
-                  final entries = <Object>[
-                    for (final group in groups) ...[
-                      group.label,
-                      ...group.chats,
-                    ],
-                    if (hasMore) _loadMoreMarker,
-                  ];
-                  return ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    itemCount: entries.length,
-                    itemBuilder: (context, index) {
-                      final entry = entries[index];
-                      if (entry is String) return _GroupLabel(entry);
-                      if (identical(entry, _loadMoreMarker)) {
-                        return _LoadMoreRow(
-                          loading: loadingMore,
-                          failed: loadMoreFailed,
-                          onTap: onLoadMore,
-                        );
-                      }
-                      final chat = entry as ChatSummary;
-                      return SessionRow(
-                        key: ValueKey('rail-row-${chat.id}'),
-                        chat: chat,
-                        detail: detailFor != null
-                            ? detailFor!(chat)
-                            : railDetail(chat, clock),
-                        selected: chat.id == selectedId,
-                        onTap: () => select(chat),
-                      );
-                    },
-                  );
+                  final list = _list(clock, select);
+                  final swap = searchResults;
+                  return swap == null
+                      ? list
+                      : swap(context, list, selectedId, select);
                 },
               ),
             ),
@@ -202,6 +199,39 @@ class SessionRail extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _list(DateTime clock, void Function(ChatSummary chat) select) {
+    // Flattened so the list builds only the rows in view.
+    final entries = <Object>[
+      for (final group in groups) ...[group.label, ...group.chats],
+      if (hasMore) _loadMoreMarker,
+    ];
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 8),
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        if (entry is String) return _GroupLabel(entry);
+        if (identical(entry, _loadMoreMarker)) {
+          return _LoadMoreRow(
+            loading: loadingMore,
+            failed: loadMoreFailed,
+            onTap: onLoadMore,
+          );
+        }
+        final chat = entry as ChatSummary;
+        return SessionRow(
+          key: ValueKey('rail-row-${chat.id}'),
+          chat: chat,
+          detail: detailFor != null
+              ? detailFor!(chat)
+              : railDetail(chat, clock),
+          selected: chat.id == selectedId,
+          onTap: () => select(chat),
+        );
+      },
     );
   }
 }

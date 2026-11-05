@@ -12,7 +12,7 @@ Status always goes through `StatusMark`. The rail follows the theme (see
 
 | File | Widgets |
 |---|---|
-| `session_rail.dart` | `SessionRail` (project switcher with new chat and hide, search with the Ctrl K hint, grouped rows, settings footer with the avatar), `SessionRow` |
+| `session_rail.dart` | `SessionRail` (project switcher with new chat and hide, search with the Ctrl K hint (or the host's own field and results through `search` and `searchResults`), grouped rows, settings footer with the avatar), `SessionRow` |
 | `rail_layout.dart` | `RailLayout` (the rail beside the content, or sliding over it when compact; Ctrl+B), `RailShowButton` (the header's way back) |
 | `rail_model.dart` | `RailController` (`hidden` above compact, `open` when compact), `RailScope`, `SessionGroup` |
 | `chat_header.dart` | `ChatHeader` (tile, title, `StatusMark` pill, branch, workspace toggle, session menu), `ContextMeter` (a button when `onOpenContext` is set), `ChromeMenuItem` |

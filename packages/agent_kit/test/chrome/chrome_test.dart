@@ -156,6 +156,78 @@ void main() {
     });
   });
 
+  group('SessionRail search slot', () {
+    Widget railWith({
+      Widget? search,
+      RailSearchResults? searchResults,
+      ValueChanged<ChatSummary>? onSelect,
+    }) => Align(
+      alignment: Alignment.topLeft,
+      child: SizedBox(
+        width: 240,
+        height: 640,
+        child: SessionRail(
+          workspaceName: 'bubblepaw-base',
+          groups: groupSessions(s.chats, s.now),
+          selectedId: 'quota',
+          detailFor: s.detailFor,
+          now: s.now,
+          initials: 'BC',
+          onSelect: onSelect,
+          search: search,
+          searchResults: searchResults,
+        ),
+      ),
+    );
+
+    testWidgets('the host field replaces the Search row', (tester) async {
+      await pumpChrome(
+        tester,
+        railWith(search: const Text('host field')),
+        size: const Size(300, 700),
+      );
+      expect(find.text('host field'), findsOneWidget);
+      expect(find.byKey(const ValueKey('rail-search')), findsNothing);
+      expect(find.text(s.quotaTitle), findsOneWidget);
+    });
+
+    testWidgets('results replace the list and pick a chat like a row', (
+      tester,
+    ) async {
+      final picked = <String>[];
+      String? seen;
+      await pumpChrome(
+        tester,
+        railWith(
+          onSelect: (c) => picked.add(c.id),
+          searchResults: (context, sessions, selectedId, select) {
+            seen = selectedId;
+            return GestureDetector(
+              onTap: () => select(s.chats[1]),
+              child: const Text('host results'),
+            );
+          },
+        ),
+        size: const Size(300, 700),
+      );
+      expect(find.text('host results'), findsOneWidget);
+      expect(find.text(s.quotaTitle), findsNothing);
+      expect(seen, 'quota');
+      await tester.tap(find.text('host results'));
+      expect(picked, [s.chats[1].id]);
+    });
+
+    testWidgets('results may hand the list back', (tester) async {
+      await pumpChrome(
+        tester,
+        railWith(searchResults: (context, sessions, _, _) => sessions),
+        size: const Size(300, 700),
+      );
+      expect(find.text(s.quotaTitle), findsOneWidget);
+      expect(find.text('Search'), findsOneWidget);
+    });
+  });
+
   group('SessionRail load more', () {
     Widget railWith({
       bool hasMore = true,

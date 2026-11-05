@@ -33,6 +33,8 @@ import 'package:agent_kit/agent_kit.dart';
 | `initialWorkspaceShown` | `bool` | Default `false`. Whether the workspace starts open. |
 | `onNewChat` | `VoidCallback?` | The rail's new-chat button. When null, the workbench calls `backend.createChat()` and opens the new chat. |
 | `onSearch` | `VoidCallback?` | Passed to the rail's search row. |
+| `railSearch` | `Widget?` | The host's search field, in place of the rail's search row. |
+| `railSearchResults` | `RailSearchResults?` | Shows the host's search results where the rail's session list is. |
 | `onSwitchWorkspace` | `VoidCallback?` | Passed to the rail's project switcher. |
 | `onSettings` | `VoidCallback?` | Passed to the rail's Settings button. |
 | `transcriptActions` | `TranscriptActions` | Default `TranscriptActions()`. What the transcript's rows open. |

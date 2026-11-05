@@ -35,6 +35,8 @@ import 'package:agent_kit/agent_kit.dart';
 | `onSelect` | `ValueChanged<ChatSummary>?` | Called when a row is tapped. The compact screen closes after it. |
 | `onNewChat` | `VoidCallback?` | The New session button. |
 | `onSearch` | `VoidCallback?` | The Search button. |
+| `search` | `Widget?` | The host's own search field, in place of the Search row; `onSearch` is then not used. Unset, the tap row draws as before. |
+| `searchResults` | `RailSearchResults?` | Called with the session list, the selected id and a `select` that picks a chat like a row; return the list as it is, or the host's results in its place. Unset, the rail shows the list. |
 | `onSwitchWorkspace` | `VoidCallback?` | The workspace button. |
 | `onSettings` | `VoidCallback?` | The Settings button. |
 | `onHide` | `VoidCallback?` | The Hide sidebar button. |
@@ -88,5 +90,6 @@ import 'package:agent_kit/agent_kit.dart';
 - Gallery scene: the Components scene (`apps/gallery/lib/src/components_scene.dart`). Specimens: `ChromeSpecimens` in `apps/gallery/lib/components/chrome.dart` (the 240 px column is the first frame; the 390 px sliding screen is `_SlidingRail`).
 - Golden shots: `apps/gallery/test/component_shots_test.dart` writes `session_rail_column` (SessionRail 0) and `session_rail_compact` (SessionRail 1) to `apps/gallery/test/goldens/shots/`. `scenes_golden_test.dart` covers the sheet as `components_1000_light.png` and `components_1000_dark.png`.
 - `packages/agent_kit/test/chrome/chrome_test.dart`, group `SessionRail`: groups, rows with status meta and the footer; the load-more row; "says it is loading and ignores presses meanwhile"; "after a failure the row offers another try"; and the compact sliding screen.
+- `chrome_test.dart`, group `SessionRail search slot`: the host's field replaces the Search row, results replace the list and receive `select`, and an unset slot leaves the tap row and the list.
 - `packages/agent_kit/test/chrome/chrome_golden_test.dart`: `chrome_rail_<brightness>.png`, `chrome_rail_more_<brightness>.png` and `chrome_rail_compact_390_<brightness>.png` in `packages/agent_kit/test/goldens/`.
 - `packages/agent_kit/test/chrome/chrome_test.dart` (group `command key hints`) covers the hint text.
