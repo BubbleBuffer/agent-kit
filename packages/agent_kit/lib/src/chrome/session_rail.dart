@@ -19,13 +19,12 @@ import 'rail_model.dart';
 /// list itself: return it to leave the rail as it is, or the host's own
 /// content (search results) in its place. [select] picks a chat the way a
 /// row does, and [selectedId] is the open chat.
-typedef RailSearchResults =
-    Widget Function(
-      BuildContext context,
-      Widget sessions,
-      String? selectedId,
-      ValueChanged<ChatSummary> select,
-    );
+typedef RailSearchResults = Widget Function(
+  BuildContext context,
+  Widget sessions,
+  String? selectedId,
+  ValueChanged<ChatSummary> select,
+);
 
 /// The rail, as wide as its parent makes it (240 px beside the sheet, the
 /// full width as a sliding screen).
