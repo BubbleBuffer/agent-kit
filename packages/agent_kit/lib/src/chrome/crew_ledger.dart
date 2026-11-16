@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 
 import '../composer/composer_parts.dart' show KitButton, KitButtonKind;
 import '../status/status.dart';
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'chrome_button.dart' show chromeTooltip;
 import 'chrome_format.dart';
@@ -64,19 +65,28 @@ class CrewLedger extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+            padding: const EdgeInsets.fromLTRB(
+              Space.sm,
+              Space.xs,
+              Space.sm,
+              Space.sm,
+            ),
             child: Wrap(
-              spacing: 8,
-              runSpacing: 2,
+              spacing: Space.sm,
+              runSpacing: Space.hair,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
                   heading.label,
-                  style: ts(const TypeSpec(12, 16, 700), theme.muted),
+                  style: ts(
+                    theme.typeScale.uiSmall,
+                    theme.muted,
+                    weight: Weight.bold,
+                  ),
                 ),
                 Text(
                   heading.counts,
-                  style: ts(const TypeSpec(12, 16, 500), theme.faint),
+                  style: ts(theme.typeScale.uiSmall, theme.faint),
                 ),
               ],
             ),
@@ -158,7 +168,7 @@ class _LedgerRow extends StatelessWidget {
 
   Widget _detailText(BbTheme theme) => Text(
     detail!,
-    style: ts(const TypeSpec(12, 16, 400), theme.faint, mono: true),
+    style: ts(theme.typeScale.codeSmall, theme.faint, mono: true),
     maxLines: 1,
     overflow: TextOverflow.ellipsis,
   );
@@ -167,8 +177,8 @@ class _LedgerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.bb;
     final titleStyle = mono
-        ? ts(const TypeSpec(12.5, 18, 400), theme.ink, mono: true)
-        : ts(theme.typeScale.ui, theme.ink, weight: 600);
+        ? ts(theme.typeScale.codeSmall, theme.ink, mono: true)
+        : ts(theme.typeScale.ui, theme.ink, weight: Weight.semibold);
     return Stack(
       children: [
         Hover(
@@ -177,18 +187,23 @@ class _LedgerRow extends StatelessWidget {
           hoverBackground: theme.hover,
           pressedBackground: theme.pressed,
           lift: 0,
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 9),
+          padding: const EdgeInsets.fromLTRB(
+            Space.sm,
+            Space.sm,
+            Space.sm,
+            Space.sm,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: 22,
+                width: KitSizes.leadSlot,
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 2),
+                  padding: const EdgeInsets.only(top: Space.hair),
                   child: ChromeIcon(glyph, color: theme.colors.iconSecondary),
                 ),
               ),
-              const SizedBox(width: 8),
+              const Gap(Space.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +216,7 @@ class _LedgerRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (detail != null) ...[
-                      const SizedBox(height: 2),
+                      const Gap(Space.hair),
                       detailTip == null
                           ? _detailText(theme)
                           : chromeTooltip(
@@ -210,13 +225,13 @@ class _LedgerRow extends StatelessWidget {
                               _detailText(theme),
                             ),
                     ],
-                    const SizedBox(height: 2),
+                    const Gap(Space.hair),
                     if (action == null)
                       status
                     else
                       Wrap(
-                        spacing: 8,
-                        runSpacing: 2,
+                        spacing: Space.sm,
+                        runSpacing: Space.hair,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [status, action!],
                       ),
@@ -229,14 +244,14 @@ class _LedgerRow extends StatelessWidget {
         if (failed)
           Positioned(
             left: 0,
-            top: 6,
-            bottom: 6,
-            width: 3,
+            top: Space.xs,
+            bottom: Space.xs,
+            width: Stroke.seam,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: theme.dangerInk,
                 borderRadius: const BorderRadius.horizontal(
-                  right: Radius.circular(2),
+                  right: Radius.circular(Radii.sm),
                 ),
               ),
             ),
@@ -269,9 +284,9 @@ class _CancelAgent extends StatelessWidget {
       semanticLabel: cancelling ? 'Cancelling $task' : 'Cancel $task',
       kind: KitButtonKind.quiet,
       icon: cancelling ? null : glyphX,
-      iconSize: 13,
-      height: 24,
-      fontSize: 12,
+      iconSize: IconSize.xs,
+      height: ControlSize.xs,
+      type: context.bb.typeScale.uiSmall,
       onTap: cancelling ? null : onTap,
     ),
   );

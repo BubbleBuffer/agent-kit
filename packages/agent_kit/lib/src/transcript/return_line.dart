@@ -48,13 +48,13 @@ class ReturnLine extends StatelessWidget {
       ),
     };
     final compact = sizeClassOf(context).isCompact;
-    final style = ts(const TypeSpec(13, 16, 500), t.muted);
+    final style = ts(t.typeScale.uiSmall, t.muted);
     final line = Text.rich(
       TextSpan(
         children: [
           TextSpan(
             text: result.task,
-            style: style.copyWith(color: t.ink, fontWeight: fw(700)),
+            style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.bold),
           ),
           TextSpan(text: ' $verb'),
         ],
@@ -74,13 +74,22 @@ class ReturnLine extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+          padding: const EdgeInsets.fromLTRB(
+            Space.sm,
+            Space.xs,
+            Space.xxs,
+            Space.xs,
+          ),
           child: Row(
             children: [
-              glyphIcon(glyphEye, size: 14, color: t.colors.iconSecondary),
-              const SizedBox(width: 8),
+              glyphIcon(
+                glyphEye,
+                size: IconSize.xs.px,
+                color: t.colors.iconSecondary,
+              ),
+              const Gap(Space.sm),
               Expanded(child: line),
-              if (!compact) ...[const SizedBox(width: 8), pill],
+              if (!compact) ...[const Gap(Space.sm), pill],
               if (open != null)
                 KitTextButton(
                   'Open',
@@ -122,7 +131,12 @@ class InterruptedNotice extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+          padding: const EdgeInsets.fromLTRB(
+            Space.sm,
+            Space.xs,
+            Space.xxs,
+            Space.xs,
+          ),
           child: Row(
             children: [
               Expanded(

@@ -10,6 +10,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'composer_parts.dart';
 
@@ -92,9 +93,9 @@ class _QueuedRowState extends State<QueuedRow> {
         color: t.colors.borderStrong,
         radius: t.radii.field,
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: isTouch(t) ? 40 : 32),
+          constraints: BoxConstraints(minHeight: t.metrics.control.height),
           child: Padding(
-            padding: const EdgeInsets.only(left: 10, right: 4),
+            padding: const EdgeInsets.only(left: Space.md, right: Space.xxs),
             child: _editing ? _editRow(t) : _row(t, size),
           ),
         ),
@@ -105,79 +106,72 @@ class _QueuedRowState extends State<QueuedRow> {
   bool _show(Object? callback) => callback != null || !widget.hideUnavailable;
 
   Widget _row(BbTheme t, SizeClass size) {
-    const buttonHeight = 24.0;
-    final touch = isTouch(t);
-    return Semantics(
-      container: true,
-      label: 'Queued message',
-      child: Row(
-        children: [
-          const KitIcon(ComposerGlyphs.arrowDown),
-          const SizedBox(width: 8),
-          if (!size.isCompact) ...[
-            Text(
-              'Queued',
-              maxLines: 1,
-              style: ts(
-                t.typeScale.ui,
-                t.faint,
-                weight: 700,
-              ).copyWith(fontSize: 13),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Text(
-              widget.input.text,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: ts(
-                t.typeScale.ui,
-                t.ink,
-                weight: 500,
-              ).copyWith(fontSize: 13),
-            ),
-          ),
-          if (_show(widget.onSendNow)) ...[
-            const SizedBox(width: 8),
-            KitTip(
-              message: 'Deliver now as a steer',
-              child: KitButton(
-                label: 'Send now',
-                kind: KitButtonKind.quiet,
-                icon: ComposerGlyphs.sendHorizontal,
-                height: touch ? 40 : buttonHeight,
-                fontSize: 13,
-                hoverBackground: t.colors.bgSelectedBlock,
-                onTap: widget.onSendNow == null
-                    ? null
-                    : () => widget.onSendNow!(widget.input),
+    final buttonHeight = isTouch(t) ? ControlSize.xl : ControlSize.xs;
+    return LayoutBuilder(
+      builder: (context, box) => Semantics(
+        container: true,
+        label: 'Queued message',
+        child: Row(
+          children: [
+            const KitIcon(ComposerGlyphs.arrowDown),
+            const Gap(Space.sm),
+            if (!size.isCompact) ...[
+              Text(
+                'Queued',
+                maxLines: 1,
+                style: ts(t.typeScale.ui, t.faint, weight: Weight.bold),
+              ),
+              const Gap(Space.sm),
+            ],
+            Expanded(
+              child: Text(
+                widget.input.text,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: ts(t.typeScale.ui, t.ink, weight: Weight.medium),
               ),
             ),
+            if (_show(widget.onSendNow)) ...[
+              const Gap(Space.sm),
+              KitTip(
+                message: 'Deliver now as a steer',
+                child: KitButton(
+                  label: 'Send now',
+                  kind: KitButtonKind.quiet,
+                  icon: ComposerGlyphs.sendHorizontal,
+                  // Very narrow: the icon alone, so the message keeps room.
+                  iconOnly: box.maxWidth < KitSizes.queuedRowLabels,
+                  height: buttonHeight,
+                  hoverBackground: t.colors.bgSelectedBlock,
+                  onTap: widget.onSendNow == null
+                      ? null
+                      : () => widget.onSendNow!(widget.input),
+                ),
+              ),
+            ],
+            if (_show(widget.onEdit)) ...[
+              const Gap(Space.sm),
+              KitButton(
+                label: 'Edit',
+                kind: KitButtonKind.quiet,
+                height: buttonHeight,
+                onTap: widget.onEdit == null ? null : _startEdit,
+              ),
+            ],
+            if (_show(widget.onRemove)) ...[
+              const Gap(Space.sm),
+              KitIconButton(
+                ComposerGlyphs.x,
+                label: 'Remove',
+                size: buttonHeight,
+                onTap: widget.onRemove == null
+                    ? null
+                    : () => widget.onRemove!(widget.input),
+              ),
+            ],
           ],
-          if (_show(widget.onEdit)) ...[
-            const SizedBox(width: 8),
-            KitButton(
-              label: 'Edit',
-              kind: KitButtonKind.quiet,
-              height: touch ? 40 : buttonHeight,
-              fontSize: 13,
-              onTap: widget.onEdit == null ? null : _startEdit,
-            ),
-          ],
-          if (_show(widget.onRemove)) ...[
-            const SizedBox(width: 8),
-            KitIconButton(
-              ComposerGlyphs.x,
-              label: 'Remove',
-              size: touch ? 40 : buttonHeight,
-              onTap: widget.onRemove == null
-                  ? null
-                  : () => widget.onRemove!(widget.input),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -187,8 +181,8 @@ class _QueuedRowState extends State<QueuedRow> {
     final style = ts(
       touch ? t.typeScale.body : t.typeScale.ui,
       t.ink,
-      weight: 400,
-    ).copyWith(fontSize: touch ? null : 13);
+      weight: Weight.regular,
+    );
     return Row(
       children: [
         Expanded(
@@ -206,8 +200,8 @@ class _QueuedRowState extends State<QueuedRow> {
             child: Semantics(
               label: 'Edit queued message',
               textField: true,
-              child: SizedBox(
-                height: touch ? 40 : 32,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: t.metrics.field.height),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: PlainField(
@@ -223,19 +217,18 @@ class _QueuedRowState extends State<QueuedRow> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const Gap(Space.sm),
         KitButton(
           label: 'Save',
           kind: KitButtonKind.quiet,
-          height: touch ? 40 : 24,
-          fontSize: 13,
+          height: touch ? ControlSize.xl : ControlSize.xs,
           onTap: _save,
         ),
-        const SizedBox(width: 8),
+        const Gap(Space.sm),
         KitIconButton(
           ComposerGlyphs.x,
           label: 'Cancel edit',
-          size: touch ? 40 : 24,
+          size: touch ? ControlSize.xl : ControlSize.xs,
           onTap: _cancel,
         ),
       ],

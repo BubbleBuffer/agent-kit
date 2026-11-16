@@ -290,13 +290,18 @@ class _ContextPaneState extends State<ContextPane> {
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                    padding: const EdgeInsets.fromLTRB(
+                      Space.lg,
+                      Space.md,
+                      Space.lg,
+                      0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ContextMeterBar(view: view),
-                        const SizedBox(height: 10),
+                        const Gap(Space.md),
                         _Tabs(
                           tab: _tab,
                           compactionCount: applied,
@@ -332,7 +337,12 @@ class _ContextPaneState extends State<ContextPane> {
             : _full[selectedId] ?? details?.summary(selectedId);
         final list = SingleChildScrollView(
           controller: _nowScroll,
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+          padding: const EdgeInsets.fromLTRB(
+            Space.md,
+            Space.xxs,
+            Space.md,
+            Space.xl,
+          ),
           child: ContextNow(
             view: view,
             details: details,
@@ -410,7 +420,12 @@ class _ContextPaneState extends State<ContextPane> {
               ? const _Loading()
               : SingleChildScrollView(
                   controller: _eventsScroll,
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+                  padding: const EdgeInsets.fromLTRB(
+                    Space.md,
+                    Space.xxs,
+                    Space.md,
+                    Space.xl,
+                  ),
                   child: ContextTimeline(
                     view: view,
                     details: details,
@@ -436,8 +451,11 @@ class _Loading extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text('Loading…', style: ts(t.typeScale.ui, t.faint, weight: 400)),
+      padding: const EdgeInsets.all(Space.lg),
+      child: Text(
+        'Loading…',
+        style: ts(t.typeScale.ui, t.faint, weight: Weight.regular),
+      ),
     );
   }
 }
@@ -498,7 +516,7 @@ class _TabsState extends State<_Tabs> {
 
   @override
   Widget build(BuildContext context) {
-    final touch = isTouch(context);
+    final tabHeight = context.bb.metrics.listRow.height;
     return Focus(
       canRequestFocus: false,
       skipTraversal: true,
@@ -514,7 +532,7 @@ class _TabsState extends State<_Tabs> {
               children: [
                 for (final tab in ContextTab.values)
                   Padding(
-                    padding: const EdgeInsets.only(right: 2),
+                    padding: const EdgeInsets.only(right: Space.hair),
                     child: _TabButton(
                       node: _nodes[tab.index],
                       label: switch (tab) {
@@ -531,7 +549,7 @@ class _TabsState extends State<_Tabs> {
                           ? widget.compactionCount
                           : null,
                       selected: widget.tab == tab,
-                      height: touch ? 40 : 34,
+                      height: tabHeight,
                       onTap: () {
                         widget.onSelect(tab);
                         final node = _nodes[tab.index];
@@ -599,7 +617,7 @@ class _TabButton extends StatelessWidget {
             hoverBackground: t.hover,
             pressedBackground: t.pressed,
             lift: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: Space.sm),
             child: CustomPaint(
               foregroundPainter: _TabMark(
                 selected: selected,
@@ -611,34 +629,44 @@ class _TabButton extends StatelessWidget {
                 focus: t.focus,
                 radius: t.radii.ctl,
               ),
-              child: SizedBox(
-                height: height,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: height),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    glyphIcon(glyph, size: 14, color: t.colors.iconSecondary),
-                    const SizedBox(width: 6),
+                    glyphIcon(
+                      glyph,
+                      size: IconSize.xs.px,
+                      color: t.colors.iconSecondary,
+                    ),
+                    const Gap(Space.xs),
                     Text(
                       label,
                       style: ts(
                         t.typeScale.ui,
                         selected ? t.ink : t.muted,
-                        weight: 600,
+                        weight: Weight.semibold,
                       ),
                     ),
                     if (count != null) ...[
-                      const SizedBox(width: 6),
+                      const Gap(Space.xs),
                       DecoratedBox(
                         decoration: BoxDecoration(
                           color: t.pressed,
                           borderRadius: t.radii.pill,
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Space.xs,
+                          ),
                           child: Text(
                             '$count',
                             style: tabular(
-                              ts(const TypeSpec(11, 16, 600), t.muted),
+                              ts(
+                                t.typeScale.caption,
+                                t.muted,
+                                weight: Weight.semibold,
+                              ),
                             ),
                           ),
                         ),
@@ -678,7 +706,7 @@ class _TabMark extends CustomPainter {
           size.height - 2,
           size.width,
           size.height,
-          const Radius.circular(2),
+          const Radius.circular(Radii.sm),
         ),
         Paint()..color = ink,
       );
@@ -689,7 +717,7 @@ class _TabMark extends CustomPainter {
         Paint()
           ..color = focus
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
+          ..strokeWidth = Stroke.bold,
       );
     }
   }

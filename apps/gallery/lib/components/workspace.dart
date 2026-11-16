@@ -7,6 +7,8 @@ import 'package:agent_kit_core/agent_kit_core.dart' show ChatStatus;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../src/gallery_tokens.dart';
+
 /// The mockup's default tree: the browser on the left at full height, the
 /// terminal over the file preview on the right.
 WorkspaceLayout galleryWorkspaceLayout() => WorkspaceLayout(
@@ -100,48 +102,52 @@ class _WorkspaceSpecimensState extends State<WorkspaceSpecimens> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.bb;
-    Widget gap() => SizedBox(height: t.spacing.xl);
+    Widget gap() => const Gap(Space.xl);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _Stage(
           title: 'AgentWorkspace · expanded (drag dividers and headers)',
-          width: 1000,
-          height: 460,
+          width: StageWidths.desktop,
+          height: Specimen.workspaceLive,
           controller: _live,
         ),
         gap(),
         _Stage(
           title: 'Browser collapsed to its edge tab',
-          width: 1000,
-          height: 360,
+          width: StageWidths.desktop,
+          height: Specimen.workspaceCollapsed,
           controller: _collapsed,
         ),
         gap(),
         _Stage(
           title: 'File pane maximised',
-          width: 1000,
-          height: 300,
+          width: StageWidths.desktop,
+          height: Specimen.workspaceMaximised,
           controller: _maximised,
         ),
         gap(),
         _Stage(
           title: 'Medium: one column of pane tabs',
-          width: 700,
-          height: 340,
+          width: StageWidths.medium,
+          height: Specimen.workspaceMedium,
           controller: _medium,
         ),
         gap(),
         _Stage(
           title: 'Compact: a full-screen sheet with pane tabs',
-          width: 390,
-          height: 480,
+          width: StageWidths.phone,
+          height: Specimen.workspaceCompact,
           controller: _compact,
           sheet: true,
         ),
         gap(),
-        _Stage(title: 'Empty', width: 700, height: 160, controller: _empty),
+        _Stage(
+          title: 'Empty',
+          width: StageWidths.medium,
+          height: Specimen.workspaceEmpty,
+          controller: _empty,
+        ),
       ],
     );
   }
@@ -166,12 +172,12 @@ class _Stage extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     // The mockup keeps 12 px around the tree; the sheet is edge to edge.
-    final pad = sheet ? 0.0 : t.spacing.md;
+    final pad = sheet ? 0.0 : Space.md;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: t.spacing.sm),
+          padding: EdgeInsets.only(bottom: Space.sm),
           child: Text(title, style: ts(t.typeScale.uiSmall, t.muted)),
         ),
         SingleChildScrollView(
@@ -210,8 +216,13 @@ class _Stage extends StatelessWidget {
 
 // ----- fake panes -----
 
-TextStyle _mono(BbTheme t, Color color, {double size = 12, double line = 18}) =>
-    ts(TypeSpec(size, line, 400), color, mono: true);
+TextStyle _mono(BbTheme t, Color color, {bool large = false, Weight? weight}) =>
+    ts(
+      large ? t.typeScale.code : t.typeScale.codeSmall,
+      color,
+      mono: true,
+      weight: weight,
+    );
 
 /// A browser card: the address bar is the kit's; the page is the host's.
 class FakeBrowserPane extends StatelessWidget {
@@ -220,27 +231,28 @@ class FakeBrowserPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    Widget navButton(IconData icon) => SizedBox(
-      width: 26,
-      height: 26,
-      child: Center(child: LucideIcon(icon, size: 14, color: t.muted)),
+    Widget navButton(IconData icon) => SizedBox.square(
+      dimension: ControlSize.sm.height,
+      child: Center(
+        child: LucideIcon(icon, size: IconSize.xs.px, color: t.muted),
+      ),
     );
     return Column(
       children: [
-        SizedBox(
-          height: 36,
+        ConstrainedBox(
+          constraints: BoxConstraints(minHeight: ControlSize.lg.height),
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: t.seam)),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: Space.xs),
               child: Row(
                 children: [
                   navButton(WorkspaceIcons.arrowLeft),
                   navButton(WorkspaceIcons.arrowRight),
                   navButton(WorkspaceIcons.rotateCw),
-                  const SizedBox(width: 4),
+                  const Gap(Space.xxs),
                   Expanded(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
@@ -248,9 +260,13 @@ class FakeBrowserPane extends StatelessWidget {
                         borderRadius: t.radii.pill,
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: SizedBox(
-                          height: 26,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Space.md,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: ControlSize.sm.height,
+                          ),
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text.rich(
@@ -288,35 +304,39 @@ class FakeBrowserPane extends StatelessWidget {
             child: ClipRect(
               child: SingleChildScrollView(
                 physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(Space.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: Space.sm,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           'BubblePaw',
-                          style: ts(t.typeScale.ui, t.ink, weight: 700),
+                          style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
                         ),
-                        const SizedBox(width: 12),
                         Text(
                           'Sessions',
                           style: ts(t.typeScale.uiSmall, t.muted),
                         ),
-                        const SizedBox(width: 8),
                         Text(
                           'Usage',
-                          style: ts(t.typeScale.uiSmall, t.ink, weight: 700),
+                          style: ts(
+                            t.typeScale.uiSmall,
+                            t.ink,
+                            weight: Weight.bold,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const Gap(Space.sm),
                     const StatusMark(
                       ChatStatus.running,
                       label: 'Reconnecting',
                       detail: 'showing the last figure from 14s ago',
                     ),
-                    const SizedBox(height: 12),
+                    const Gap(Space.md),
                     _AppCard(
                       children: [
                         Text(
@@ -325,44 +345,50 @@ class FakeBrowserPane extends StatelessWidget {
                         ),
                         Text(
                           '62%',
-                          style: ts(t.typeScale.h2, t.ink, weight: 700),
+                          style: ts(t.typeScale.h2, t.ink, weight: Weight.bold),
                         ),
-                        const SizedBox(height: 4),
+                        const Gap(Space.xxs),
                         _Meter(fraction: .62, color: t.faint),
-                        const SizedBox(height: 6),
+                        const Gap(Space.xs),
                         Text(
                           '1.24M of 2M tokens · resets Monday 00:00',
-                          style: ts(t.typeScale.uiSmall, t.muted, weight: 400),
+                          style: ts(
+                            t.typeScale.uiSmall,
+                            t.muted,
+                            weight: Weight.regular,
+                          ),
                         ),
-                        const SizedBox(height: 4),
+                        const Gap(Space.xxs),
                         Row(
                           children: [
                             LucideIcon(
                               WorkspaceIcons.clock,
-                              size: 12,
+                              size: IconSize.xs.px,
                               color: t.attentionInk,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Stale, last update 14s ago',
-                              style: ts(
-                                t.typeScale.uiSmall,
-                                t.attentionInk,
-                                weight: 500,
+                            const Gap(Space.xxs),
+                            Flexible(
+                              child: Text(
+                                'Stale, last update 14s ago',
+                                style: ts(
+                                  t.typeScale.uiSmall,
+                                  t.attentionInk,
+                                  weight: Weight.medium,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const Gap(Space.sm),
                     _AppCard(
                       children: [
                         Text(
                           'By model',
                           style: ts(t.typeScale.uiSmall, t.muted),
                         ),
-                        const SizedBox(height: 4),
+                        const Gap(Space.xxs),
                         for (final (name, share) in const [
                           ('deepseek-v4.1-flash', '48%'),
                           ('gpt-6.1-sol', '14%'),
@@ -371,7 +397,14 @@ class FakeBrowserPane extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(name, style: _mono(t, t.ink)),
+                              Flexible(
+                                child: Text(
+                                  name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: _mono(t, t.ink),
+                                ),
+                              ),
                               Text(share, style: _mono(t, t.muted)),
                             ],
                           ),
@@ -403,7 +436,7 @@ class _AppCard extends StatelessWidget {
         borderRadius: t.radii.field,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(Space.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: children,
@@ -423,11 +456,11 @@ class _Meter extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return SizedBox(
-      height: 6,
+      height: FakePane.bar,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: t.surface2,
-          borderRadius: BorderRadius.circular(3),
+          borderRadius: BorderRadius.circular(Radii.sm),
         ),
         child: FractionallySizedBox(
           alignment: Alignment.centerLeft,
@@ -435,7 +468,7 @@ class _Meter extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(Radii.sm),
             ),
           ),
         ),
@@ -493,7 +526,12 @@ class FakeTerminalPane extends StatelessWidget {
       child: ClipRect(
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+          padding: const EdgeInsets.fromLTRB(
+            Space.md,
+            Space.md,
+            Space.md,
+            Space.lg,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -503,14 +541,15 @@ class FakeTerminalPane extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.clip,
-                  style:
-                      _mono(t, switch (kind) {
-                        'p' => t.ink,
-                        'b' => t.dangerInk,
-                        _ => t.muted,
-                      }).copyWith(
-                        fontWeight: kind == 'b' || kind == 'p' ? fw(600) : null,
-                      ),
+                  style: _mono(
+                    t,
+                    switch (kind) {
+                      'p' => t.ink,
+                      'b' => t.dangerInk,
+                      _ => t.muted,
+                    },
+                    weight: kind == 'b' || kind == 'p' ? Weight.semibold : null,
+                  ),
                 ),
             ],
           ),
@@ -548,33 +587,37 @@ class FakeFilePane extends StatelessWidget {
     final t = context.bb;
     return Column(
       children: [
-        SizedBox(
-          height: 36,
+        ConstrainedBox(
+          constraints: BoxConstraints(minHeight: ControlSize.lg.height),
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: t.seam)),
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 0, 8, 0),
+              padding: const EdgeInsets.fromLTRB(Space.md, 0, Space.sm, 0),
               child: Row(
                 children: [
                   Text(
                     'Pending edit',
-                    style: ts(t.typeScale.uiSmall, t.attentionInk, weight: 600),
+                    style: ts(
+                      t.typeScale.uiSmall,
+                      t.attentionInk,
+                      weight: Weight.semibold,
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const Gap(Space.sm),
                   Flexible(
                     child: Text(
                       '…/src/usage/mod.rs',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: _mono(t, t.muted, line: 16),
+                      style: _mono(t, t.muted),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text('+8', style: _mono(t, t.constructiveInk, line: 16)),
-                  const SizedBox(width: 6),
-                  Text('−3', style: _mono(t, t.dangerInk, line: 16)),
+                  const Gap(Space.sm),
+                  Text('+8', style: _mono(t, t.constructiveInk)),
+                  const Gap(Space.xs),
+                  Text('−3', style: _mono(t, t.dangerInk)),
                 ],
               ),
             ),
@@ -584,7 +627,7 @@ class FakeFilePane extends StatelessWidget {
           child: ClipRect(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.only(top: 6, bottom: 12),
+              padding: const EdgeInsets.only(top: Space.xs, bottom: Space.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -617,21 +660,21 @@ class _FileLine extends StatelessWidget {
         : del
         ? t.dangerInk
         : t.ink;
-    final base = _mono(t, ink, size: 12.5, line: 20);
+    final base = _mono(t, ink, large: true);
     return ColoredBox(
       color: add
           ? t.constructive
           : del
           ? t.danger
           : kTransparent,
-      child: SizedBox(
-        height: 20,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: t.typeScale.code.line),
         child: Row(
           children: [
             SizedBox(
-              width: 44,
+              width: FakePane.diffGutter,
               child: Padding(
-                padding: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.only(right: Space.sm),
                 child: Text(
                   n == null ? '' : '$n',
                   textAlign: TextAlign.right,
@@ -640,7 +683,7 @@ class _FileLine extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: 16,
+              width: FakePane.diffSign,
               child: Text(
                 sign.trim(),
                 textAlign: TextAlign.center,
@@ -674,24 +717,27 @@ class FakeActivityPane extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.lg,
+        vertical: Space.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Still running', style: ts(t.typeScale.uiSmall, t.faint)),
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
           const StatusMark(
             ChatStatus.running,
             label: 'Survey quota handling in Codex',
             detail: '1m',
           ),
-          const SizedBox(height: 6),
+          const Gap(Space.xs),
           const StatusMark(
             ChatStatus.done,
             label: 'Map UsageState transitions',
             detail: '2m',
           ),
-          const SizedBox(height: 6),
+          const Gap(Space.xs),
           const StatusMark(
             ChatStatus.failed,
             label: 'cargo test -p harbor-runtime usage',

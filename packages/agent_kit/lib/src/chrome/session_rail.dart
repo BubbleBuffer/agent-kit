@@ -8,6 +8,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import '../status/status.dart';
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'chrome_button.dart';
 import 'chrome_format.dart';
@@ -131,7 +132,12 @@ class SessionRail extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 12, 8, 6),
+              padding: const EdgeInsets.fromLTRB(
+                Space.sm,
+                Space.md,
+                Space.sm,
+                Space.xs,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -140,7 +146,7 @@ class SessionRail extends StatelessWidget {
                       onTap: onSwitchWorkspace,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const Gap(Space.xxs),
                   ChromeIconButton(
                     glyphSquarePen,
                     key: const ValueKey('rail-new-chat'),
@@ -149,7 +155,7 @@ class SessionRail extends StatelessWidget {
                     color: theme.railInk,
                     hoverColor: theme.railHover,
                   ),
-                  const SizedBox(width: 2),
+                  const Gap(Space.hair),
                   ChromeIconButton(
                     glyphPanelLeftClose,
                     key: const ValueKey('rail-hide'),
@@ -163,7 +169,7 @@ class SessionRail extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: Space.sm),
               child: search ?? _SearchRow(onTap: onSearch),
             ),
             Expanded(
@@ -178,17 +184,22 @@ class SessionRail extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
+              padding: const EdgeInsets.fromLTRB(
+                Space.sm,
+                0,
+                Space.sm,
+                Space.md,
+              ),
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   border: Border(top: BorderSide(color: theme.railLine)),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: Space.sm),
                   child: Row(
                     children: [
                       Expanded(child: _SettingsLink(onTap: onSettings)),
-                      const SizedBox(width: 8),
+                      const Gap(Space.sm),
                       _Avatar(initials: initials),
                     ],
                   ),
@@ -208,7 +219,7 @@ class SessionRail extends StatelessWidget {
       if (hasMore) _loadMoreMarker,
     ];
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: Space.sm),
       itemCount: entries.length,
       itemBuilder: (context, index) {
         final entry = entries[index];
@@ -258,8 +269,10 @@ class SessionRow extends StatelessWidget {
     final theme = context.bb;
     final title = ts(
       theme.typeScale.ui,
-      theme.railInk.withValues(alpha: selected ? 1 : .86),
-      weight: selected ? 700 : 500,
+      theme.railInk.withValues(
+        alpha: selected ? KitAlpha.opaque : Alpha.strong,
+      ),
+      weight: selected ? Weight.bold : Weight.medium,
     );
     return Semantics(
       selected: selected,
@@ -267,7 +280,7 @@ class SessionRow extends StatelessWidget {
         fit: StackFit.passthrough,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: Space.sm),
             child: Hover(
               onTap: onTap,
               borderRadius: theme.radii.ctl,
@@ -276,7 +289,12 @@ class SessionRow extends StatelessWidget {
               hoverBackground: theme.railHover,
               pressedBackground: theme.railSelected,
               lift: 0,
-              padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+              padding: const EdgeInsets.fromLTRB(
+                Space.md,
+                Space.xs,
+                Space.sm,
+                Space.xs,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -287,7 +305,7 @@ class SessionRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  const Gap(Space.hair),
                   StatusMark(chat.status, detail: detail),
                 ],
               ),
@@ -298,12 +316,12 @@ class SessionRow extends StatelessWidget {
               left: 0,
               top: 0,
               bottom: 0,
-              width: 3,
+              width: Stroke.seam,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: theme.railInk,
                   borderRadius: const BorderRadius.horizontal(
-                    right: Radius.circular(2),
+                    right: Radius.circular(Radii.sm),
                   ),
                 ),
               ),
@@ -344,7 +362,7 @@ class _LoadMoreRow extends StatelessWidget {
       excludeSemantics: true,
       onTap: enabled ? onTap : null,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+        padding: const EdgeInsets.fromLTRB(Space.sm, Space.xxs, Space.sm, 0),
         child: Hover(
           key: const ValueKey('rail-load-more'),
           onTap: enabled ? onTap : null,
@@ -352,11 +370,13 @@ class _LoadMoreRow extends StatelessWidget {
           hoverBackground: theme.railHover,
           pressedBackground: theme.railSelected,
           lift: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: Space.md),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 32),
+            constraints: BoxConstraints(
+              minHeight: theme.metrics.control.height,
+            ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: Space.xs),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -364,7 +384,7 @@ class _LoadMoreRow extends StatelessWidget {
                   style: ts(
                     theme.typeScale.ui,
                     failed ? theme.dangerInk : theme.railMuted,
-                    weight: 500,
+                    weight: Weight.medium,
                   ),
                 ),
               ),
@@ -385,16 +405,20 @@ class _GroupLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.bb;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: SizedBox(
-        height: 30,
+      padding: const EdgeInsets.fromLTRB(Space.lg, Space.sm, Space.lg, 0),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: ControlSize.md.height),
         child: Align(
           alignment: Alignment.bottomLeft,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: Space.xs),
             child: Text(
               label,
-              style: ts(const TypeSpec(12, 16, 700), theme.railMuted),
+              style: ts(
+                theme.typeScale.uiSmall,
+                theme.railMuted,
+                weight: Weight.bold,
+              ),
             ),
           ),
         ),
@@ -424,23 +448,31 @@ class _WorkspaceButton extends StatelessWidget {
         hoverBackground: theme.railHover,
         pressedBackground: theme.railSelected,
         lift: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: SizedBox(
-          height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: theme.metrics.control.height),
           child: Row(
             children: [
               ChromeIcon(glyphFolderPen, color: theme.railInk),
-              const SizedBox(width: 8),
+              const Gap(Space.sm),
               Expanded(
                 child: Text(
                   name,
-                  style: ts(theme.typeScale.ui, theme.railInk, weight: 700),
+                  style: ts(
+                    theme.typeScale.ui,
+                    theme.railInk,
+                    weight: Weight.bold,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 8),
-              ChromeIcon(glyphChevronDown, size: 14, color: theme.railMuted),
+              const Gap(Space.sm),
+              ChromeIcon(
+                glyphChevronDown,
+                size: IconSize.xs,
+                color: theme.railMuted,
+              ),
             ],
           ),
         ),
@@ -457,7 +489,7 @@ class _SearchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.bb;
-    final showKey = theme.formFactor != FormFactor.mobile;
+    final showKey = !theme.touch;
     return Semantics(
       button: true,
       label: 'Search',
@@ -470,17 +502,21 @@ class _SearchRow extends StatelessWidget {
         hoverBackground: theme.railHover,
         pressedBackground: theme.railSelected,
         lift: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: SizedBox(
-          height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: theme.metrics.row.height),
           child: Row(
             children: [
               ChromeIcon(glyphSearch, color: theme.railMuted),
-              const SizedBox(width: 10),
+              const Gap(Space.md),
               Expanded(
                 child: Text(
                   'Search',
-                  style: ts(theme.typeScale.ui, theme.railMuted, weight: 500),
+                  style: ts(
+                    theme.typeScale.ui,
+                    theme.railMuted,
+                    weight: Weight.medium,
+                  ),
                   maxLines: 1,
                 ),
               ),
@@ -488,8 +524,8 @@ class _SearchRow extends StatelessWidget {
                 Text(
                   commandKeyHint('Ctrl K'),
                   style: ts(
-                    const TypeSpec(11, 16, 400),
-                    theme.railMuted.withValues(alpha: .85),
+                    theme.typeScale.caption,
+                    theme.railMuted.withValues(alpha: Alpha.strong),
                     mono: true,
                   ),
                 ),
@@ -521,16 +557,20 @@ class _SettingsLink extends StatelessWidget {
         hoverBackground: theme.railHover,
         pressedBackground: theme.railSelected,
         lift: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: SizedBox(
-          height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: theme.metrics.row.height),
           child: Row(
             children: [
               ChromeIcon(glyphSettings, color: theme.railMuted),
-              const SizedBox(width: 10),
+              const Gap(Space.md),
               Text(
                 'Settings',
-                style: ts(theme.typeScale.ui, theme.railMuted, weight: 500),
+                style: ts(
+                  theme.typeScale.ui,
+                  theme.railMuted,
+                  weight: Weight.medium,
+                ),
               ),
             ],
           ),
@@ -552,9 +592,8 @@ class _Avatar extends StatelessWidget {
         ? theme.colors.bgPrimary
         : theme.colors.textPrimary;
     return ExcludeSemantics(
-      child: SizedBox(
-        width: 28,
-        height: 28,
+      child: SizedBox.square(
+        dimension: ControlSize.sm.height,
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: spaceColor('moss', theme.brightness) ?? theme.accent,
@@ -563,7 +602,7 @@ class _Avatar extends StatelessWidget {
           child: Center(
             child: Text(
               initials,
-              style: ts(const TypeSpec(11, 11, 700), letters),
+              style: ts(theme.typeScale.micro, letters, weight: Weight.bold),
             ),
           ),
         ),

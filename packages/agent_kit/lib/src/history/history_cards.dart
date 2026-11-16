@@ -12,6 +12,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../context/context_support.dart' show glyphCtxMessage;
 import '../outline/outline_chapter_widgets.dart' show outlineColor;
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import '../transcript/transcript_support.dart';
 import 'history_controller.dart';
@@ -84,7 +85,7 @@ class HistoryChapterCard extends StatelessWidget {
       builder: (context, _) {
         final open = controller.chapterOpen(key);
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(horizontal: Space.xxs),
           child: FoldableStackCard(
             faceKey: ValueKey('history-chapter-$key-face'),
             edge: outlineColor(context, chapter.colorIndex),
@@ -100,8 +101,8 @@ class HistoryChapterCard extends StatelessWidget {
                 if (hasFace) face,
                 if (chapter.episodes.isNotEmpty)
                   Container(
-                    margin: EdgeInsets.only(top: hasFace ? 14 : 0),
-                    padding: const EdgeInsets.only(top: 14),
+                    margin: EdgeInsets.only(top: hasFace ? Space.lg : 0),
+                    padding: const EdgeInsets.only(top: Space.lg),
                     decoration: hasFace
                         ? BoxDecoration(
                             border: Border(
@@ -120,7 +121,7 @@ class HistoryChapterCard extends StatelessWidget {
             footer: (open) => counts.isEmpty && chapter.episodes.isEmpty
                 ? null
                 : Padding(
-                    padding: const EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.only(top: Space.md),
                     child: Row(
                       children: [
                         Expanded(
@@ -166,7 +167,7 @@ class _ChapterFace extends StatelessWidget {
         for (final (i, d) in chapter.decisions.indexed)
           Padding(
             key: ValueKey('history-chapter-${chapter.key}-decision-$i'),
-            padding: const EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.only(top: Space.xs),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -179,7 +180,7 @@ class _ChapterFace extends StatelessWidget {
           ),
         if (chapter.sections.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 6),
+            padding: const EdgeInsets.only(top: Space.xs),
             child: MarkedList(
               rows: [
                 for (final (i, s) in chapter.sections.indexed)
@@ -221,7 +222,12 @@ class HistoryCurrentChapter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(2, 0, 2, 10),
+          padding: const EdgeInsets.fromLTRB(
+            Space.hair,
+            0,
+            Space.hair,
+            Space.md,
+          ),
           child: Text.rich(
             key: ValueKey('history-current-${chapter.key}'),
             TextSpan(
@@ -229,7 +235,7 @@ class HistoryCurrentChapter extends StatelessWidget {
               children: [
                 TextSpan(
                   text: 'Current chapter',
-                  style: ts(ty.uiSmall, t.ink, weight: 700),
+                  style: ts(ty.uiSmall, t.ink, weight: Weight.bold),
                 ),
                 if (when.isNotEmpty) ...[sep, TextSpan(text: when)],
                 sep,
@@ -264,7 +270,7 @@ class _EpisodeList extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       for (final (i, e) in episodes.indexed) ...[
-        if (i > 0) const SizedBox(height: 10),
+        if (i > 0) const Gap(Space.md),
         HistoryEpisodeCard(
           episode: e,
           controller: controller,
@@ -292,7 +298,7 @@ class HistoryLegacyCard extends StatelessWidget {
     final when = historyWhen(legacy.startedAt, legacy.endedAt);
     final title = legacy.title;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+      padding: const EdgeInsets.fromLTRB(Space.xxs, 0, Space.xxs, Space.xs),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(Radii.lg),
         child: DecoratedBox(
@@ -307,13 +313,18 @@ class HistoryLegacyCard extends StatelessWidget {
                 left: 0,
                 top: 0,
                 bottom: 0,
-                width: 4,
+                width: Sizes.edge,
                 child: ColoredBox(
                   color: outlineColor(context, legacy.colorIndex),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.lg,
+                  Space.md,
+                  Space.md,
+                  Space.md,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -326,12 +337,12 @@ class HistoryLegacyCard extends StatelessWidget {
                       style: ts(ty.uiSmall, c.textTertiary),
                     ),
                     if (title != null && title.isNotEmpty) ...[
-                      const SizedBox(height: 1),
+                      const Gap(Space.hair),
                       Text(title, style: tsDisplay(ty.h3, c.textPrimary)),
                     ],
-                    const SizedBox(height: 3),
+                    const Gap(Space.xxs),
                     Text(legacy.summary, style: ts(ty.body, c.textPrimary)),
-                    const SizedBox(height: 10),
+                    const Gap(Space.md),
                     Text(
                       _plural(legacy.messageCount, 'message'),
                       style: ts(ty.uiSmall, c.textSecondary),
@@ -363,7 +374,10 @@ class HistoryBoundary extends StatelessWidget {
     final ty = t.typeScale;
     final compact = sizeClassOf(context).isCompact;
     Widget rule() => Expanded(
-      child: SizedBox(height: 1, child: ColoredBox(color: t.thread)),
+      child: SizedBox(
+        height: Stroke.hair,
+        child: ColoredBox(color: t.thread),
+      ),
     );
     return Semantics(
       container: true,
@@ -372,18 +386,22 @@ class HistoryBoundary extends StatelessWidget {
         child: Row(
           children: [
             rule(),
-            const SizedBox(width: 8),
-            glyphIcon(glyphArrowDown, size: 14, color: t.colors.iconSecondary),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
+            glyphIcon(
+              glyphArrowDown,
+              size: IconSize.xs.px,
+              color: t.colors.iconSecondary,
+            ),
+            const Gap(Space.sm),
             Text(
               'Full messages from here',
-              style: ts(ty.uiSmall, t.ink, weight: 600),
+              style: ts(ty.uiSmall, t.ink, weight: Weight.semibold),
             ),
             if (!compact) ...[
-              const SizedBox(width: 8),
+              const Gap(Space.sm),
               Text('message $messageNumber', style: ts(ty.uiSmall, t.faint)),
             ],
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
             rule(),
           ],
         ),
@@ -471,10 +489,10 @@ class HistoryEpisodeCard extends StatelessWidget {
             ),
             child: Padding(
               padding: EdgeInsets.fromLTRB(
-                compact ? 10 : 12,
+                compact ? Space.md : Space.md,
                 0,
-                compact ? 10 : 12,
-                6,
+                compact ? Space.md : Space.md,
+                Space.xs,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -485,12 +503,12 @@ class HistoryEpisodeCard extends StatelessWidget {
                     lift: 0,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        minHeight: isTouch(context) ? 40 : 34,
+                        minHeight: t.metrics.listRow.height,
                       ),
                       child: Row(
                         children: [
-                          DisclosureChevron(open: open, size: 12),
-                          const SizedBox(width: 6),
+                          DisclosureChevron(open: open, size: IconSize.xs),
+                          const Gap(Space.xs),
                           Expanded(
                             child: Text.rich(
                               TextSpan(
@@ -516,7 +534,7 @@ class HistoryEpisodeCard extends StatelessWidget {
                             ),
                           ),
                           if (hasActions && !compact) ...[
-                            const SizedBox(width: 8),
+                            const Gap(Space.sm),
                             Text(
                               counts,
                               maxLines: 1,
@@ -528,17 +546,20 @@ class HistoryEpisodeCard extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 18),
+                    padding: const EdgeInsets.only(left: Space.lg),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           episode.title,
-                          style: ts(ty.ui, t.ink, weight: 700),
+                          style: ts(ty.ui, t.ink, weight: Weight.bold),
                         ),
                         if (gist != null && gist.isNotEmpty)
-                          Text(gist, style: ts(ty.ui, t.muted, weight: 400)),
-                        const SizedBox(height: 6),
+                          Text(
+                            gist,
+                            style: ts(ty.ui, t.muted, weight: Weight.regular),
+                          ),
+                        const Gap(Space.xs),
                       ],
                     ),
                   ),
@@ -547,13 +568,13 @@ class HistoryEpisodeCard extends StatelessWidget {
                   if (view == HistoryEpisodeView.messages &&
                       messagesBuilder != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.only(bottom: Space.xxs),
                       child: messagesBuilder!(context, episode),
                     ),
                   if (footer != null)
                     Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      padding: const EdgeInsets.only(top: 4),
+                      margin: const EdgeInsets.only(top: Space.xxs),
+                      padding: const EdgeInsets.only(top: Space.xxs),
                       alignment: Alignment.centerLeft,
                       decoration: BoxDecoration(
                         border: Border(top: BorderSide(color: c.borderSubtle)),
@@ -599,7 +620,7 @@ class _ActionLog extends StatelessWidget {
         ),
         if (rest > 0)
           Padding(
-            padding: EdgeInsets.only(left: 48, top: 2),
+            padding: EdgeInsets.only(left: Space.xxxl, top: Space.hair),
             child: Align(
               alignment: Alignment.centerLeft,
               child: KitTextButton(
@@ -633,7 +654,10 @@ class _ActionRow extends StatelessWidget {
     final marker = action.marker;
     final point = action.point;
     final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.sm,
+        vertical: Space.hair,
+      ),
       decoration: BoxDecoration(
         color: t.surface,
         borderRadius: BorderRadius.circular(Radii.sm),
@@ -651,14 +675,14 @@ class _ActionRow extends StatelessWidget {
         border: Border(bottom: BorderSide(color: t.colors.borderSubtle)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: Space.xxs),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: 56,
+              width: KitSizes.historyVerbColumn,
               child: Padding(
-                padding: const EdgeInsets.only(top: 1),
+                padding: const EdgeInsets.only(top: Space.hair),
                 child: Text(
                   action.verb,
                   maxLines: 1,
@@ -667,19 +691,21 @@ class _ActionRow extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
-                    runSpacing: 4,
+                    spacing: Space.sm,
+                    runSpacing: Space.xxs,
                     children: [
                       ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxWidth: compact ? 220 : 520,
+                          maxWidth: compact
+                              ? KitSizes.historyChipCompact
+                              : KitSizes.historyChip,
                         ),
                         child: chip,
                       ),
@@ -695,7 +721,7 @@ class _ActionRow extends StatelessWidget {
                                   style: ts(
                                     ty.uiSmall,
                                     _tone(t, tone),
-                                    weight: 600,
+                                    weight: Weight.semibold,
                                   ),
                                 ),
                             ],
@@ -732,27 +758,42 @@ class _PointLine extends StatelessWidget {
       HistoryPointKind.question => 'open question',
     };
     final Widget icon = switch (point.kind) {
-      HistoryPointKind.decision => Icon20(Ico.star, size: 12, color: ink),
-      HistoryPointKind.correction => glyphIcon(
-        _glyphReply,
-        size: 12,
+      HistoryPointKind.decision => Icon20(
+        Ico.star,
+        size: IconSize.xs,
         color: ink,
       ),
-      HistoryPointKind.error => glyphIcon(glyphCircleX, size: 12, color: ink),
+      HistoryPointKind.correction => glyphIcon(
+        _glyphReply,
+        size: IconSize.xs.px,
+        color: ink,
+      ),
+      HistoryPointKind.error => glyphIcon(
+        glyphCircleX,
+        size: IconSize.xs.px,
+        color: ink,
+      ),
       HistoryPointKind.question => glyphIcon(
         glyphCtxMessage,
-        size: 12,
+        size: IconSize.xs.px,
         color: ink,
       ),
     };
     return Padding(
-      padding: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.only(top: Space.hair),
       child: Row(
         children: [
           ExcludeSemantics(child: icon),
-          const SizedBox(width: 5),
-          Text(word, style: ts(ty.uiSmall, ink, weight: 700)),
-          const SizedBox(width: 5),
+          const Gap(Space.xs),
+          Flexible(
+            child: Text(
+              word,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ts(ty.uiSmall, ink, weight: Weight.bold),
+            ),
+          ),
+          const Gap(Space.xs),
           Expanded(
             child: Text(
               point.reason,

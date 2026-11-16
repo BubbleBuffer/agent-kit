@@ -6,6 +6,7 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import '../transcript/markdown.dart';
 import '../transcript/transcript_support.dart';
@@ -61,19 +62,24 @@ class _ContextRowState extends State<ContextRow> {
             color: widget.selected ? t.seam : t.surface.withValues(alpha: 0),
           );
     final body = Padding(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+      padding: const EdgeInsets.fromLTRB(
+        Space.md,
+        Space.sm,
+        Space.md,
+        Space.sm,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 1),
+            padding: const EdgeInsets.only(top: Space.hair),
             child: glyphIcon(
               widget.glyph,
-              size: 16,
+              size: IconSize.sm.px,
               color: button ? t.colors.iconPrimary : t.colors.iconSecondary,
             ),
           ),
-          const SizedBox(width: 10),
+          const Gap(Space.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,20 +87,24 @@ class _ContextRowState extends State<ContextRow> {
               children: [
                 Text(
                   widget.name,
-                  style: ts(t.typeScale.ui, t.ink, weight: 600),
+                  style: ts(t.typeScale.ui, t.ink, weight: Weight.semibold),
                 ),
                 if (widget.sub != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 1),
+                    padding: const EdgeInsets.only(top: Space.hair),
                     child: Text(
                       widget.sub!,
-                      style: ts(t.typeScale.uiSmall, t.muted, weight: 400),
+                      style: ts(
+                        t.typeScale.uiSmall,
+                        t.muted,
+                        weight: Weight.regular,
+                      ),
                     ),
                   ),
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          const Gap(Space.md),
           if (widget.tokens != null)
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -102,7 +112,9 @@ class _ContextRowState extends State<ContextRow> {
               children: [
                 Text(
                   widget.tokens!,
-                  style: tabular(ts(t.typeScale.ui, t.ink, weight: 700)),
+                  style: tabular(
+                    ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+                  ),
                 ),
                 if (widget.from != null)
                   Text(
@@ -113,14 +125,16 @@ class _ContextRowState extends State<ContextRow> {
             ),
           if (button)
             SizedBox(
-              width: 18,
+              width: IconSize.md.px,
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Opacity(
-                  opacity: _hover || _focused || widget.selected ? 1 : 0,
+                  opacity: _hover || _focused || widget.selected
+                      ? KitAlpha.opaque
+                      : 0,
                   child: glyphIcon(
                     glyphChevronRight,
-                    size: 14,
+                    size: IconSize.xs.px,
                     color: t.colors.iconTertiary,
                   ),
                 ),
@@ -181,7 +195,10 @@ class _ContextRowState extends State<ContextRow> {
       radius: radius,
       child: row,
     );
-    return Padding(padding: const EdgeInsets.only(top: 2), child: row);
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.hair),
+      child: row,
+    );
   }
 }
 
@@ -282,7 +299,7 @@ class ContextNow extends StatelessWidget {
             CxNote(
               'After the next compaction the view is about '
               '${ctxTokens(after)}.',
-              top: 12,
+              top: Space.md,
             ),
         ],
       ],
@@ -417,8 +434,8 @@ class ContextDetail extends StatelessWidget {
     final episodes = [for (final id in s.episodeIds) ?details.episode(id)];
     final ordinals = episodes.map(episodeTag).join(', ');
     final done = t.statusStyle(ChatStatus.done).ink;
-    final fact = ts(t.typeScale.ui, t.ink, weight: 400);
-    final label = ts(t.typeScale.uiSmall, t.faint, weight: 400);
+    final fact = ts(t.typeScale.ui, t.ink, weight: Weight.regular);
+    final label = ts(t.typeScale.uiSmall, t.faint, weight: Weight.regular);
     final kindText = s.closed
         ? 'Closed chapter, written once and frozen'
         : s.applied
@@ -448,7 +465,12 @@ class ContextDetail extends StatelessWidget {
         ? 0.0
         : (s.summaryTokens / s.sourceTokens).clamp(0.0, 1.0);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      padding: const EdgeInsets.fromLTRB(
+        Space.lg,
+        Space.md,
+        Space.lg,
+        Space.xxl,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -457,49 +479,53 @@ class ContextDetail extends StatelessWidget {
             children: [
               if (onBack != null)
                 Padding(
-                  padding: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.only(right: Space.xs),
                   child: _BackButton(onBack!),
                 ),
-              glyphIcon(glyphLayers, size: 14, color: t.colors.iconSecondary),
+              glyphIcon(
+                glyphLayers,
+                size: IconSize.xs.px,
+                color: t.colors.iconSecondary,
+              ),
             ],
           ),
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
           Semantics(
             header: true,
-            child: Text(
-              s.title,
-              style: ts(
-                const TypeSpec(18, 24, 640),
-                t.ink,
-              ).copyWith(letterSpacing: -.18),
-            ),
+            child: Text(s.title, style: ts(t.typeScale.h3, t.ink)),
           ),
-          const SizedBox(height: 6),
+          const Gap(Space.xs),
           Row(
             children: [
               glyphIcon(
                 s.applied ? glyphCheck : glyphHourglass,
-                size: 14,
+                size: IconSize.xs.px,
                 color: s.applied ? done : t.muted,
               ),
-              const SizedBox(width: 6),
-              Text(
-                s.applied ? "In the model's view" : 'Ready, not in view yet',
-                style: ts(t.typeScale.uiSmall, t.muted, weight: 600),
+              const Gap(Space.xs),
+              Flexible(
+                child: Text(
+                  s.applied ? "In the model's view" : 'Ready, not in view yet',
+                  style: ts(
+                    t.typeScale.uiSmall,
+                    t.muted,
+                    weight: Weight.semibold,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const Gap(Space.lg),
           for (final (k, v) in facts)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.only(bottom: Space.xxs),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: 76,
+                    width: KitSizes.factLabel,
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.only(top: Space.hair),
                       child: Text(k, style: label),
                     ),
                   ),
@@ -507,24 +533,29 @@ class ContextDetail extends StatelessWidget {
                 ],
               ),
             ),
-          const SizedBox(height: 10),
+          const Gap(Space.md),
           DecoratedBox(
             decoration: BoxDecoration(
               color: t.surface2,
               borderRadius: t.radii.field,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.md,
+                vertical: Space.md,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _TokenBar('Original', s.sourceTokens, 1, t.ctxOpening),
-                  const SizedBox(height: 6),
+                  const Gap(Space.xs),
                   _TokenBar('Summary', s.summaryTokens, ratio, t.ctxSummary),
-                  const SizedBox(height: 6),
+                  const Gap(Space.xs),
                   Text(
                     'Saves ${ctxTokens(s.savedTokens)} · $pct%',
-                    style: tabular(ts(t.typeScale.uiSmall, done, weight: 600)),
+                    style: tabular(
+                      ts(t.typeScale.uiSmall, done, weight: Weight.semibold),
+                    ),
                   ),
                 ],
               ),
@@ -534,15 +565,15 @@ class ContextDetail extends StatelessWidget {
             if (s.text.isEmpty)
               Text(
                 'Loading the summary…',
-                style: ts(t.typeScale.ui, t.faint, weight: 400),
+                style: ts(t.typeScale.ui, t.faint, weight: Weight.regular),
               )
             else
               renderer.build(context, s.text),
-            const SizedBox(height: 10),
+            const Gap(Space.md),
             Text(
               'Summaries are lossy. The originals are unchanged, and the '
               'agent can search them.',
-              style: ts(t.typeScale.uiSmall, t.muted, weight: 400),
+              style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.regular),
             ),
           ],
           if (episodes.isNotEmpty) ...[
@@ -550,7 +581,7 @@ class ContextDetail extends StatelessWidget {
             for (final e in episodes)
               _Covered(e, onTap: () => onGoEpisode(e.id)),
             Padding(
-              padding: const EdgeInsets.only(top: 14),
+              padding: const EdgeInsets.only(top: Space.lg),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: KitTextButton(
@@ -577,8 +608,11 @@ class _H extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: const EdgeInsets.only(top: 18, bottom: 6),
-      child: Text(text, style: ts(t.typeScale.uiSmall, t.faint, weight: 700)),
+      padding: const EdgeInsets.only(top: Space.lg, bottom: Space.xs),
+      child: Text(
+        text,
+        style: ts(t.typeScale.uiSmall, t.faint, weight: Weight.bold),
+      ),
     );
   }
 }
@@ -597,16 +631,16 @@ class _TokenBar extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 64,
+          width: KitSizes.shareLabel,
           child: Text(label, style: ts(t.typeScale.uiSmall, t.muted)),
         ),
         Expanded(
           child: SizedBox(
-            height: 6,
+            height: KitSizes.shareBar,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: t.seam,
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(Radii.sm),
               ),
               child: Align(
                 alignment: Alignment.centerLeft,
@@ -615,7 +649,7 @@ class _TokenBar extends StatelessWidget {
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: color,
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: BorderRadius.circular(Radii.sm),
                     ),
                   ),
                 ),
@@ -624,11 +658,13 @@ class _TokenBar extends StatelessWidget {
           ),
         ),
         SizedBox(
-          width: 54,
+          width: KitSizes.shareValue,
           child: Text(
             ctxTokens(tokens),
             textAlign: TextAlign.right,
-            style: tabular(ts(t.typeScale.uiSmall, t.ink, weight: 600)),
+            style: tabular(
+              ts(t.typeScale.uiSmall, t.ink, weight: Weight.semibold),
+            ),
           ),
         ),
       ],
@@ -645,7 +681,7 @@ class _Covered extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    final small = ts(const TypeSpec(13, 18, 500), t.muted, weight: 400);
+    final small = ts(t.typeScale.ui, t.muted, weight: Weight.regular);
     return Semantics(
       button: true,
       label:
@@ -659,27 +695,37 @@ class _Covered extends StatelessWidget {
         hoverBackground: t.hover,
         pressedBackground: t.pressed,
         lift: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.sm,
+          vertical: Space.xs,
+        ),
         child: Row(
           children: [
             CxTag(episodeTag(episode)),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
             Expanded(
               child: Text(
                 episode.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: ts(const TypeSpec(13, 18, 500), t.ink, weight: 400),
+                style: ts(t.typeScale.ui, t.ink, weight: Weight.regular),
               ),
             ),
-            const SizedBox(width: 8),
-            Text(seqRange(episode.firstSeq, episode.lastSeq), style: small),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
+            Flexible(
+              child: Text(
+                seqRange(episode.firstSeq, episode.lastSeq),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: small,
+              ),
+            ),
+            const Gap(Space.sm),
             Text(ctxTokens(episode.sourceTokens), style: tabular(small)),
-            const SizedBox(width: 6),
+            const Gap(Space.xs),
             glyphIcon(
               glyphChevronRight,
-              size: 14,
+              size: IconSize.xs.px,
               color: t.colors.iconTertiary,
             ),
           ],
@@ -708,13 +754,12 @@ class _BackButton extends StatelessWidget {
         hoverBackground: t.hover,
         pressedBackground: t.pressed,
         lift: 0,
-        child: SizedBox(
-          width: isTouch(context) ? 40 : 28,
-          height: isTouch(context) ? 40 : 28,
+        child: SizedBox.square(
+          dimension: t.metrics.row.height,
           child: Center(
             child: glyphIcon(
               glyphChevronLeft,
-              size: 18,
+              size: IconSize.md.px,
               color: t.colors.iconSecondary,
             ),
           ),

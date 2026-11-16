@@ -1,6 +1,7 @@
 // Size classes come from the container width, not the window.
 
 import 'package:agent_kit/agent_kit.dart';
+import 'package:bb_ui/bb_ui.dart' show ThemeX;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,7 +31,8 @@ void main() {
           width: width,
           child: SizeClassBuilder(
             builder: (context, sizeClass) {
-              seen = SizeClass.of(context);
+              seen = sizeClassOf(context);
+              expect(context.sizeClass, sizeClass);
               expect(seen, sizeClass);
               return const SizedBox(height: 10);
             },

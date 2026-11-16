@@ -9,6 +9,7 @@
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart'
     show AssistantMessage, TranscriptItem, UserMessage;
+import 'package:bb_ui/bb_ui.dart' show Gap, Space;
 import 'package:flutter/widgets.dart';
 
 const _tests = 'cargo test -p harbor-runtime usage';
@@ -333,7 +334,7 @@ class _HistorySceneState extends State<HistoryScene> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final (i, (user, text)) in _originals.indexed) ...[
-            if (i > 0) const SizedBox(height: 10),
+            if (i > 0) const Gap(Space.md),
             TranscriptItemView(_item('${episode.id}-$i', user, text)),
           ],
         ],

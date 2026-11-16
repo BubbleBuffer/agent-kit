@@ -41,19 +41,19 @@ class OutlineWhereStrip extends StatelessWidget {
           onTap: onTap,
           radius: 0,
           padding: const EdgeInsets.symmetric(horizontal: Layout.gutter),
-          child: SizedBox(
-            height: 40,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: ControlSize.xl.height),
             child: Row(
               children: [
                 Container(
-                  width: 8,
-                  height: 8,
+                  width: Sizes.dot,
+                  height: Sizes.dot,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: colors[w.chapterId] ?? c.accent,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const Gap(Space.sm),
                 Expanded(
                   child: Text.rich(
                     TextSpan(
@@ -63,7 +63,8 @@ class OutlineWhereStrip extends StatelessWidget {
                           style: ts(
                             t.typeScale.ui,
                             c.textPrimary,
-                          ).copyWith(fontWeight: FontWeight.w600),
+                            weight: Weight.semibold,
+                          ),
                         ),
                         if (w.section != null)
                           TextSpan(
@@ -76,7 +77,7 @@ class OutlineWhereStrip extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const Gap(Space.md),
                 Text('Contents ▾', style: ts(t.typeScale.ui, c.textTertiary)),
               ],
             ),

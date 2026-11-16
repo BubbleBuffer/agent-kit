@@ -16,11 +16,26 @@
 import 'dart:math' as math;
 
 import 'package:bb_ui/bb_ui.dart'
-    show AppTooltip, Hover, LucideIcon, globalRectOf, kTransparent, ts;
+    show
+        Alpha,
+        AppTooltip,
+        ControlSize,
+        Gap,
+        Hover,
+        IconSize,
+        LucideIcon,
+        Radii,
+        Space,
+        Stroke,
+        Weight,
+        globalRectOf,
+        kTransparent,
+        ts;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'workspace_controller.dart';
 import 'workspace_geometry.dart';
@@ -96,7 +111,7 @@ typedef WorkspacePaneBuilder = Widget Function(
 );
 
 /// Height of a pane header (`.wp-head`).
-const double _headerHeight = 32;
+final double _headerHeight = ControlSize.md.height;
 
 /// How far past a pane's minimum a divider drag goes before it previews
 /// hiding the pane.
@@ -471,7 +486,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('No panes open', style: ts(t.typeScale.ui, t.muted)),
-          SizedBox(height: t.spacing.sm),
+          const Gap(Space.sm),
           Builder(
             builder: (context) => _HeadButton(
               key: const ValueKey('wp-add-empty'),
@@ -496,8 +511,12 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = Size(
-          constraints.hasBoundedWidth ? constraints.maxWidth : 1000,
-          constraints.hasBoundedHeight ? constraints.maxHeight : 600,
+          constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : KitSizes.unboundedWorkspace.width,
+          constraints.hasBoundedHeight
+              ? constraints.maxHeight
+              : KitSizes.unboundedWorkspace.height,
         );
         final geo = layoutWorkspace(layout.root, size, metrics);
         _geo = geo;
@@ -534,8 +553,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
           // state.
           final hidden = placed == null || (max != null && max != leaf.id);
           final dim = snapLeaves.contains(leaf.id)
-              ? .32
-              : (dragLeaf == leaf.id ? .4 : 1.0);
+              ? Alpha.wash
+              : (dragLeaf == leaf.id ? Alpha.muted : KitAlpha.opaque);
           if (placed != null) {
             frames.add(
               Positioned.fromRect(
@@ -575,8 +594,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                   opacity: dim,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(15),
-                      bottomRight: Radius.circular(9),
+                      bottomLeft: Radius.circular(Radii.sheet),
+                      bottomRight: Radius.circular(Radii.lg),
                     ),
                     child: KeyedSubtree(
                       key: ValueKey('wp-pane-${tab.id}'),
@@ -635,7 +654,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                 child: IgnorePointer(
                   child: Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(Space.sm),
                       child: _Pill(
                         key: const ValueKey('wp-snap-hint'),
                         text:
@@ -666,9 +685,14 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                 child: IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: t.information.withValues(alpha: .72),
+                      color: t.information.withValues(
+                        alpha: KitAlpha.dockPreview,
+                      ),
                       borderRadius: t.radii.field,
-                      border: Border.all(color: t.threadStrong, width: 1.5),
+                      border: Border.all(
+                        color: t.threadStrong,
+                        width: Stroke.regular,
+                      ),
                     ),
                     child: Center(
                       child: _Pill(text: dockCaption(drag.target!)),
@@ -685,8 +709,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
             overlay.add(
               Positioned(
                 key: const ValueKey('wp-dock-ghost'),
-                left: drag.pos.dx + 14,
-                top: drag.pos.dy + 12,
+                left: drag.pos.dx + Space.lg,
+                top: drag.pos.dy + Space.md,
                 child: IgnorePointer(
                   child: _Pill(
                     text: _tabLabel(tab),
@@ -747,7 +771,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
         border: Border(bottom: BorderSide(color: t.seam)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: Space.xxs),
         child: Row(
           children: [
             Expanded(
@@ -794,14 +818,14 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
               key: ValueKey('wp-max-${leaf.id}'),
               icon: maximised ? LucideIcons.minimize2 : LucideIcons.maximize2,
               label: maximised ? 'Restore pane' : 'Maximise pane',
-              size: 14,
+              size: IconSize.xs,
               onTap: () => _c.toggleMaximise(leaf.id),
             ),
             _HeadButton(
               key: ValueKey('wp-close-${leaf.id}'),
               icon: LucideIcons.x,
               label: 'Close pane',
-              size: 14,
+              size: IconSize.xs,
               onTap: () => _c.closeLeaf(leaf.id),
             ),
           ],
@@ -820,15 +844,17 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
   ) {
     final tabs = layout.tabs;
     final front = layout.frontTab!;
-    final bar = SizedBox(
-      height: compact ? 52 : 36,
+    final bar = ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: compact ? KitSizes.compactHeader : ControlSize.lg.height,
+      ),
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: compact ? Border(bottom: BorderSide(color: t.seam)) : null,
         ),
         child: Padding(
           padding: compact
-              ? const EdgeInsets.fromLTRB(8, 0, 4, 0)
+              ? const EdgeInsets.fromLTRB(Space.sm, 0, Space.xxs, 0)
               : EdgeInsets.zero,
           child: Row(
             children: [
@@ -840,13 +866,13 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                     children: [
                       for (final tab in tabs)
                         Padding(
-                          padding: const EdgeInsets.only(right: 2),
+                          padding: const EdgeInsets.only(right: Space.hair),
                           child: _TabChip(
                             key: ValueKey('wp-ws-tab-${tab.id}'),
                             label: _tabLabel(tab),
                             icon: _kind(tab.kind).icon,
                             selected: tab.id == front.id,
-                            height: compact ? 36 : 24,
+                            height: compact ? ControlSize.lg : ControlSize.xs,
                             onTap: () => _c.activate(tab.id),
                           ),
                         ),
@@ -859,8 +885,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                   key: const ValueKey('wp-ws-add'),
                   icon: LucideIcons.plus,
                   label: 'Add pane',
-                  size: compact ? 18 : 16,
-                  box: compact ? 40 : 26,
+                  size: compact ? IconSize.md : IconSize.sm,
+                  box: compact ? ControlSize.xl : ControlSize.sm,
                   onTap: () =>
                       _openMenu(layout.frontLeaf?.id, globalRectOf(context)),
                 ),
@@ -870,8 +896,8 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                   key: const ValueKey('wp-sheet-close'),
                   icon: LucideIcons.chevronDown,
                   label: 'Back to chat',
-                  size: 18,
-                  box: 40,
+                  size: IconSize.md,
+                  box: ControlSize.xl,
                   onTap: widget.onClose,
                 ),
             ],
@@ -886,7 +912,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
         borderRadius: compact ? null : t.radii.panel,
       ),
       child: Padding(
-        padding: EdgeInsets.all(compact ? 0 : 1),
+        padding: EdgeInsets.all(compact ? 0 : Space.hair),
         child: ClipRRect(
           borderRadius: compact ? BorderRadius.zero : t.radii.panel,
           child: KeyedSubtree(
@@ -901,7 +927,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
       child: Column(
         children: [
           bar,
-          if (!compact) const SizedBox(height: 6),
+          if (!compact) const Gap(Space.xs),
           Expanded(
             child: SizedBox(width: double.infinity, child: pane),
           ),
@@ -913,15 +939,18 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
   // ----- the + menu -----
 
   List<Widget> _buildMenu(BuildContext context, BbTheme t) {
-    const width = 176.0;
+    const width = KitSizes.paneMenu;
     final root = _rootKey.currentContext?.findRenderObject() as RenderBox?;
     final anchor = root == null
         ? _menuAnchor
         : root.globalToLocal(_menuAnchor.topLeft) & _menuAnchor.size;
     final maxLeft = root == null
-        ? 8.0
-        : math.max(8.0, root.size.width - width - 8);
-    final left = (anchor.right + 30 - width).clamp(8.0, maxLeft).toDouble();
+        ? Space.sm
+        : math.max(Space.sm, root.size.width - width - Space.sm);
+    // The menu's right edge sits a little past its + button's.
+    final left = (anchor.right + Space.xxl - width)
+        .clamp(Space.sm, maxLeft)
+        .toDouble();
     return [
       Positioned.fill(
         child: GestureDetector(
@@ -932,7 +961,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
       ),
       Positioned(
         left: left,
-        top: anchor.bottom + 4,
+        top: anchor.bottom + Space.xxs,
         width: width,
         child: DecoratedBox(
           key: const ValueKey('wp-menu'),
@@ -943,7 +972,7 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
             boxShadow: t.colors.seamHover,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(Space.xxs),
             child: Semantics(
               label: 'Add pane',
               child: Column(
@@ -951,7 +980,12 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
+                    padding: const EdgeInsets.fromLTRB(
+                      Space.sm,
+                      Space.xs,
+                      Space.sm,
+                      Space.xxs,
+                    ),
                     child: Text(
                       'Add pane',
                       style: ts(t.typeScale.uiSmall, t.faint),
@@ -963,19 +997,29 @@ class _AgentWorkspaceState extends State<AgentWorkspace> {
                       onTap: () => _pickKind(k),
                       lift: 0,
                       hoverBackground: t.hover,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: SizedBox(
-                        height: 30,
+                      padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: t.metrics.row.height,
+                        ),
                         child: Row(
                           children: [
-                            LucideIcon(k.icon, size: 16, color: t.muted),
-                            const SizedBox(width: 10),
+                            LucideIcon(
+                              k.icon,
+                              size: IconSize.sm.px,
+                              color: t.muted,
+                            ),
+                            const Gap(Space.md),
                             Expanded(
                               child: Text(
                                 k.label,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: ts(t.typeScale.ui, t.ink, weight: 400),
+                                style: ts(
+                                  t.typeScale.ui,
+                                  t.ink,
+                                  weight: Weight.regular,
+                                ),
                               ),
                             ),
                           ],
@@ -1098,14 +1142,14 @@ class _TabChip extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
-    this.height = 24,
+    this.height = ControlSize.xs,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-  final double height;
+  final ControlSize height;
 
   @override
   Widget build(BuildContext context) {
@@ -1118,14 +1162,14 @@ class _TabChip extends StatelessWidget {
         selected: selected,
         selectedColor: t.pressed,
         hoverBackground: t.hover,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: SizedBox(
-          height: height,
+        padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: height.height),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              LucideIcon(icon, size: 14, color: t.faint),
-              const SizedBox(width: 6),
+              LucideIcon(icon, size: IconSize.xs.px, color: t.faint),
+              const Gap(Space.xs),
               Flexible(
                 child: Text(
                   label,
@@ -1134,7 +1178,7 @@ class _TabChip extends StatelessWidget {
                   style: ts(
                     t.typeScale.uiSmall,
                     selected ? t.ink : t.muted,
-                    weight: selected ? 600 : 500,
+                    weight: selected ? Weight.semibold : Weight.medium,
                   ),
                 ),
               ),
@@ -1152,15 +1196,15 @@ class _HeadButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.size = 16,
-    this.box = 26,
+    this.size = IconSize.sm,
+    this.box = ControlSize.sm,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
-  final double size;
-  final double box;
+  final IconSize size;
+  final ControlSize box;
 
   @override
   Widget build(BuildContext context) {
@@ -1175,10 +1219,10 @@ class _HeadButton extends StatelessWidget {
           lift: 0,
           hoverBackground: t.hover,
           child: SizedBox(
-            width: box,
-            height: box,
+            width: box.height,
+            height: box.height,
             child: Center(
-              child: LucideIcon(icon, size: size, color: t.muted),
+              child: LucideIcon(icon, size: size.px, color: t.muted),
             ),
           ),
         ),
@@ -1215,19 +1259,22 @@ class _Pill extends StatelessWidget {
         boxShadow: ghost ? t.colors.seamHover : null,
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: ghost ? 6 : 4),
+        padding: EdgeInsets.symmetric(
+          horizontal: Space.md,
+          vertical: ghost ? Space.xs : Space.xxs,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              LucideIcon(icon!, size: 14, color: t.faint),
-              const SizedBox(width: 6),
+              LucideIcon(icon!, size: IconSize.xs.px, color: t.faint),
+              const Gap(Space.xs),
             ],
             Flexible(
               child: Text(
                 text,
                 textAlign: TextAlign.center,
-                style: ts(t.typeScale.uiSmall, fg, weight: 600),
+                style: ts(t.typeScale.uiSmall, fg, weight: Weight.semibold),
               ),
             ),
           ],
@@ -1262,9 +1309,9 @@ class _EdgeTab extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       softWrap: false,
-      style: ts(t.typeScale.uiSmall, t.muted, weight: 600),
+      style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.semibold),
     );
-    final glyph = LucideIcon(icon, size: 14, color: t.faint);
+    final glyph = LucideIcon(icon, size: IconSize.xs.px, color: t.faint);
     return Semantics(
       button: true,
       enabled: enabled,
@@ -1279,21 +1326,21 @@ class _EdgeTab extends StatelessWidget {
         child: ClipRect(
           child: vertical
               ? Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  padding: const EdgeInsets.symmetric(vertical: Space.md),
                   child: Column(
                     children: [
                       glyph,
-                      const SizedBox(height: 8),
+                      const Gap(Space.sm),
                       Flexible(child: RotatedBox(quarterTurns: 1, child: text)),
                     ],
                   ),
                 )
               : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: Space.md),
                   child: Row(
                     children: [
                       glyph,
-                      const SizedBox(width: 8),
+                      const Gap(Space.sm),
                       Flexible(child: text),
                     ],
                   ),
@@ -1350,9 +1397,12 @@ class _DividerState extends State<_Divider> {
     final line = DecoratedBox(
       decoration: BoxDecoration(
         color: lit ? t.threadStrong : kTransparent,
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(Radii.sm),
       ),
-      child: SizedBox(width: row ? 2 : null, height: row ? null : 2),
+      child: SizedBox(
+        width: row ? Stroke.bold : null,
+        height: row ? null : Stroke.bold,
+      ),
     );
     return Semantics(
       label: 'Resize panes',
@@ -1418,8 +1468,14 @@ class _DividerState extends State<_Divider> {
               },
               child: Padding(
                 padding: row
-                    ? const EdgeInsets.symmetric(horizontal: 3, vertical: 12)
-                    : const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                    ? const EdgeInsets.symmetric(
+                        horizontal: Space.xxs,
+                        vertical: Space.md,
+                      )
+                    : const EdgeInsets.symmetric(
+                        horizontal: Space.md,
+                        vertical: Space.xxs,
+                      ),
                 child: line,
               ),
             ),

@@ -8,6 +8,7 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import '../transcript/transcript_support.dart';
 import 'context_parts.dart';
@@ -40,7 +41,7 @@ class ContextTimeline extends StatelessWidget {
           'Summaries are written in the background. The model only sees them '
           'once a compaction is applied.',
         ),
-        const SizedBox(height: 8),
+        const Gap(Space.sm),
         for (var i = 0; i < events.length; i++)
           _EventRow(
             events[i],
@@ -124,7 +125,7 @@ class _EventRow extends StatelessWidget {
         e.kind == ContextEventKind.episodeWritten &&
         e.episodeIds.any(view.pendingEpisodeIds.contains);
     final why = triggerWhy(e);
-    final small = ts(const TypeSpec(13, 18, 500), t.ink, weight: 400);
+    final small = ts(t.typeScale.ui, t.ink, weight: Weight.regular);
     final done = t.statusStyle(ChatStatus.done).ink;
 
     final before = applied ? (e.inputBefore ?? e.tokensBefore) : e.tokensBefore;
@@ -144,8 +145,9 @@ class _EventRow extends StatelessWidget {
         : 'would save ${ctxTokens(saved)}';
     final label = applied && inputKnown ? 'Input' : 'Covered';
     final name = applied
-        ? ts(t.typeScale.ui, t.ink, weight: 700).copyWith(fontSize: 15)
-        : ts(t.typeScale.ui, t.muted, weight: 600);
+        ? ts(t.typeScale.title, t.ink, weight: Weight.bold)
+        : ts(t.typeScale.ui, t.muted, weight: Weight.semibold);
+    final dot = applied ? KitTimeline.dotApplied : Sizes.dot;
 
     return Semantics(
       container: true,
@@ -158,35 +160,35 @@ class _EventRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              width: 44,
+              width: KitTimeline.timeColumn,
               child: Padding(
-                padding: const EdgeInsets.only(top: 1),
+                padding: const EdgeInsets.only(top: Space.xxs),
                 child: Text(
                   clockText(e.at),
                   textAlign: TextAlign.right,
-                  style: monoStyle(const TypeSpec(12, 20, 400), t.faint),
+                  style: monoStyle(t.typeScale.codeSmall, t.faint),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
             SizedBox(
-              width: 14,
+              width: KitTimeline.rail,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   if (!last)
                     Positioned(
-                      left: 6.5,
-                      top: 18,
+                      left: (KitTimeline.rail - Stroke.hair) / 2,
+                      top: KitTimeline.lineTop,
                       bottom: 0,
-                      width: 1,
+                      width: Stroke.hair,
                       child: ColoredBox(color: t.seam),
                     ),
                   Positioned(
-                    left: applied ? 2 : 3,
-                    top: applied ? 5 : 6,
-                    width: applied ? 10 : 8,
-                    height: applied ? 10 : 8,
+                    left: (KitTimeline.rail - dot) / 2,
+                    top: KitTimeline.dotCenter - dot / 2,
+                    width: dot,
+                    height: dot,
                     child: CustomPaint(
                       painter: _DotPainter(
                         filled: applied,
@@ -199,16 +201,18 @@ class _EventRow extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.only(bottom: Space.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 22),
+                      constraints: BoxConstraints(
+                        minHeight: ControlSize.xs.height,
+                      ),
                       child: Row(
                         children: [
                           Expanded(child: Text(_title, style: name)),
@@ -226,9 +230,9 @@ class _EventRow extends StatelessWidget {
                     Text(_what, style: small.copyWith(color: t.muted)),
                     if (sized)
                       Padding(
-                        padding: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.only(top: Space.xxs),
                         child: Wrap(
-                          spacing: 12,
+                          spacing: Space.md,
                           children: [
                             Text.rich(
                               TextSpan(
@@ -240,9 +244,12 @@ class _EventRow extends StatelessWidget {
                                   TextSpan(text: '${ctxTokens(before)} → '),
                                   TextSpan(
                                     text: ctxTokens(after),
-                                    style: TextStyle(
-                                      color: t.ink,
-                                      fontWeight: fw(700),
+                                    style: tabular(
+                                      ts(
+                                        t.typeScale.ui,
+                                        t.ink,
+                                        weight: Weight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -251,9 +258,12 @@ class _EventRow extends StatelessWidget {
                             ),
                             Text(
                               saveText,
-                              style: small.copyWith(
-                                color: applied ? done : t.muted,
-                                fontWeight: fw(applied ? 600 : 500),
+                              style: ts(
+                                t.typeScale.ui,
+                                applied ? done : t.muted,
+                                weight: applied
+                                    ? Weight.semibold
+                                    : Weight.medium,
                               ),
                             ),
                           ],
@@ -261,10 +271,12 @@ class _EventRow extends StatelessWidget {
                       ),
                     if (sized)
                       Padding(
-                        padding: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.only(top: Space.xxs),
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxWidth: applied ? 420 : 260,
+                            maxWidth: applied
+                                ? KitTimeline.barsApplied
+                                : KitTimeline.barsPending,
                           ),
                           child: _EventBars(
                             a: before / scale,
@@ -296,11 +308,11 @@ class _EventBars extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     Widget bar(double f, Color c) => SizedBox(
-      height: 6,
+      height: KitSizes.shareBar,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: t.colors.borderSubtle,
-          borderRadius: BorderRadius.circular(3),
+          borderRadius: BorderRadius.circular(Radii.sm),
         ),
         child: Align(
           alignment: Alignment.centerLeft,
@@ -309,7 +321,7 @@ class _EventBars extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: c,
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(Radii.sm),
               ),
             ),
           ),
@@ -324,22 +336,22 @@ class _EventBars extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               bar(a, t.ctxOpening),
-              const SizedBox(height: 3),
+              const Gap(Space.xxs),
               bar(b, t.ctxSummary),
             ],
           ),
           if (cap != null)
             Positioned.fill(
-              top: -2,
-              bottom: -2,
+              top: -Space.hair,
+              bottom: -Space.hair,
               child: Align(
                 alignment: Alignment(cap!.clamp(0.0, 1.0) * 2 - 1, 0),
                 child: SizedBox(
-                  width: 2,
+                  width: Stroke.bold,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: t.ink,
-                      borderRadius: BorderRadius.circular(1),
+                      borderRadius: BorderRadius.circular(Radii.sm),
                     ),
                   ),
                 ),
@@ -374,7 +386,7 @@ class _DotPainter extends CustomPainter {
     final stroke = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..strokeWidth = Stroke.regular;
     if (!dashed) {
       canvas.drawCircle(c, r - .75, stroke);
       return;

@@ -85,16 +85,16 @@ class ChromeIcon extends StatelessWidget {
     this.glyph, {
     super.key,
     required this.color,
-    this.size = 16,
+    this.size = IconSize.sm,
   });
 
   final LucideGlyph glyph;
   final Color color;
-  final double size;
+  final IconSize size;
 
   @override
   Widget build(BuildContext context) =>
-      kitIcon(glyph, size: size, color: color);
+      kitIcon(glyph, size: size.px, color: color);
 }
 
 const LucideGlyph glyphX = (LucideIcons.x300, LucideIcons.x, LucideIcons.x500);

@@ -1,50 +1,32 @@
 // Size classes: layout by the width of the container, never the window.
+//
+// The classes and their scope are bb-ui's (`SizeClass`, `SizeClassScope` in
+// bb_tokens, compact below `SizeClass.mediumWidth`, medium below
+// `SizeClass.expandedWidth`); this adds the kit's builder and lookups.
 
+import 'package:bb_ui/tokens.dart';
 import 'package:flutter/widgets.dart';
 
-import 'bb_theme.dart';
+export 'package:bb_ui/tokens.dart' show SizeClass, SizeClassScope;
 
-/// The three layouts of a kit area (`--size-medium` and `--size-expanded` in
-/// the mockup's theme.css): compact below `sizeMedium`, medium to below
-/// `sizeExpanded`, expanded from there up.
-enum SizeClass {
-  compact,
-  medium,
-  expanded;
-
-  /// The class of a container [width] with the given thresholds.
-  static SizeClass forWidth(
-    double width, {
-    double medium = 600,
-    double expanded = 1000,
-  }) => width < medium
-      ? SizeClass.compact
-      : width < expanded
-      ? SizeClass.medium
-      : SizeClass.expanded;
-
-  bool get isCompact => this == compact;
-  bool get isMedium => this == medium;
-  bool get isExpanded => this == expanded;
-
-  /// Whether this class is [other] or wider.
-  bool atLeast(SizeClass other) => index >= other.index;
-
-  /// The class of the nearest [SizeClassBuilder] above [context].
-  static SizeClass of(BuildContext context) {
-    final scope = maybeOf(context);
-    assert(scope != null, 'No SizeClassBuilder above this context.');
-    return scope!;
-  }
-
-  /// Like [of], or null when there is none.
-  static SizeClass? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<SizeClassScope>()?.sizeClass;
+/// The kit's questions about a [SizeClass].
+extension KitSizeClass on SizeClass {
+  bool get isMedium => this == SizeClass.medium;
+  bool get isExpanded => this == SizeClass.expanded;
 }
 
+/// The class of the nearest [SizeClassScope] above [context] (a
+/// [SizeClassBuilder] puts one), or [SizeClass.expanded] when there is none.
+///
+/// Unlike `context.sizeClass` this never falls back to the window: a kit
+/// area without a builder lays out as the widest class.
+SizeClass sizeClassOf(BuildContext context) =>
+    context.dependOnInheritedWidgetOfExactType<SizeClassScope>()?.sizeClass ??
+    SizeClass.expanded;
+
 /// Measures its own width with a [LayoutBuilder] and gives [builder] the
-/// [SizeClass] from the theme's thresholds. Descendants can read it with
-/// [SizeClass.of]. An unbounded width counts as expanded.
+/// [SizeClass] of that width. Descendants read it with [sizeClassOf] or
+/// `context.sizeClass`. An unbounded width counts as expanded.
 class SizeClassBuilder extends StatelessWidget {
   const SizeClassBuilder({super.key, required this.builder});
 
@@ -52,15 +34,10 @@ class SizeClassBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = BbTheme.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final sizeClass = constraints.hasBoundedWidth
-            ? SizeClass.forWidth(
-                constraints.maxWidth,
-                medium: theme.sizeMedium,
-                expanded: theme.sizeExpanded,
-              )
+            ? SizeClass.forWidth(constraints.maxWidth)
             : SizeClass.expanded;
         return SizeClassScope(
           sizeClass: sizeClass,
@@ -69,18 +46,4 @@ class SizeClassBuilder extends StatelessWidget {
       },
     );
   }
-}
-
-/// Carries a [SizeClass] to descendants.
-class SizeClassScope extends InheritedWidget {
-  const SizeClassScope({
-    super.key,
-    required this.sizeClass,
-    required super.child,
-  });
-
-  final SizeClass sizeClass;
-
-  @override
-  bool updateShouldNotify(SizeClassScope old) => old.sizeClass != sizeClass;
 }

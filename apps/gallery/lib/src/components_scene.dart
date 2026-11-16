@@ -12,6 +12,7 @@ import '../components/context.dart';
 import '../components/providers.dart';
 import '../components/transcript.dart';
 import '../components/workspace.dart';
+import 'gallery_tokens.dart';
 
 class ComponentsScene extends StatelessWidget {
   const ComponentsScene({super.key, this.tall = false});
@@ -30,15 +31,15 @@ class ComponentsScene extends StatelessWidget {
         const _StatusSpecimens(),
         const TranscriptSpecimens(),
         const ContextSpecimens(),
-        SizedBox(height: t.spacing.xl),
+        Gap(Space.xl),
         const ComposerSpecimens(),
-        SizedBox(height: t.spacing.xl),
+        Gap(Space.xl),
         const _Heading('Workspace'),
         const WorkspaceSpecimens(),
-        SizedBox(height: t.spacing.xl),
+        Gap(Space.xl),
         const _Heading('Chrome'),
         const ChromeSpecimens(),
-        SizedBox(height: t.spacing.xl),
+        Gap(Space.xl),
         const _Heading('Providers'),
         const ProviderSpecimens(),
       ],
@@ -46,7 +47,7 @@ class ComponentsScene extends StatelessWidget {
     final scene = ColoredBox(
       color: t.canvas,
       child: Padding(
-        padding: EdgeInsets.all(t.spacing.md),
+        padding: EdgeInsets.all(Space.md),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: t.surface,
@@ -55,10 +56,10 @@ class ComponentsScene extends StatelessWidget {
             boxShadow: t.colors.stack,
           ),
           child: tall
-              ? Padding(padding: EdgeInsets.all(t.spacing.xl), child: sheet)
+              ? Padding(padding: EdgeInsets.all(Space.xl), child: sheet)
               : SizedBox.expand(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.all(t.spacing.xl),
+                    padding: EdgeInsets.all(Space.xl),
                     child: sheet,
                   ),
                 ),
@@ -79,7 +80,7 @@ class _Heading extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: EdgeInsets.only(bottom: t.spacing.md),
+      padding: EdgeInsets.only(bottom: Space.md),
       child: Text(text, style: ts(t.typeScale.h3, t.ink)),
     );
   }
@@ -97,21 +98,24 @@ class _StatusSpecimens extends StatelessWidget {
       children: [
         for (final s in ChatStatus.values)
           Padding(
-            padding: EdgeInsets.only(bottom: t.spacing.md),
+            padding: EdgeInsets.only(bottom: Space.md),
             child: Wrap(
-              spacing: t.spacing.lg,
-              runSpacing: t.spacing.sm,
+              spacing: Space.lg,
+              runSpacing: Space.sm,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 SizedBox(
-                  width: 96,
+                  width: Specimen.statusName,
                   child: Text(
                     s.name,
-                    style: ts(const TypeSpec(12, 16, 400), t.faint, mono: true),
+                    style: ts(TypeScale.pointer.codeSmall, t.faint, mono: true),
                   ),
                 ),
-                SizedBox(width: 170, child: StatusMark(s)),
-                SizedBox(width: 190, child: StatusMark(s, detail: '3 agents')),
+                SizedBox(width: Specimen.statusMark, child: StatusMark(s)),
+                SizedBox(
+                  width: Specimen.statusDetail,
+                  child: StatusMark(s, detail: '3 agents'),
+                ),
                 StatusMark.pill(s),
               ],
             ),

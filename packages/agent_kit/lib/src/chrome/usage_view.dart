@@ -48,9 +48,9 @@ class UsageByModel extends StatelessWidget {
       }
     }
     final input = usage?.inputTokens, output = usage?.outputTokens;
-    final label = ts(theme.typeScale.ui, theme.ink, weight: 400);
-    final figure = ts(theme.typeScale.ui, theme.muted, weight: 400);
-    final faint = ts(theme.typeScale.ui, theme.faint, weight: 400);
+    final label = ts(theme.typeScale.ui, theme.ink, weight: Weight.regular);
+    final figure = ts(theme.typeScale.ui, theme.muted, weight: Weight.regular);
+    final faint = ts(theme.typeScale.ui, theme.faint, weight: Weight.regular);
 
     Widget row(String name, String share, TextStyle nameStyle, TextStyle end) =>
         Row(
@@ -63,7 +63,7 @@ class UsageByModel extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
             Text(share, style: end, maxLines: 1),
           ],
         );
@@ -78,7 +78,10 @@ class UsageByModel extends StatelessWidget {
           border: Border.all(color: theme.seam),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.lg,
+            vertical: Space.md,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -86,13 +89,13 @@ class UsageByModel extends StatelessWidget {
               Text(title, style: ts(theme.typeScale.uiSmall, theme.muted)),
               if (total == 0)
                 Padding(
-                  padding: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.only(top: Space.xs),
                   child: Text('No usage yet', style: faint),
                 )
               else ...[
                 for (final m in shown)
                   Padding(
-                    padding: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.only(top: Space.xs),
                     child: row(
                       m.model,
                       '${(m.tokens * 100 / total).round()}%',
@@ -102,13 +105,13 @@ class UsageByModel extends StatelessWidget {
                   ),
                 if (other > 0)
                   Padding(
-                    padding: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.only(top: Space.xs),
                     child: row('Other', '<1%', faint, faint),
                   ),
               ],
               if (input != null && output != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.only(top: Space.sm),
                   child: Text(
                     '${formatTokens(input + output)} tokens',
                     style: ts(theme.typeScale.uiSmall, theme.faint),

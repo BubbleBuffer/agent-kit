@@ -11,6 +11,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import '../transcript/transcript_support.dart';
 import 'context_parts.dart';
@@ -176,7 +177,12 @@ class _ContextHistoryState extends State<ContextHistory> {
     _entries = _build();
     return ListView.builder(
       controller: widget.controller,
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+      padding: const EdgeInsets.fromLTRB(
+        Space.md,
+        Space.xxs,
+        Space.md,
+        Space.xl,
+      ),
       itemCount: _entries.length,
       itemBuilder: (context, i) => _entries[i].builder(context),
     );
@@ -201,17 +207,26 @@ class _ChapterBand extends StatelessWidget {
       header: true,
       label: 'Chapter ${c.ordinal}${open ? ', open' : ''}. ${c.title}',
       child: Padding(
-        padding: const EdgeInsets.only(top: 14),
+        padding: const EdgeInsets.only(top: Space.lg),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.xxs,
+            vertical: Space.xs,
+          ),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 10,
-            runSpacing: 2,
+            spacing: Space.md,
+            runSpacing: Space.hair,
             children: [
               CxTag('Chapter ${c.ordinal}'),
-              Text(c.title, style: ts(t.typeScale.ui, t.ink, weight: 700)),
-              Text(range, style: ts(t.typeScale.uiSmall, t.faint, weight: 400)),
+              Text(
+                c.title,
+                style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+              ),
+              Text(
+                range,
+                style: ts(t.typeScale.uiSmall, t.faint, weight: Weight.regular),
+              ),
             ],
           ),
         ),
@@ -278,7 +293,7 @@ class _EpisodeBlock extends StatelessWidget {
       container: true,
       label: '$tag $title. $stateText. Messages ${seqRange(first, last)}.',
       child: Padding(
-        padding: const EdgeInsets.only(top: 6, left: 4),
+        padding: const EdgeInsets.only(top: Space.xs, left: Space.xxs),
         child: CustomPaint(
           foregroundPainter: state == ContextState.ready
               ? DashedPainter(
@@ -294,14 +309,21 @@ class _EpisodeBlock extends StatelessWidget {
               border: state == ContextState.ready
                   ? Border(
                       left: BorderSide(
-                        width: 3,
+                        width: Stroke.seam,
                         color: t.surface.withValues(alpha: 0),
                       ),
                     )
-                  : Border(left: BorderSide(width: 3, color: gutter)),
+                  : Border(
+                      left: BorderSide(width: Stroke.seam, color: gutter),
+                    ),
             ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(9, 6, 0, 6),
+              padding: const EdgeInsets.fromLTRB(
+                Space.sm,
+                Space.xs,
+                0,
+                Space.xs,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
@@ -310,22 +332,28 @@ class _EpisodeBlock extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       CxTag(tag),
-                      const SizedBox(width: 8),
+                      const Gap(Space.sm),
                       Expanded(
                         child: Text(
                           title,
-                          style: ts(t.typeScale.ui, t.ink, weight: 600),
+                          style: ts(
+                            t.typeScale.ui,
+                            t.ink,
+                            weight: Weight.semibold,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 26),
+                    constraints: BoxConstraints(
+                      minHeight: ControlSize.sm.height,
+                    ),
                     child: Row(
                       children: [
                         Flexible(
                           child: Wrap(
-                            spacing: 10,
+                            spacing: Space.md,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text(
@@ -333,13 +361,17 @@ class _EpisodeBlock extends StatelessWidget {
                                 style: ts(
                                   t.typeScale.uiSmall,
                                   t.muted,
-                                  weight: 400,
+                                  weight: Weight.regular,
                                 ),
                               ),
                               Text(
                                 [seqRange(first, last), ?tokens].join(' · '),
                                 style: tabular(
-                                  ts(t.typeScale.uiSmall, t.faint, weight: 400),
+                                  ts(
+                                    t.typeScale.uiSmall,
+                                    t.faint,
+                                    weight: Weight.regular,
+                                  ),
                                 ),
                               ),
                             ],
@@ -419,14 +451,18 @@ class _MessagesState extends State<_Messages> {
       builder: (context, snap) {
         final pages = snap.data;
         if (pages == null) {
-          return SizedBox(
-            height: 22,
+          return ConstrainedBox(
+            constraints: BoxConstraints(minHeight: ControlSize.xs.height),
             child: snap.hasError
                 ? Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'The messages could not be loaded.',
-                      style: ts(t.typeScale.uiSmall, t.faint, weight: 400),
+                      style: ts(
+                        t.typeScale.uiSmall,
+                        t.faint,
+                        weight: Weight.regular,
+                      ),
                     ),
                   )
                 : null,
@@ -463,14 +499,23 @@ class _Fold extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(36, 2, 4, 2),
+      padding: const EdgeInsets.fromLTRB(
+        Space.xxl,
+        Space.hair,
+        Space.xxs,
+        Space.hair,
+      ),
       child: Row(
         children: [
-          glyphIcon(glyphCtxEllipsis, size: 14, color: t.colors.iconTertiary),
-          const SizedBox(width: 6),
+          glyphIcon(
+            glyphCtxEllipsis,
+            size: IconSize.xs.px,
+            color: t.colors.iconTertiary,
+          ),
+          const Gap(Space.xs),
           Text(
             '$count more messages',
-            style: ts(t.typeScale.uiSmall, t.faint, weight: 400),
+            style: ts(t.typeScale.uiSmall, t.faint, weight: Weight.regular),
           ),
         ],
       ),
@@ -492,49 +537,54 @@ class _MessageRow extends StatelessWidget {
       HistoryRole.agent => 'Agent',
       HistoryRole.tool => 'tool',
     };
-    final mono = monoStyle(const TypeSpec(11, 18, 400), t.faint);
+    final mono = monoStyle(t.typeScale.caption, t.faint);
     return Opacity(
-      opacity: dim ? .62 : 1,
+      opacity: dim ? Alpha.muted : KitAlpha.opaque,
       child: Semantics(
         label: '${message.seq}, $who: ${message.preview}',
         excludeSemantics: true,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 2, 4, 2),
+          padding: const EdgeInsets.fromLTRB(
+            0,
+            Space.hair,
+            Space.xxs,
+            Space.hair,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               SizedBox(
-                width: 30,
+                width: KitSizes.historySeqColumn,
                 child: Text(
                   '${message.seq}',
                   textAlign: TextAlign.right,
                   style: mono,
                 ),
               ),
-              const SizedBox(width: 6),
+              const Gap(Space.xs),
               SizedBox(
-                width: 44,
+                width: KitSizes.historyRoleColumn,
                 child: Text(
                   who,
-                  style: ts(t.typeScale.uiSmall, t.muted, weight: 700),
+                  style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.bold),
                 ),
               ),
-              const SizedBox(width: 6),
+              const Gap(Space.xs),
               Expanded(
                 child: Text(
                   message.preview,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: ts(
-                    const TypeSpec(13, 18, 500),
+                    t.typeScale.ui,
                     t.ink,
-                    weight: dim ? 400 : 500,
+                    weight: dim ? Weight.regular : Weight.medium,
                   ),
                 ),
               ),
               if (message.tokens != null) ...[
-                const SizedBox(width: 6),
+                const Gap(Space.xs),
                 Text(ctxTokens(message.tokens!), style: mono),
               ],
             ],

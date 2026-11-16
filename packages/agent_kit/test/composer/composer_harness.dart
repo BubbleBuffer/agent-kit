@@ -1,6 +1,6 @@
 // Shared by the composer tests: a theme scope with a Navigator (the pick menus
-// are popovers), animations off, a fixed width, and the form factor that width
-// implies (as a phone window would give it); and the fixtures.
+// are popovers), animations off, a fixed width, and the density that width
+// implies (touch for a compact, phone-sized window); and the fixtures.
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart'
@@ -18,7 +18,7 @@ import 'package:agent_kit_core/agent_kit_core.dart'
         QuestionOption,
         QueuedInput,
         ToolKind;
-import 'package:bb_ui/tokens.dart' show FormFactor;
+import 'package:bb_ui/tokens.dart' show Density;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -46,7 +46,10 @@ Future<void> pumpComposer(
         data: MediaQuery.of(context).copyWith(disableAnimations: true),
         child: BbThemeScope(
           brightness: brightness,
-          formFactor: FormFactor.forWidth(width),
+          // A phone-width window is a phone: touch density.
+          density: SizeClass.forWidth(width).isCompact
+              ? Density.touch
+              : Density.pointer,
           child: navigator!,
         ),
       ),

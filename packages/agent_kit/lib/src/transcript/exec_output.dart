@@ -43,7 +43,6 @@ class ExecOutput extends StatefulWidget {
 class _ExecOutputState extends State<ExecOutput> {
   bool _expanded = false;
 
-  static const _lineHeight = 18.0;
   static const _fade = 36.0;
 
   @override
@@ -56,7 +55,7 @@ class _ExecOutputState extends State<ExecOutput> {
     final clamped = !_expanded && lines.length > widget.clampLines;
     if (clamped) lines = lines.sublist(0, widget.clampLines);
 
-    const spec = TypeSpec(12, _lineHeight, 400);
+    final spec = t.typeScale.codeSmall;
     final base = monoStyle(spec, t.muted);
     final bad = base.copyWith(color: t.dangerInk);
     final text = Text.rich(
@@ -81,7 +80,10 @@ class _ExecOutputState extends State<ExecOutput> {
         width: double.infinity,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.md,
+            vertical: Space.sm,
+          ),
           child: text,
         ),
       ),
@@ -143,23 +145,18 @@ class _ExecOutputState extends State<ExecOutput> {
           block,
           if (meta.isNotEmpty || buttons.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.only(top: Space.xxs),
               child: Wrap(
                 alignment: WrapAlignment.spaceBetween,
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 4,
+                spacing: Space.sm,
+                runSpacing: Space.xxs,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (var i = 0; i < meta.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 8),
-                        meta[i],
-                      ],
-                    ],
+                  Wrap(spacing: Space.sm, children: meta),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: buttons,
                   ),
-                  Row(mainAxisSize: MainAxisSize.min, children: buttons),
                 ],
               ),
             ),

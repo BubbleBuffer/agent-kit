@@ -9,7 +9,8 @@ import 'gallery_controller.dart';
 import 'scenes.dart';
 
 /// [scene] constrained to [width] (or less, when the space is narrower),
-/// with the form factor the width implies, as a phone window would give it.
+/// with the density the width implies: touch for a compact, phone-sized
+/// width, as a phone would give it.
 class SceneFrame extends StatelessWidget {
   const SceneFrame({
     super.key,
@@ -31,7 +32,9 @@ class SceneFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BbThemeScope(
     brightness: brightness,
-    formFactor: FormFactor.forWidth(width),
+    density: SizeClass.forWidth(width).isCompact
+        ? Density.touch
+        : Density.pointer,
     child: Builder(
       builder: (context) {
         final t = context.bb;

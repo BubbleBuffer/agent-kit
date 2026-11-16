@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 import '../status/status.dart';
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'chrome_icons.dart';
 import 'crew_text.dart';
@@ -43,7 +44,7 @@ class CrewStrip extends StatelessWidget {
     if (agents.isEmpty && jobs.isEmpty) return const SizedBox.shrink();
     final theme = context.bb;
     final clock = now ?? DateTime.now();
-    final touch = theme.formFactor == FormFactor.mobile;
+    final touch = theme.touch;
     final chips = <Widget>[
       for (final agent in agents)
         _CrewChip(
@@ -51,7 +52,7 @@ class CrewStrip extends StatelessWidget {
           glyph: glyphBot,
           title: agentTitle?.call(agent) ?? agent.task,
           mark: StatusMark.work(agent.state, label: agentTag(agent, clock)),
-          height: touch ? 24 : 26,
+          height: touch ? ControlSize.xs : ControlSize.sm,
           onTap: onOpenAgent == null ? null : () => onOpenAgent!(agent),
         ),
       for (final job in jobs)
@@ -60,7 +61,7 @@ class CrewStrip extends StatelessWidget {
           glyph: glyphTerminal,
           title: jobTitle?.call(job) ?? jobShortName(job),
           mark: StatusMark(jobStatus(job), label: jobTag(job, clock)),
-          height: touch ? 24 : 26,
+          height: touch ? ControlSize.xs : ControlSize.sm,
           onTap: onOpenJob == null ? null : () => onOpenJob!(job),
         ),
     ];
@@ -71,8 +72,10 @@ class CrewStrip extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: theme.colors.borderSubtle)),
         ),
-        child: SizedBox(
-          height: touch ? 32 : 40,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: (touch ? ControlSize.md : ControlSize.xl).height,
+          ),
           child: ScrollConfiguration(
             behavior: ScrollConfiguration.of(context).copyWith(
               scrollbars: false,
@@ -85,15 +88,8 @@ class CrewStrip extends StatelessWidget {
             ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  for (var i = 0; i < chips.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 6),
-                    chips[i],
-                  ],
-                ],
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: Space.md),
+              child: Row(spacing: Space.xs, children: chips),
             ),
           ),
         ),
@@ -115,7 +111,7 @@ class _CrewChip extends StatelessWidget {
   final LucideGlyph glyph;
   final String title;
   final Widget mark;
-  final double height;
+  final ControlSize height;
   final VoidCallback? onTap;
 
   @override
@@ -128,16 +124,23 @@ class _CrewChip extends StatelessWidget {
       pressedBackground: theme.pressed,
       lift: 0,
       border: Border.all(color: theme.seam),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: SizedBox(
-        height: height - 2,
+      padding: const EdgeInsets.symmetric(horizontal: Space.md),
+      // Inside the hairline border; grows with the text size.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: height.height - 2 * Stroke.hair),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ChromeIcon(glyph, size: 14, color: theme.colors.iconSecondary),
-            const SizedBox(width: 6),
+            ChromeIcon(
+              glyph,
+              size: IconSize.xs,
+              color: theme.colors.iconSecondary,
+            ),
+            const Gap(Space.xs),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 180),
+              constraints: const BoxConstraints(
+                maxWidth: KitSizes.crewChipTitle,
+              ),
               child: Text(
                 title,
                 style: ts(theme.typeScale.uiSmall, theme.ink),
@@ -145,9 +148,11 @@ class _CrewChip extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 6),
+            const Gap(Space.xs),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 140),
+              constraints: const BoxConstraints(
+                maxWidth: KitSizes.crewChipMark,
+              ),
               child: mark,
             ),
           ],

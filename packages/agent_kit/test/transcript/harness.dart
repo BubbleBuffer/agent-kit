@@ -1,9 +1,9 @@
-// Harness for the transcript tests: a theme scope with the form factor the
-// width implies (a phone window under 768 px), animations off, and a size
-// class builder so widgets lay out by the width given here.
+// Harness for the transcript tests: a theme scope with the density the width
+// implies (touch for a compact, phone-sized window), animations off, and a
+// size class builder so widgets lay out by the width given here.
 
 import 'package:agent_kit/agent_kit.dart';
-import 'package:bb_ui/bb_ui.dart' show FormFactor;
+import 'package:bb_ui/tokens.dart' show Density;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -27,7 +27,10 @@ Future<void> pumpTranscript(
         data: MediaQuery.of(context).copyWith(disableAnimations: true),
         child: BbThemeScope(
           brightness: brightness,
-          formFactor: FormFactor.forWidth(width),
+          // A phone-width window is a phone: touch density.
+          density: SizeClass.forWidth(width).isCompact
+              ? Density.touch
+              : Density.pointer,
           child: Builder(
             builder: (context) => ColoredBox(
               color: sheet ? context.bb.surface : const Color(0x00000000),

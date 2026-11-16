@@ -269,10 +269,10 @@ class _ComposerSpecimensState extends State<ComposerSpecimens> {
       children: [
         const _Heading('Composer, approval bar, queued row, question'),
         Padding(
-          padding: EdgeInsets.only(bottom: t.spacing.md),
+          padding: EdgeInsets.only(bottom: Space.md),
           child: Text(
             'Last callback: $_last',
-            style: ts(const TypeSpec(12, 16, 400), t.faint, mono: true),
+            style: ts(TypeScale.pointer.codeSmall, t.faint, mono: true),
           ),
         ),
         const _Sub('AgentComposer'),
@@ -409,7 +409,7 @@ class _Heading extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: EdgeInsets.only(bottom: t.spacing.md),
+      padding: EdgeInsets.only(bottom: Space.md),
       child: Text(text, style: ts(t.typeScale.h3, t.ink)),
     );
   }
@@ -424,8 +424,8 @@ class _Sub extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: EdgeInsets.only(top: t.spacing.md, bottom: t.spacing.sm),
-      child: Text(text, style: ts(t.typeScale.ui, t.ink, weight: 700)),
+      padding: EdgeInsets.only(top: Space.md, bottom: Space.sm),
+      child: Text(text, style: ts(t.typeScale.ui, t.ink, weight: Weight.bold)),
     );
   }
 }
@@ -447,12 +447,12 @@ class _Frame extends StatelessWidget {
     if (phone) {
       body = BbThemeScope(
         brightness: t.brightness,
-        formFactor: FormFactor.mobile,
+        density: Density.touch,
         child: child,
       );
     }
     return Padding(
-      padding: EdgeInsets.only(bottom: t.spacing.lg),
+      padding: EdgeInsets.only(bottom: Space.lg),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final w = width < constraints.maxWidth ? width : constraints.maxWidth;
@@ -460,10 +460,10 @@ class _Frame extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsets.only(bottom: t.spacing.xs),
+                padding: EdgeInsets.only(bottom: Space.xxs),
                 child: Text(
                   label,
-                  style: ts(const TypeSpec(12, 16, 400), t.faint, mono: true),
+                  style: ts(TypeScale.pointer.codeSmall, t.faint, mono: true),
                 ),
               ),
               SizedBox(width: w, child: body),

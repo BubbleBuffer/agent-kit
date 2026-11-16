@@ -372,7 +372,7 @@ class _QuestionPromptState extends State<QuestionPrompt> {
 
   // -------------------------------------------------------------- build
 
-  static const _inset = EdgeInsets.symmetric(horizontal: 4);
+  static const _inset = EdgeInsets.symmetric(horizontal: Space.xxs);
 
   @override
   Widget build(BuildContext context) {
@@ -391,19 +391,24 @@ class _QuestionPromptState extends State<QuestionPrompt> {
             // The option list reaches 4 px past the text on both sides, as in
             // the mockup (`.qo-list` has a -4 px margin); everything else
             // takes `_inset` back.
-            padding: EdgeInsets.fromLTRB(touch ? 6 : 8, 10, touch ? 6 : 6, 8),
+            padding: EdgeInsets.fromLTRB(
+              touch ? Space.xs : Space.sm,
+              Space.md,
+              touch ? Space.xs : Space.xs,
+              Space.sm,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(padding: _inset, child: _head(t, many)),
                 if (many) ...[
-                  const SizedBox(height: 6),
+                  const Gap(Space.xs),
                   Padding(padding: _inset, child: _tabs(t)),
                 ],
-                const SizedBox(height: 6),
+                const Gap(Space.xs),
                 _body(context, t, size, touch),
-                const SizedBox(height: 10),
+                const Gap(Space.md),
                 Padding(padding: _inset, child: _foot(t, many)),
               ],
             ),
@@ -415,11 +420,22 @@ class _QuestionPromptState extends State<QuestionPrompt> {
 
   Widget _head(BbTheme t, bool many) => Row(
     children: [
-      const StatusMark.pill(ChatStatus.needsYou, label: 'Question'),
-      const SizedBox(width: 8),
-      WaitingLabel(requestedAt: widget.question.requestedAt, now: widget.now),
+      Expanded(
+        child: Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.xxs,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const StatusMark.pill(ChatStatus.needsYou, label: 'Question'),
+            WaitingLabel(
+              requestedAt: widget.question.requestedAt,
+              now: widget.now,
+            ),
+          ],
+        ),
+      ),
       if (many) ...[
-        const Spacer(),
+        const Gap(Space.sm),
         Text(
           '${_step + 1} of ${_drafts.length}',
           maxLines: 1,
@@ -433,8 +449,8 @@ class _QuestionPromptState extends State<QuestionPrompt> {
     container: true,
     label: 'Questions',
     child: Wrap(
-      spacing: 4,
-      runSpacing: 4,
+      spacing: Space.xxs,
+      runSpacing: Space.xxs,
       children: [
         for (var i = 0; i < _drafts.length; i++)
           _QuestionTab(
@@ -453,7 +469,7 @@ class _QuestionPromptState extends State<QuestionPrompt> {
     final item = _item;
     final d = _draft;
     final hideKeys = touch || size.isCompact;
-    final textStyle = ts(t.typeScale.body, t.ink, weight: 600);
+    final textStyle = ts(t.typeScale.body, t.ink, weight: Weight.semibold);
     final Widget text = item.text.contains('\n')
         ? const LeanMarkdownRenderer().build(context, item.text)
         : MarkdownText(item.text, style: textStyle);
@@ -465,11 +481,16 @@ class _QuestionPromptState extends State<QuestionPrompt> {
         Padding(padding: _inset, child: text),
         if (item.kind == QuestionKind.text)
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+            padding: const EdgeInsets.fromLTRB(
+              Space.xxs,
+              Space.xs,
+              Space.xxs,
+              0,
+            ),
             child: _TextAnswer(controller: d.entry, focusNode: d.entryFocus),
           )
         else ...[
-          const SizedBox(height: 2),
+          const Gap(Space.hair),
           Padding(
             padding: _inset,
             child: Text(
@@ -477,7 +498,7 @@ class _QuestionPromptState extends State<QuestionPrompt> {
               style: ts(t.typeScale.uiSmall, t.muted),
             ),
           ),
-          const SizedBox(height: 2),
+          const Gap(Space.hair),
           _options(t, item, d, hideKeys),
         ],
       ],
@@ -514,7 +535,7 @@ class _QuestionPromptState extends State<QuestionPrompt> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < rows.length; i++) ...[
-            if (i > 0) const SizedBox(height: 2),
+            if (i > 0) const Gap(Space.hair),
             rows[i],
           ],
         ],
@@ -527,15 +548,22 @@ class _QuestionPromptState extends State<QuestionPrompt> {
     return Row(
       children: [
         _SkipButton(onTap: _skip),
-        const Spacer(),
-        if (many && _step > 0) ...[
-          KitButton(label: 'Back', onTap: () => _go(_step - 1)),
-          const SizedBox(width: 8),
-        ],
-        KitButton(
-          label: _last ? 'Answer' : 'Next',
-          kind: KitButtonKind.primary,
-          onTap: canPrimary ? _primary : null,
+        const Gap(Space.sm),
+        Expanded(
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: Space.sm,
+            runSpacing: Space.xxs,
+            children: [
+              if (many && _step > 0)
+                KitButton(label: 'Back', onTap: () => _go(_step - 1)),
+              KitButton(
+                label: _last ? 'Answer' : 'Next',
+                kind: KitButtonKind.primary,
+                onTap: canPrimary ? _primary : null,
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -565,8 +593,8 @@ class _QuestionTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     final color = done ? t.constructiveInk : (active ? t.ink : t.muted);
-    final style = ts(t.typeScale.uiSmall, color, weight: 600);
-    final h = isTouch(t) ? 32.0 : 26.0;
+    final style = ts(t.typeScale.uiSmall, color, weight: Weight.semibold);
+    final h = (isTouch(t) ? ControlSize.md : ControlSize.sm).height;
     return Semantics(
       button: true,
       selected: active,
@@ -582,26 +610,27 @@ class _QuestionTab extends StatelessWidget {
         hoverBackground: active ? t.colors.bgSelectedBlock : t.hover,
         lift: 0,
         border: Border.all(color: active ? t.seam : t.colors.borderSubtle),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: SizedBox(
-          height: h - 2,
+        padding: const EdgeInsets.symmetric(horizontal: Space.md),
+        // Inside the hairline border; grows with the text size.
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: h - 2 * Stroke.hair),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (done) ...[
-                KitIcon(ComposerGlyphs.check, size: 12, color: color),
-                const SizedBox(width: 4),
+                KitIcon(ComposerGlyphs.check, size: IconSize.xs, color: color),
+                const Gap(Space.xxs),
               ],
               Text(
                 header,
                 maxLines: 1,
                 softWrap: false,
                 style: skipped
-                    ? style.copyWith(
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w400,
-                        color: t.faint,
-                      )
+                    ? ts(
+                        t.typeScale.uiSmall,
+                        t.faint,
+                        weight: Weight.regular,
+                      ).copyWith(fontStyle: FontStyle.italic)
                     : style,
               ),
             ],
@@ -629,26 +658,26 @@ class _Box extends StatelessWidget {
         color: t.surface,
         border: Border.all(
           color: on ? t.accent : t.colors.borderStrong,
-          width: on ? 5 : 1.5,
+          width: on ? Stroke.seam : Stroke.regular,
         ),
       );
     } else {
       decoration = BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(Radii.sm),
         color: on ? t.accent : t.surface,
         border: Border.all(
           color: on ? t.accent : t.colors.borderStrong,
-          width: 1.5,
+          width: Stroke.regular,
         ),
       );
     }
     return Container(
-      width: 16,
-      height: 16,
+      width: IconSize.sm.px,
+      height: IconSize.sm.px,
       alignment: Alignment.center,
       decoration: decoration,
       child: !single && on
-          ? KitIcon(ComposerGlyphs.check, size: 12, color: t.onAccent)
+          ? KitIcon(ComposerGlyphs.check, size: IconSize.xs, color: t.onAccent)
           : null,
     );
   }
@@ -665,7 +694,7 @@ BoxDecoration _rowDecoration(
   borderRadius: BorderRadius.circular(t.radii.md),
   border: Border.all(
     color: focus ? t.focus : (on ? t.seam : t.seam.withValues(alpha: 0)),
-    width: focus ? 2 : 1,
+    width: focus ? Stroke.bold : Stroke.hair,
   ),
 );
 
@@ -767,29 +796,33 @@ class _OptionRowState extends State<_OptionRow> {
               ),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
-                  8,
-                  touch ? 10 : 7,
-                  6,
-                  touch ? 10 : 7,
+                  Space.sm,
+                  touch ? Space.md : Space.sm,
+                  Space.xs,
+                  touch ? Space.md : Space.sm,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.only(top: Space.hair),
                       child: _Box(single: widget.single, on: widget.on),
                     ),
-                    const SizedBox(width: 10),
+                    const Gap(Space.md),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             o.label,
-                            style: ts(t.typeScale.ui, t.ink, weight: 600),
+                            style: ts(
+                              t.typeScale.ui,
+                              t.ink,
+                              weight: Weight.semibold,
+                            ),
                           ),
                           if (o.description != null) ...[
-                            const SizedBox(height: 1),
+                            const Gap(Space.hair),
                             Text(
                               o.description!,
                               style: ts(t.typeScale.uiSmall, t.muted),
@@ -799,10 +832,10 @@ class _OptionRowState extends State<_OptionRow> {
                       ),
                     ),
                     if (widget.keyHint != null) ...[
-                      const SizedBox(width: 10),
+                      const Gap(Space.md),
                       Padding(
                         padding: EdgeInsets.only(
-                          top: o.description == null ? 1 : 8,
+                          top: o.description == null ? Space.hair : Space.sm,
                         ),
                         child: KeyCap(widget.keyHint!, color: t.ink),
                       ),
@@ -864,7 +897,7 @@ class _OtherRowState extends State<_OtherRow> {
     final t = context.bb;
     final touch = isTouch(t);
     final on = widget.controller.text.trim().isNotEmpty;
-    final h = touch ? 40.0 : 28.0;
+    final h = t.metrics.row.height;
     return Semantics(
       container: true,
       checked: on,
@@ -884,15 +917,20 @@ class _OtherRowState extends State<_OtherRow> {
               focus: false,
             ),
             child: Padding(
-              padding: EdgeInsets.fromLTRB(8, touch ? 5 : 3, 6, touch ? 5 : 3),
+              padding: EdgeInsets.fromLTRB(
+                Space.sm,
+                touch ? Space.xs : Space.xxs,
+                Space.xs,
+                touch ? Space.xs : Space.xxs,
+              ),
               child: Row(
                 children: [
                   _Box(single: widget.single, on: on),
-                  const SizedBox(width: 10),
+                  const Gap(Space.md),
                   Expanded(
                     child: FieldFrame(
                       height: h,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: Space.sm),
                       child: Semantics(
                         label: 'Other answer',
                         textField: true,
@@ -902,7 +940,7 @@ class _OtherRowState extends State<_OtherRow> {
                           style: ts(
                             touch ? t.typeScale.body : t.typeScale.ui,
                             t.ink,
-                            weight: 400,
+                            weight: Weight.regular,
                           ),
                           placeholder: 'Something else…',
                           textInputAction: TextInputAction.done,
@@ -911,7 +949,7 @@ class _OtherRowState extends State<_OtherRow> {
                     ),
                   ),
                   if (widget.keyHint != null) ...[
-                    const SizedBox(width: 10),
+                    const Gap(Space.md),
                     KeyCap(widget.keyHint!, color: t.ink),
                   ],
                 ],
@@ -955,9 +993,12 @@ class _TextAnswerState extends State<_TextAnswer> {
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    final style = ts(t.typeScale.body, t.ink, weight: 400);
+    final style = ts(t.typeScale.body, t.ink, weight: Weight.regular);
     return FieldFrame(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.md,
+        vertical: Space.sm,
+      ),
       child: Semantics(
         label: 'Answer',
         textField: true,
@@ -1016,15 +1057,16 @@ class _SkipButton extends StatelessWidget {
       child: Hover(
         onTap: onTap,
         borderRadius: BorderRadius.circular(t.radii.md),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: SizedBox(
-          height: isTouch(t) ? 40 : 28,
+        padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: t.metrics.row.height),
           child: Center(
             widthFactor: 1,
+            heightFactor: 1,
             child: Text(
               'Skip',
               maxLines: 1,
-              style: ts(t.typeScale.ui, t.muted, weight: 600),
+              style: ts(t.typeScale.ui, t.muted, weight: Weight.semibold),
             ),
           ),
         ),
