@@ -88,11 +88,11 @@ class _AgentContextPaneState extends State<AgentContextPane> {
         color: t.surface,
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(Space.xl),
             child: Text(
               'This chat has no context data yet.',
               textAlign: TextAlign.center,
-              style: ts(t.typeScale.ui, t.faint, weight: 400),
+              style: ts(t.typeScale.ui, t.faint, weight: Weight.regular),
             ),
           ),
         ),

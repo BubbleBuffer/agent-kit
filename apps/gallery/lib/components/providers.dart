@@ -3,6 +3,7 @@
 
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
+import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
 ProviderSetup _setup({required bool reload}) => ProviderSetup(
@@ -48,7 +49,7 @@ class ProviderSpecimens extends StatelessWidget {
         child: ColoredBox(
           color: t.surface,
           child: Padding(
-            padding: EdgeInsets.all(t.spacing.lg),
+            padding: EdgeInsets.all(Space.lg),
             child: ProviderList(setup: setup, onMakeDefault: (_) {}),
           ),
         ),
@@ -58,9 +59,9 @@ class ProviderSpecimens extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         boxed(680, _setup(reload: false)),
-        SizedBox(height: t.spacing.lg),
+        Gap(Space.lg),
         boxed(680, _setup(reload: true)),
-        SizedBox(height: t.spacing.lg),
+        Gap(Space.lg),
         boxed(390, _setup(reload: false)),
       ],
     );

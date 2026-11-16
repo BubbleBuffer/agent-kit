@@ -9,6 +9,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import '../status/status.dart';
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'chrome_button.dart';
 import 'chrome_format.dart';
@@ -77,14 +78,13 @@ class ChatHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.bb;
-    final touch = theme.formFactor == FormFactor.mobile;
-    final button = touch ? 40.0 : 32.0;
+    final button = theme.metrics.control;
     return LayoutBuilder(
       builder: (context, constraints) {
         final narrow =
             constraints.hasBoundedWidth &&
-            constraints.maxWidth < theme.sizeMedium;
-        final gap = narrow ? 6.0 : 8.0;
+            constraints.maxWidth < SizeClass.mediumWidth;
+        final gap = narrow ? Space.xs : Space.sm;
         final fraction = usage?.contextFraction;
         return DecoratedBox(
           decoration: BoxDecoration(
@@ -92,40 +92,58 @@ class ChatHeader extends StatelessWidget {
               bottom: BorderSide(color: theme.colors.borderSubtle),
             ),
           ),
-          child: SizedBox(
-            height: narrow ? 52 : Layout.topbarHeight,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: narrow ? KitSizes.compactHeader : Layout.topbarHeight,
+            ),
             child: Padding(
               padding: narrow
-                  ? const EdgeInsets.symmetric(horizontal: 8)
-                  : const EdgeInsets.fromLTRB(16, 0, 10, 0),
+                  ? const EdgeInsets.symmetric(horizontal: Space.sm)
+                  : const EdgeInsets.fromLTRB(Space.lg, 0, Space.md, 0),
               child: Row(
                 children: [
                   RailShowButton(gap: gap, size: button),
                   Expanded(
-                    child: Row(
-                      children: [
-                        if (!narrow) ...[const _Tile(), SizedBox(width: gap)],
-                        Flexible(
-                          child: Text(
-                            chat.title,
-                            style: ts(
-                              theme.typeScale.ui,
-                              theme.ink,
-                              weight: 700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SizedBox(width: gap),
-                        StatusMark.pill(chat.status, detail: statusDetail),
-                        if (!narrow && branch != null) ...[
-                          SizedBox(width: gap),
+                    child: LayoutBuilder(
+                      builder: (context, title) => Row(
+                        children: [
+                          if (!narrow) ...[const _Tile(), Gap(gap)],
                           Flexible(
-                            child: _Branch(branch: branch!, worktree: worktree),
+                            child: Text(
+                              chat.title,
+                              style: ts(
+                                theme.typeScale.ui,
+                                theme.ink,
+                                weight: Weight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
+                          Gap(gap),
+                          // The pill gives way (ellipsis) only when the title
+                          // has no room left at all.
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth:
+                                  title.maxWidth * KitSizes.headerPillShare,
+                            ),
+                            child: StatusMark.pill(
+                              chat.status,
+                              detail: statusDetail,
+                            ),
+                          ),
+                          if (!narrow && branch != null) ...[
+                            Gap(gap),
+                            Flexible(
+                              child: _Branch(
+                                branch: branch!,
+                                worktree: worktree,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                   if (fraction != null)
@@ -153,7 +171,7 @@ class ChatHeader extends StatelessWidget {
                         key: const ValueKey('header-menu'),
                         label: 'Session menu',
                         size: button,
-                        glyphSize: 20,
+                        glyphSize: IconSize.lg,
                         onTap: menuItems.isEmpty
                             ? null
                             : () => _openMenu(buttonContext),
@@ -173,7 +191,7 @@ class ChatHeader extends StatelessWidget {
       buttonContext,
       globalRectOf(buttonContext),
       (menuContext) => MenuList(
-        width: 220,
+        width: Widths.popover,
         children: [
           for (final item in menuItems) ...[
             if (item.separatorBefore) const MenuSeparator(),
@@ -184,7 +202,7 @@ class ChatHeader extends StatelessWidget {
                   ? null
                   : ChromeIcon(
                       item.glyph!,
-                      size: 18,
+                      size: IconSize.md,
                       color: item.danger
                           ? menuContext.colors.inlineCodeText
                           : menuContext.colors.iconPrimary,
@@ -209,17 +227,20 @@ class _Tile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.bb;
     return ExcludeSemantics(
-      child: SizedBox(
-        width: 22,
-        height: 22,
+      child: SizedBox.square(
+        dimension: KitSizes.sessionTile,
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: theme.surface,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(Radii.md),
             border: Border.all(color: theme.seam),
           ),
           child: Center(
-            child: ChromeIcon(glyphMessageSquare, size: 14, color: theme.ink),
+            child: ChromeIcon(
+              glyphMessageSquare,
+              size: IconSize.xs,
+              color: theme.ink,
+            ),
           ),
         ),
       ),
@@ -242,12 +263,12 @@ class _Branch extends StatelessWidget {
       Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ChromeIcon(glyphGitBranch, size: 14, color: theme.muted),
-          const SizedBox(width: 4),
+          ChromeIcon(glyphGitBranch, size: IconSize.xs, color: theme.muted),
+          const Gap(Space.xxs),
           Flexible(
             child: Text(
               branch,
-              style: ts(const TypeSpec(12, 16, 400), theme.muted, mono: true),
+              style: ts(theme.typeScale.codeSmall, theme.muted, mono: true),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -289,7 +310,7 @@ class ContextMeter extends StatelessWidget {
         ? 'Context: $percent%'
         : 'Context: $percent% of ${formatTokens(contextLimit!)}';
     final readout = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: Space.xs),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -299,15 +320,15 @@ class ContextMeter extends StatelessWidget {
               style: ts(theme.typeScale.uiSmall, theme.faint),
               maxLines: 1,
             ),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
           ],
           Container(
-            width: 40,
-            height: 2,
+            width: KitSizes.headerMeter,
+            height: Stroke.bold,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: theme.seam,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(Radii.sm),
             ),
             child: Align(
               alignment: Alignment.centerLeft,
@@ -332,7 +353,6 @@ class ContextMeter extends StatelessWidget {
         ),
       );
     }
-    final touch = theme.formFactor == FormFactor.mobile;
     return chromeTooltip(
       context,
       tip,
@@ -348,9 +368,11 @@ class ContextMeter extends StatelessWidget {
           hoverBackground: theme.hover,
           pressedBackground: theme.pressed,
           lift: 0,
-          child: SizedBox(
-            height: touch ? 40 : 32,
-            child: Center(child: readout),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: theme.metrics.control.height,
+            ),
+            child: Center(heightFactor: 1, child: readout),
           ),
         ),
       ),

@@ -10,8 +10,12 @@
 
 import 'package:agent_kit_core/agent_kit_core.dart' show ChatStatus;
 import 'package:bb_ui/tokens.dart';
+// BbTheme is a ThemeExtension so a host can also put it in ThemeData.
+// ignore: bb_lints/no_material
 import 'package:flutter/material.dart' show ThemeExtension;
 import 'package:flutter/widgets.dart';
+
+import 'kit_tokens.dart';
 
 /// How one status looks (one row of the kit's status table).
 @immutable
@@ -65,8 +69,8 @@ class BbRadii {
   BorderRadius get pill => Radii.pill;
 }
 
-/// Semantic roles, status roles, type, spacing, radii, motion and the
-/// size-class thresholds.
+/// Semantic roles, status roles, type, metrics, radii, motion and the kit's
+/// layout sizes.
 ///
 /// Build one from the bb-ui colours ([AppColors]); [BbThemeScope] does this from a
 /// [Brightness]. Role names follow `theme.css`: `canvas`, `surface`, `ink`,
@@ -77,26 +81,20 @@ class BbTheme extends ThemeExtension<BbTheme> {
   /// Derives every role from [colors].
   factory BbTheme(
     AppColors colors, {
-    FormFactor formFactor = FormFactor.desktop,
+    Density density = Density.pointer,
     KitLayout layout = KitLayout.standard,
-    KitSpacing spacing = KitSpacing.standard,
-  }) => BbTheme._(colors, formFactor, layout, spacing, KitInks.of(colors));
+  }) => BbTheme._(colors, density, layout, KitInks.of(colors));
 
   /// The light theme.
-  factory BbTheme.light({FormFactor formFactor = FormFactor.desktop}) =>
-      BbTheme(AppColors.light, formFactor: formFactor);
+  factory BbTheme.light({Density density = Density.pointer}) =>
+      BbTheme(AppColors.light, density: density);
 
   /// The dark theme.
-  factory BbTheme.dark({FormFactor formFactor = FormFactor.desktop}) =>
-      BbTheme(AppColors.darkTheme, formFactor: formFactor);
+  factory BbTheme.dark({Density density = Density.pointer}) =>
+      BbTheme(AppColors.darkTheme, density: density);
 
-  BbTheme._(
-    this.colors,
-    this.formFactor,
-    this.layout,
-    this.spacing,
-    KitInks inks,
-  ) : brightness = colors.dark ? Brightness.dark : Brightness.light,
+  BbTheme._(this.colors, this.density, this.layout, KitInks inks)
+    : brightness = colors.dark ? Brightness.dark : Brightness.light,
       canvas = colors.desk,
       surface = colors.bgPrimary,
       surface2 = colors.bgSecondary,
@@ -129,7 +127,7 @@ class BbTheme extends ThemeExtension<BbTheme> {
       railHover = colors.dark ? colors.rail2 : colors.bgHover,
       railSelected = colors.dark
           ? Color.alphaBlend(
-              colors.railInk.withValues(alpha: .10),
+              colors.railInk.withValues(alpha: KitAlpha.railSelected),
               colors.rail2,
             )
           : colors.bgPressed,
@@ -148,15 +146,12 @@ class BbTheme extends ThemeExtension<BbTheme> {
   /// The bb-ui palette this theme was derived from; `bb_ui` reads it.
   final AppColors colors;
 
-  /// Decides touch sizing and the type scale (window width, as in Scratch).
-  /// Layout uses [SizeClass] instead.
-  final FormFactor formFactor;
+  /// How the user points: it sets control heights, icon sizes and the type
+  /// ramp ([typeScale], [metrics]). Layout follows [SizeClass] instead.
+  final Density density;
 
-  /// Size-class thresholds, pane minimums and other layout tokens.
+  /// Pane minimums, the composer's fit width and other layout sizes.
   final KitLayout layout;
-
-  /// The spacing scale.
-  final KitSpacing spacing;
 
   final Brightness brightness;
 
@@ -210,15 +205,14 @@ class BbTheme extends ThemeExtension<BbTheme> {
   final BbRadii radii = const BbRadii();
   final BbMotion motion = const BbMotion();
 
-  /// bb-ui's type scale for the [formFactor].
-  TypeScale get typeScale =>
-      formFactor == FormFactor.mobile ? TypeScale.mobile : TypeScale.desktop;
+  /// bb-ui's type ramp for the [density].
+  TypeScale get typeScale => density.type;
 
-  /// The compact/medium boundary in logical px.
-  double get sizeMedium => layout.sizeMedium;
+  /// bb-ui's control, row and icon sizes for the [density].
+  Metrics get metrics => density.metrics;
 
-  /// The medium/expanded boundary in logical px.
-  double get sizeExpanded => layout.sizeExpanded;
+  /// Whether the user points with a finger ([Density.touch]).
+  bool get touch => density == Density.touch;
 
   /// How [s] looks.
   BbStatusStyle statusStyle(ChatStatus s) => status[s]!;
@@ -239,17 +233,12 @@ class BbTheme extends ThemeExtension<BbTheme> {
       context.dependOnInheritedWidgetOfExactType<_BbThemeInherited>()?.theme;
 
   @override
-  BbTheme copyWith({
-    AppColors? colors,
-    FormFactor? formFactor,
-    KitLayout? layout,
-    KitSpacing? spacing,
-  }) => BbTheme(
-    colors ?? this.colors,
-    formFactor: formFactor ?? this.formFactor,
-    layout: layout ?? this.layout,
-    spacing: spacing ?? this.spacing,
-  );
+  BbTheme copyWith({AppColors? colors, Density? density, KitLayout? layout}) =>
+      BbTheme(
+        colors ?? this.colors,
+        density: density ?? this.density,
+        layout: layout ?? this.layout,
+      );
 
   /// Themes do not blend; the nearer one wins at the halfway point.
   @override
@@ -299,9 +288,8 @@ class _BbThemeInherited extends InheritedWidget {
   @override
   bool updateShouldNotify(_BbThemeInherited old) =>
       old.theme.colors != theme.colors ||
-      old.theme.formFactor != theme.formFactor ||
-      old.theme.layout != theme.layout ||
-      old.theme.spacing != theme.spacing;
+      old.theme.density != theme.density ||
+      old.theme.layout != theme.layout;
 }
 
 /// Installs a [BbTheme] and `bb_ui`'s [AppTheme] (which the primitives read)
@@ -312,23 +300,26 @@ class BbThemeScope extends StatelessWidget {
     super.key,
     required this.brightness,
     required this.child,
-    this.formFactor = FormFactor.desktop,
+    this.density = Density.pointer,
   });
 
   final Brightness brightness;
-  final FormFactor formFactor;
+
+  /// How the user points; the host picks it, for example with
+  /// `Density.forPlatform(defaultTargetPlatform)`.
+  final Density density;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final theme = brightness == Brightness.dark
-        ? BbTheme.dark(formFactor: formFactor)
-        : BbTheme.light(formFactor: formFactor);
+        ? BbTheme.dark(density: density)
+        : BbTheme.light(density: density);
     return _BbThemeInherited(
       theme: theme,
       child: AppTheme(
         colors: theme.colors,
-        formFactor: formFactor,
+        density: density,
         child: DefaultTextStyle(
           style: ts(theme.typeScale.body, theme.ink),
           child: child,

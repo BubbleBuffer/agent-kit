@@ -10,6 +10,7 @@ import 'package:agent_kit_core/agent_kit_core.dart' show ContextView;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'context_support.dart';
 
@@ -63,7 +64,7 @@ class ContextMeterBar extends StatelessWidget {
     }
     if (cap > 0) label.write('. Compaction applies near ${ctxLimit(cap)}.');
 
-    final head = ts(t.typeScale.ui, t.muted, weight: 400);
+    final head = ts(t.typeScale.ui, t.muted, weight: Weight.regular);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -82,9 +83,11 @@ class ContextMeterBar extends StatelessWidget {
                   if (total != null) ...[
                     Text(
                       ctxTokens(total),
-                      style: tabular(ts(const TypeSpec(18, 22, 700), t.ink)),
+                      style: tabular(
+                        ts(t.typeScale.title, t.ink, weight: Weight.bold),
+                      ),
                     ),
-                    const SizedBox(width: 6),
+                    const Gap(Space.xs),
                   ],
                   Flexible(
                     child: Text(
@@ -106,18 +109,19 @@ class ContextMeterBar extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 6),
+        const Gap(Space.xs),
         Semantics(
           container: true,
           image: true,
           label: label.toString(),
           excludeSemantics: true,
           child: SizedBox(
-            height: 10,
+            height: KitSizes.meterBar,
             child: LayoutBuilder(
               builder: (context, box) {
                 final w = box.maxWidth;
-                final scale = base <= 0 ? 1.0 : w / base;
+                // Nothing is drawn without a base, so its scale is moot.
+                final scale = base > 0 ? w / base : 0.0;
                 return Stack(
                   clipBehavior: Clip.none,
                   children: [
@@ -125,13 +129,13 @@ class ContextMeterBar extends StatelessWidget {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: t.seam,
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(Radii.md),
                         ),
                       ),
                     ),
                     Positioned.fill(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
+                        borderRadius: BorderRadius.circular(Radii.md),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: SizedBox(
@@ -139,7 +143,7 @@ class ContextMeterBar extends StatelessWidget {
                             child: Row(
                               children: [
                                 for (var i = 0; i < segments.length; i++) ...[
-                                  if (i > 0) const SizedBox(width: 1),
+                                  if (i > 0) const Gap(Stroke.hair),
                                   Expanded(
                                     flex: segments[i].tokens,
                                     child: ColoredBox(
@@ -157,13 +161,13 @@ class ContextMeterBar extends StatelessWidget {
                     if (cap > 0 && cap <= base)
                       Positioned(
                         left: cap * scale - 1,
-                        top: -3,
-                        bottom: -3,
-                        width: 2,
+                        top: -KitSizes.meterCapOvershoot,
+                        bottom: -KitSizes.meterCapOvershoot,
+                        width: Stroke.bold,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             color: t.ink,
-                            borderRadius: BorderRadius.circular(1),
+                            borderRadius: BorderRadius.circular(Radii.sm),
                           ),
                         ),
                       ),
@@ -173,14 +177,18 @@ class ContextMeterBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        const Gap(Space.xs),
         LayoutBuilder(
           builder: (context, box) {
             final capLabel = cap > 0
                 ? Text(
                     'Compacts near ${ctxLimit(cap)}',
                     key: const ValueKey('context-cap-label'),
-                    style: ts(t.typeScale.uiSmall, t.faint, weight: 400),
+                    style: ts(
+                      t.typeScale.uiSmall,
+                      t.faint,
+                      weight: Weight.regular,
+                    ),
                   )
                 : null;
             final legend = [for (final s in segments) _Legend(s)];
@@ -188,8 +196,8 @@ class ContextMeterBar extends StatelessWidget {
             // otherwise it wraps in with the legend.
             if (capLabel == null || box.maxWidth < 440) {
               return Wrap(
-                spacing: 14,
-                runSpacing: 2,
+                spacing: Space.lg,
+                runSpacing: Space.hair,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [...legend, ?capLabel],
               );
@@ -199,13 +207,13 @@ class ContextMeterBar extends StatelessWidget {
               children: [
                 Expanded(
                   child: Wrap(
-                    spacing: 14,
-                    runSpacing: 2,
+                    spacing: Space.lg,
+                    runSpacing: Space.hair,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: legend,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const Gap(Space.lg),
                 capLabel,
               ],
             );
@@ -227,20 +235,19 @@ class _Legend extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 10,
-          height: 10,
+        SizedBox.square(
+          dimension: KitSizes.meterBar,
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: segment.color,
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(Radii.sm),
             ),
           ),
         ),
-        const SizedBox(width: 6),
+        const Gap(Space.xs),
         Text(
           '${segment.label} ${ctxTokens(segment.tokens)}',
-          style: ts(t.typeScale.uiSmall, t.muted, weight: 400),
+          style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.regular),
         ),
       ],
     );

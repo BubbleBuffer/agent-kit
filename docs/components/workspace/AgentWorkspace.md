@@ -67,7 +67,7 @@ The other five shots show the same layout at other sizes and states.
 
 ## Behaviour
 
-- Layout by size class (`SizeClassBuilder`, thresholds from `theme.sizeMedium` and `theme.sizeExpanded`; `SizeClass.forWidth` defaults to 600 and 1000):
+- Layout by size class (`SizeClassBuilder`, thresholds `SizeClass.mediumWidth` and `SizeClass.expandedWidth`, 600 and 1000):
   - Expanded: the split tree, with dividers and a header on each pane.
   - Medium: one column. A 36 px bar of pane tabs (horizontally scrolling) above the front pane. The pane has a 1 px seam border and rounded corners.
   - Compact: the same tab bar at 52 px, a bottom rule and a "Back to chat" chevron, filling the screen. The pane has no border.

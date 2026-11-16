@@ -4,6 +4,7 @@
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'decision_line.dart';
 import 'outline_chapter_widgets.dart';
@@ -36,10 +37,10 @@ Future<void> showOutlineContents(
       onSection(chapter, section);
     },
   ),
-  desktopWidth: 440,
-  desktopHeight: 560,
+  desktopWidth: KitSizes.contents.width,
+  desktopHeight: KitSizes.contents.height,
   shrink: false,
-  mobileHeightFactor: .7,
+  sheetHeightFactor: KitSizes.contents.sheetShare,
 );
 
 PickerSheet _contents(
@@ -57,7 +58,7 @@ PickerSheet _contents(
   return PickerSheet(
     key: const ValueKey('outline-contents'),
     listHeight: null,
-    listPadding: const EdgeInsets.only(bottom: 12),
+    listPadding: const EdgeInsets.only(bottom: Space.md),
     listKey: const ValueKey('outline-contents-scroll'),
     header: SheetHeader(
       'Contents · $count ${count == 1 ? 'chapter' : 'chapters'}',
@@ -74,12 +75,12 @@ PickerSheet _contents(
             dot: true,
             small: true,
             oneLine: true,
-            labelStyle: ts(ty.ui, c.textPrimary, weight: 600),
+            labelStyle: ts(ty.ui, c.textPrimary, weight: Weight.semibold),
             padding: const EdgeInsets.fromLTRB(
               Layout.gutter,
-              8,
+              Space.sm,
               Layout.gutter,
-              4,
+              Space.xxs,
             ),
             trailing: where.chapterId == chapter.id && where.sectionId == null
                 ? const _HereTag()
@@ -95,14 +96,14 @@ PickerSheet _contents(
                   style: ts(ty.uiSmall, c.textTertiary),
                 ),
                 if (chapter.decision != null) ...[
-                  const SizedBox(height: 2),
+                  const Gap(Space.hair),
                   DecisionLine(
                     chapter.decision!,
                     peek: true,
                     color: c.textSecondary,
                   ),
                 ] else if (chapter.gist != null) ...[
-                  const SizedBox(height: 2),
+                  const Gap(Space.hair),
                   Text(
                     chapter.gist!,
                     maxLines: 1,
@@ -124,13 +125,15 @@ PickerSheet _contents(
               labelStyle: ts(
                 ty.uiSmall,
                 c.textPrimary,
-                weight: where.sectionId == section.id ? 600 : 400,
+                weight: where.sectionId == section.id
+                    ? Weight.semibold
+                    : Weight.regular,
               ),
               padding: const EdgeInsets.fromLTRB(
-                Layout.gutter + 18,
-                6,
+                Layout.gutter + Space.lg,
+                Space.xs,
                 Layout.gutter,
-                6,
+                Space.xs,
               ),
               trailing: where.sectionId == section.id ? const _HereTag() : null,
             ),
@@ -145,7 +148,7 @@ class _HereTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 8),
+    padding: const EdgeInsets.only(left: Space.sm),
     child: Text(
       "you're here",
       style: ts(context.bb.typeScale.uiSmall, context.bb.colors.accentText),

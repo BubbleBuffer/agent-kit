@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 
 /// Paints a dashed outline of a rounded rectangle, or only a dashed vertical
@@ -68,7 +69,7 @@ class CxFlash extends StatefulWidget {
     required this.active,
     required this.token,
     required this.child,
-    this.radius = const BorderRadius.all(Radius.circular(6)),
+    this.radius = const BorderRadius.all(Radius.circular(Radii.md)),
   });
 
   final bool active;
@@ -155,11 +156,11 @@ class CxTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(t.radii.sm),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(horizontal: Space.xs),
         child: Text(
           text,
           maxLines: 1,
-          style: ts(const TypeSpec(11, 18, 700), t.muted),
+          style: ts(t.typeScale.caption, t.muted, weight: Weight.bold),
         ),
       ),
     );
@@ -177,16 +178,24 @@ class CxGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 16, 2, 4),
+      padding: const EdgeInsets.fromLTRB(
+        Space.hair,
+        Space.lg,
+        Space.hair,
+        Space.xxs,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
           Expanded(
-            child: Text(label, style: ts(const TypeSpec(12, 16, 700), t.muted)),
+            child: Text(
+              label,
+              style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.bold),
+            ),
           ),
           if (trailing != null)
-            Text(trailing!, style: ts(const TypeSpec(12, 16, 500), t.faint)),
+            Text(trailing!, style: ts(t.typeScale.uiSmall, t.faint)),
         ],
       ),
     );
@@ -195,7 +204,7 @@ class CxGroup extends StatelessWidget {
 
 /// A quiet paragraph (`.cx-note`).
 class CxNote extends StatelessWidget {
-  const CxNote(this.text, {super.key, this.top = 10});
+  const CxNote(this.text, {super.key, this.top = Space.md});
 
   final String text;
   final double top;
@@ -204,12 +213,12 @@ class CxNote extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: EdgeInsets.fromLTRB(2, top, 2, 4),
+      padding: EdgeInsets.fromLTRB(Space.hair, top, Space.hair, Space.xxs),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: const BoxConstraints(maxWidth: KitSizes.noteMaxWidth),
         child: Text(
           text,
-          style: ts(const TypeSpec(13, 18, 500), t.muted, weight: 400),
+          style: ts(t.typeScale.ui, t.muted, weight: Weight.regular),
         ),
       ),
     );

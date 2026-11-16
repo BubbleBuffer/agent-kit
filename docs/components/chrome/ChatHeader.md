@@ -66,14 +66,14 @@ import 'package:agent_kit/agent_kit.dart';
 `BbTheme` roles read in `chat_header.dart`:
 
 - `surface`, `seam`, `ink`, `muted`, `faint`, `hover`, `pressed`, `threadStrong`
-- `radii.ctl`, `typeScale.ui`, `typeScale.uiSmall`, `formFactor`, `sizeMedium`
+- `radii.ctl`, `typeScale.ui`, `typeScale.uiSmall`, `metrics`, `SizeClass.mediumWidth`
 - `colors.borderSubtle` (the workspace toggle and menu edges)
 - The status pill is a `StatusMark` (`status/status_mark.dart`) that reads the `status` styles for the chat's status.
 
 ## Size classes
 
-- Narrow: `constraints.hasBoundedWidth && constraints.maxWidth < theme.sizeMedium` (600 px by default) (`chat_header.dart:85`). Narrow drops the tile, the branch and the meter label. The height is 52 px when narrow, and `Layout.topbarHeight` otherwise.
-- Touch (`formFactor == mobile`): the meter button is 40 px high, otherwise 32 px (`ContextMeter`, `chat_header.dart:335`).
+- Narrow: `constraints.hasBoundedWidth && constraints.maxWidth < SizeClass.mediumWidth` (600 px) (`chat_header.dart`). Narrow drops the tile, the branch and the meter label. The minimum height is 52 px when narrow (`KitSizes.compactHeader`), and `Layout.topbarHeight` otherwise; the pill gives way (ellipsis) when the title has no room.
+- The meter button is at least `metrics.control` high: 44 px by touch, otherwise 32 px (`ContextMeter`).
 - The menu popover is 220 px wide (`_openMenu`).
 
 ## Accessibility

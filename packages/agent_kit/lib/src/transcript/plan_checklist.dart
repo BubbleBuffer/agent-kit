@@ -50,24 +50,31 @@ class _PlanChecklistState extends State<PlanChecklist> {
               onTap: () => setState(() => _open = !_open),
               lift: 0,
               borderRadius: t.radii.field,
-              padding: const EdgeInsets.fromLTRB(10, 0, 8, 0),
+              padding: const EdgeInsets.fromLTRB(Space.md, 0, Space.sm, 0),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: isTouch(context) ? 40 : 34,
+                  minHeight: t.metrics.listRow.height,
                 ),
                 child: Row(
                   children: [
                     glyphIcon(
                       glyphListChecks,
-                      size: 14,
+                      size: IconSize.xs.px,
                       color: t.colors.iconSecondary,
                     ),
-                    const SizedBox(width: 8),
-                    Text('Plan', style: ts(t.typeScale.ui, t.ink, weight: 700)),
-                    const SizedBox(width: 8),
+                    const Gap(Space.sm),
+                    Text(
+                      'Plan',
+                      style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+                    ),
+                    const Gap(Space.sm),
                     Text(
                       count,
-                      style: ts(t.typeScale.ui, t.faint, weight: 400),
+                      style: ts(
+                        t.typeScale.ui,
+                        t.faint,
+                        weight: Weight.regular,
+                      ),
                     ),
                     const Spacer(),
                     DisclosureChevron(open: _open),
@@ -78,7 +85,12 @@ class _PlanChecklistState extends State<PlanChecklist> {
           ),
           if (_open)
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 2, 10, 10),
+              padding: const EdgeInsets.fromLTRB(
+                Space.md,
+                Space.hair,
+                Space.md,
+                Space.md,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [for (final item in items) _PlanRow(item: item)],
@@ -99,14 +111,14 @@ class _PlanRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     final style = switch (item.state) {
-      PlanItemState.done => ts(t.typeScale.ui, t.muted, weight: 400),
-      PlanItemState.now => ts(t.typeScale.ui, t.ink, weight: 700),
-      PlanItemState.todo => ts(t.typeScale.ui, t.ink, weight: 400),
+      PlanItemState.done => ts(t.typeScale.ui, t.muted, weight: Weight.regular),
+      PlanItemState.now => ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+      PlanItemState.todo => ts(t.typeScale.ui, t.ink, weight: Weight.regular),
     };
     final mark = switch (item.state) {
       PlanItemState.done => glyphIcon(
         glyphCheck,
-        size: 14,
+        size: IconSize.xs.px,
         color: t.constructiveInk,
       ),
       PlanItemState.now => const StatusMark(ChatStatus.running, label: ''),
@@ -122,11 +134,14 @@ class _PlanRow extends StatelessWidget {
       label: '${item.text}, $stateLabel',
       excludeSemantics: true,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 26),
+        constraints: BoxConstraints(minHeight: ControlSize.sm.height),
         child: Row(
           children: [
-            SizedBox(width: 16, child: Center(child: mark)),
-            const SizedBox(width: 8),
+            SizedBox(
+              width: IconSize.sm.px,
+              child: Center(child: mark),
+            ),
+            const Gap(Space.sm),
             Expanded(child: MarkdownText(item.text, style: style)),
           ],
         ),

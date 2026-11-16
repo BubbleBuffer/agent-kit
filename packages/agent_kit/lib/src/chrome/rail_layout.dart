@@ -119,7 +119,10 @@ class _Column extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(child: rail),
-                      SizedBox(width: 1, child: ColoredBox(color: line)),
+                      SizedBox(
+                        width: Stroke.hair,
+                        child: ColoredBox(color: line),
+                      ),
                     ],
                   ),
                 ),
@@ -175,10 +178,14 @@ class _Sliding extends StatelessWidget {
 /// hidden, and nothing while the rail shows or outside a [RailLayout].
 /// [gap] is the space after it, only when it shows.
 class RailShowButton extends StatelessWidget {
-  const RailShowButton({super.key, this.gap = 8, this.size = 32});
+  const RailShowButton({
+    super.key,
+    this.gap = Space.sm,
+    this.size = ControlSize.md,
+  });
 
   final double gap;
-  final double size;
+  final ControlSize size;
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +198,7 @@ class RailShowButton extends StatelessWidget {
         key: const ValueKey('rail-show'),
         label: 'Sessions',
         size: size,
-        glyphSize: 20,
+        glyphSize: IconSize.lg,
         onTap: () => scope.controller.show(scope.sizeClass),
       );
     } else if (!scope.visible) {

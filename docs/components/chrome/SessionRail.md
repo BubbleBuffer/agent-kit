@@ -69,14 +69,14 @@ import 'package:agent_kit/agent_kit.dart';
 - `accent` (the avatar background when no moss space colour is found)
 - `colors.bgPrimary`, `colors.textPrimary` (the avatar text)
 - `dangerInk` (the failed load-more label)
-- `radii.ctl`, `typeScale.ui`, `brightness`, `formFactor`
+- `radii.ctl`, `typeScale.ui`, `brightness`, `density` and `metrics`
 - The row's status mark uses `status` (`BbStatusStyle` per `ChatStatus`) through `StatusMark`.
 
 ## Size classes
 
 - Compact (`scope.sizeClass.isCompact`, below 600 px): the rail is the sliding screen opened from the header's Sessions button. `select()` sets `scope.controller.open = false`, so the screen closes after a pick (`session_rail.dart:96`).
 - Medium and expanded: the rail is the 240 px column (`Layout.sidebarWidth`, see RailLayout).
-- The Search button's shortcut hint is shown when `formFactor != FormFactor.mobile` (`session_rail.dart:431`), and the Search button's hint is `Ctrl K` through `commandKeyHint`.
+- The Search button's shortcut hint is shown when the density is not touch (`session_rail.dart`), and the Search button's hint is `Ctrl K` through `commandKeyHint`.
 
 ## Accessibility
 

@@ -46,7 +46,7 @@ import 'package:agent_kit/agent_kit.dart';
 `BbTheme` roles read in `crew_strip.dart`:
 
 - `ink`, `hover`, `pressed`, `seam`, `colors.borderSubtle`, `colors.iconSecondary`
-- `radii.pill` (chip shape), `typeScale.uiSmall`, `formFactor`
+- `radii.pill` (chip shape), `typeScale.uiSmall`, `density`
 - Each chip's mark is a `StatusMark` or `StatusMark.work` (`crew_strip.dart:53`, `:62`). `StatusMark` uses `askingParent` for an agent waiting on its parent (`status/status_mark.dart:111`).
 
 ## Size classes

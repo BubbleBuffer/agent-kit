@@ -15,6 +15,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../shared/kit_icon.dart';
 import '../shared/path_segments.dart';
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 
 export '../shared/kit_icon.dart' show KitIcon;
@@ -103,11 +104,13 @@ abstract final class ComposerGlyphs {
   );
 }
 
-/// Whether the window is phone-sized: touch controls, no key hints.
-bool isTouch(BbTheme t) => t.formFactor == FormFactor.mobile;
+/// Whether the user points by touch: touch controls, no key hints.
+bool isTouch(BbTheme t) => t.touch;
 
-/// The height of the agent's buttons (`--ctl-h`: 32, and 40 on touch).
-double controlHeight(BbTheme t) => isTouch(t) ? 40 : t.layout.controlHeight;
+/// The height of the agent's buttons (`--ctl-h`: 32 with a pointer, bb-ui's
+/// touch control height by touch).
+double controlHeight(BbTheme t) =>
+    isTouch(t) ? t.metrics.control.height : t.layout.controlHeight;
 
 /// A shortcut hint: a small outlined mono label (`.kc`).
 class KeyCap extends StatelessWidget {
@@ -121,20 +124,22 @@ class KeyCap extends StatelessWidget {
     final t = context.bb;
     return ExcludeSemantics(
       child: Opacity(
-        opacity: .8,
+        opacity: Alpha.strong,
         child: Container(
-          height: 18,
-          constraints: const BoxConstraints(minWidth: 18),
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          constraints: const BoxConstraints(
+            minWidth: KitSizes.keyCap,
+            minHeight: KitSizes.keyCap,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: Space.xxs),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(t.radii.sm),
-            border: Border.all(color: color.withValues(alpha: .3)),
+            border: Border.all(color: color.withValues(alpha: Alpha.wash)),
           ),
           child: Text(
             label,
             maxLines: 1,
-            style: ts(const TypeSpec(11, 16, 400), color, mono: true),
+            style: ts(t.typeScale.caption, color, mono: true),
           ),
         ),
       ),
@@ -166,11 +171,11 @@ class KitButton extends StatelessWidget {
     required this.onTap,
     this.kind = KitButtonKind.secondary,
     this.icon,
-    this.iconSize = 14,
+    this.iconSize = IconSize.xs,
     this.keyHint,
     this.iconOnly = false,
     this.height,
-    this.fontSize,
+    this.type,
     this.hoverBackground,
     this.semanticLabel,
   });
@@ -181,15 +186,18 @@ class KitButton extends StatelessWidget {
   final VoidCallback? onTap;
   final KitButtonKind kind;
   final LucideGlyph? icon;
-  final double iconSize;
+  final IconSize iconSize;
 
   /// A key hint such as `1`; hidden on touch.
   final String? keyHint;
   final bool iconOnly;
 
-  /// Defaults to the control height, or 28 (40 on touch) for [quiet].
-  final double? height;
-  final double? fontSize;
+  /// Defaults to the control height, or [ControlSize.sm] ([ControlSize.xl]
+  /// on touch) for [quiet].
+  final ControlSize? height;
+
+  /// The label's type role; defaults to `ui`.
+  final TypeSpec? type;
 
   /// A tint for hover and focus, for the Send now button.
   final Color? hoverBackground;
@@ -199,18 +207,21 @@ class KitButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     final quiet = kind == KitButtonKind.quiet;
-    final h = height ?? (quiet ? (isTouch(t) ? 40 : 28) : controlHeight(t));
+    final h =
+        height?.height ??
+        (quiet
+            ? (isTouch(t) ? ControlSize.xl : ControlSize.sm).height
+            : controlHeight(t));
     final fg = switch (kind) {
       KitButtonKind.primary => t.onAccent,
       KitButtonKind.danger => t.dangerInk,
       _ => t.ink,
     };
-    var style = ts(
-      t.typeScale.ui,
+    final style = ts(
+      type ?? t.typeScale.ui,
       fg,
-      weight: kind == KitButtonKind.primary ? 700 : 600,
+      weight: kind == KitButtonKind.primary ? Weight.bold : Weight.semibold,
     );
-    if (fontSize != null) style = style.copyWith(fontSize: fontSize);
     final hint = keyHint;
     final content = Row(
       mainAxisSize: MainAxisSize.min,
@@ -218,7 +229,7 @@ class KitButton extends StatelessWidget {
       children: [
         if (icon != null) KitIcon(icon!, size: iconSize, color: fg),
         if (!iconOnly && label.isNotEmpty) ...[
-          if (icon != null) const SizedBox(width: 6),
+          if (icon != null) const Gap(Space.xs),
           Flexible(
             child: Text(
               label,
@@ -230,7 +241,7 @@ class KitButton extends StatelessWidget {
           ),
         ],
         if (!iconOnly && hint != null && !isTouch(t)) ...[
-          const SizedBox(width: 8),
+          const Gap(Space.sm),
           KeyCap(hint, color: fg),
         ],
       ],
@@ -246,11 +257,11 @@ class KitButton extends StatelessWidget {
           KitButtonKind.primary => t.accentHover,
           KitButtonKind.quiet => t.hover,
           KitButtonKind.danger => Color.alphaBlend(
-            t.dangerInk.withValues(alpha: .08),
+            t.dangerInk.withValues(alpha: KitAlpha.dangerHover),
             t.surface,
           ),
           KitButtonKind.secondary => Color.alphaBlend(
-            t.ink.withValues(alpha: .05),
+            t.ink.withValues(alpha: KitAlpha.hover),
             t.surface,
           ),
         };
@@ -275,15 +286,17 @@ class KitButton extends StatelessWidget {
         },
         padding: iconOnly
             ? EdgeInsets.zero
-            : EdgeInsets.symmetric(horizontal: quiet ? 8 : 12),
-        child: SizedBox(
-          height: h,
-          width: iconOnly ? h : null,
-          child: Center(widthFactor: 1, child: content),
+            : EdgeInsets.symmetric(horizontal: quiet ? Space.sm : Space.md),
+        // A minimum, so the label grows with the text size.
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: h, minWidth: iconOnly ? h : 0),
+          child: Center(widthFactor: 1, heightFactor: 1, child: content),
         ),
       ),
     );
-    return onTap == null ? Opacity(opacity: .45, child: button) : button;
+    return onTap == null
+        ? Opacity(opacity: Alpha.muted, child: button)
+        : button;
   }
 }
 
@@ -295,7 +308,7 @@ class KitIconButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.size,
-    this.iconSize = 14,
+    this.iconSize = IconSize.xs,
   });
 
   final LucideGlyph glyph;
@@ -304,14 +317,14 @@ class KitIconButton extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  /// Defaults to 28, or 40 on touch.
-  final double? size;
-  final double iconSize;
+  /// Defaults to [ControlSize.sm], or [ControlSize.xl] on touch.
+  final ControlSize? size;
+  final IconSize iconSize;
 
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    final s = size ?? (isTouch(t) ? 40 : 28);
+    final s = (size ?? (isTouch(t) ? ControlSize.xl : ControlSize.sm)).height;
     return Semantics(
       button: true,
       enabled: onTap != null,
@@ -404,7 +417,7 @@ class _DashedPainter extends CustomPainter {
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+      ..strokeWidth = Stroke.hair;
     for (final metric in path.computeMetrics()) {
       var d = 0.0;
       while (d < metric.length) {
@@ -500,8 +513,8 @@ class _WaitingLabelState extends State<WaitingLabel> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          KitIcon(ComposerGlyphs.clock, size: 12, color: t.muted),
-          const SizedBox(width: 4),
+          KitIcon(ComposerGlyphs.clock, size: IconSize.xs, color: t.muted),
+          const Gap(Space.xxs),
           Text(
             text,
             maxLines: 1,

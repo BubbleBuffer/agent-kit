@@ -7,6 +7,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'code_block.dart';
 import 'transcript_support.dart';
@@ -299,7 +300,7 @@ class _Prose extends StatelessWidget {
     final t = context.bb;
     final children = <Widget>[];
     for (final b in blocks) {
-      if (children.isNotEmpty) children.add(const SizedBox(height: 10));
+      if (children.isNotEmpty) children.add(const Gap(Space.md));
       children.add(switch (b) {
         MdParagraph(:final text) => MarkdownText(
           text,
@@ -310,16 +311,18 @@ class _Prose extends StatelessWidget {
           text,
           style: level <= 2
               ? ts(t.typeScale.h3, t.ink)
-              : ts(t.typeScale.body, t.ink, weight: 700),
+              : ts(t.typeScale.body, t.ink, weight: Weight.bold),
           onLinkTap: onLinkTap,
         ),
         final MdList l => _ListBlock(list: l, onLinkTap: onLinkTap),
         MdQuote(:final text) => DecoratedBox(
           decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: t.thread, width: 3)),
+            border: Border(
+              left: BorderSide(color: t.thread, width: Stroke.seam),
+            ),
           ),
           child: Padding(
-            padding: const EdgeInsets.only(left: 12),
+            padding: const EdgeInsets.only(left: Space.md),
             child: MarkdownText(
               text,
               style: ts(t.typeScale.body, t.muted),
@@ -332,7 +335,7 @@ class _Prose extends StatelessWidget {
           language: language,
         ),
         MdRule() => SizedBox(
-          height: 1,
+          height: Stroke.hair,
           width: double.infinity,
           child: ColoredBox(color: t.seam),
         ),
@@ -368,14 +371,14 @@ class _ListBlock extends StatelessWidget {
       rows.add(
         Padding(
           padding: EdgeInsets.only(
-            left: 6.0 + item.level * 18,
-            top: rows.isEmpty ? 0 : 4,
+            left: Space.xs + item.level * Space.lg,
+            top: rows.isEmpty ? 0 : Space.xxs,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: 16,
+                width: KitSizes.listMarker,
                 child: Text(
                   marker,
                   textAlign: list.ordered ? TextAlign.start : TextAlign.center,
@@ -440,7 +443,6 @@ class _MarkdownTextState extends State<MarkdownText> {
     final t = context.bb;
     _disposeRecognizers();
     final base = widget.style;
-    final size = base.fontSize ?? 16;
     final spans = <InlineSpan>[];
     for (final m in parseMarkdownInline(widget.text)) {
       if (m.code) {
@@ -454,13 +456,13 @@ class _MarkdownTextState extends State<MarkdownText> {
                 borderRadius: BorderRadius.circular(t.radii.sm),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Space.xxs,
+                  vertical: Space.hair,
+                ),
                 child: Text(
                   m.text,
-                  style: monoStyle(
-                    TypeSpec(size * .85, size * 1.2, 400),
-                    t.codeInk,
-                  ),
+                  style: monoStyle(t.typeScale.code, t.codeInk),
                 ),
               ),
             ),
@@ -469,7 +471,9 @@ class _MarkdownTextState extends State<MarkdownText> {
         continue;
       }
       var style = base.copyWith(
-        fontWeight: m.bold ? fw(700) : null,
+        // A bold run keeps the caller's role and takes the scale's bold.
+        // ignore: bb_lints/no_raw_text_style
+        fontWeight: m.bold ? Weight.bold.fontWeight : null,
         fontStyle: m.italic ? FontStyle.italic : null,
       );
       TapGestureRecognizer? recognizer;

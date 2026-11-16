@@ -1,5 +1,5 @@
 // Shared by the composition tests: a theme scope with a Navigator (menus are
-// popovers), animations off, the form factor the width implies, and a backend
+// popovers), animations off, the density the width implies, and a backend
 // that has played the mockups' scenarios.
 
 import 'dart:async';
@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:agent_kit_core/fake.dart';
-import 'package:bb_ui/tokens.dart' show FormFactor;
+import 'package:bb_ui/tokens.dart' show Density;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,7 +35,10 @@ Future<void> pumpApp(
         data: MediaQuery.of(context).copyWith(disableAnimations: true),
         child: BbThemeScope(
           brightness: brightness,
-          formFactor: FormFactor.forWidth(width),
+          // A phone-width window is a phone: touch density.
+          density: SizeClass.forWidth(width).isCompact
+              ? Density.touch
+              : Density.pointer,
           child: navigator!,
         ),
       ),

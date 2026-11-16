@@ -118,13 +118,13 @@ A pick button that opens a menu of choices.
 `BbTheme` roles read in `agent_composer.dart`, and in `composer_parts.dart` where the bar's buttons and surface come from:
 
 - `surface`, `ink`, `muted`, `pressed`, `typeScale.uiSmall`, `radii.md` (`agent_composer.dart`)
-- `accent`, `accentHover`, `onAccent`, `hover`, `dangerInk`, `seam`, `thread`, `typeScale.ui`, `layout.controlHeight`, `radii.sm`, `radii.md`, `radii.ctl`, `radii.panel`, `formFactor` (`composer_parts.dart`)
+- `accent`, `accentHover`, `onAccent`, `hover`, `dangerInk`, `seam`, `thread`, `typeScale.ui`, `layout.controlHeight`, `radii.sm`, `radii.md`, `radii.ctl`, `radii.panel`, `density` and `metrics` (`composer_parts.dart`)
 - `colors` (the bb-ui palette): `bgSecondary`, `iconSecondary`, `iconTertiary`, `textPrimary`, `textSecondary`, `textTertiary`, `textSelection`, `palette.lift` (`agent_composer.dart`)
 
 ## Size classes
 
 - The bar checks `constraints.hasBoundedWidth && SizeClass.forWidth(constraints.maxWidth).isCompact` (`agent_composer.dart:642`). When compact and there are picks, the picks sit on their own line.
-- Compact is below `sizeMedium` (600 px by default; see `theme/size_class.dart`).
+- Compact is below `SizeClass.mediumWidth` (600 px).
 - The mention menu is 324 px wide and 168 px high on non-mobile forms (`_MentionMenu`, `agent_composer.dart:914`).
 - Touch form factor (`isTouch`) uses 40 px controls, otherwise `layout.controlHeight`.
 

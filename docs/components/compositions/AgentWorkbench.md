@@ -63,7 +63,7 @@ The workbench reads two classes, not the window width (the layout comment at `ag
   - expanded: the chat sheet is `min(584, max(444, 0.44 × width))` px and the workspace takes the rest;
   - medium: the workspace is a column on the right, `min(420, max(240, 0.4 × width))` px, and the chat takes the rest;
   - compact: the workspace is a full-screen layer over the chat sheet.
-- Thresholds: compact below 600 px, medium below 1000 px, expanded from 1000 px. These are `BbTheme.sizeMedium` and `sizeExpanded` (see `BbTheme.md`).
+- Thresholds: compact below 600 px, medium below 1000 px, expanded from 1000 px. These are bb-ui's `SizeClass.mediumWidth` and `expandedWidth`.
 
 ## Accessibility
 

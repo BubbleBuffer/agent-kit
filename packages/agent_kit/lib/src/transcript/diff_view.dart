@@ -9,6 +9,7 @@ import 'package:agent_kit_core/agent_kit_core.dart'
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'transcript_support.dart';
 
@@ -23,7 +24,7 @@ class DiffView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    const spec = TypeSpec(12.5, 20, 400);
+    final spec = t.typeScale.code;
     final rows = <Widget>[];
     for (var h = 0; h < diff.hunks.length; h++) {
       if (h > 0) rows.add(_Gap(lineNumbers: lineNumbers));
@@ -103,14 +104,14 @@ class _DiffRow extends StatelessWidget {
     return ColoredBox(
       color: bg,
       child: Padding(
-        padding: const EdgeInsets.only(right: 16),
+        padding: const EdgeInsets.only(right: Space.lg),
         child: Row(
           children: [
             if (lineNumbers)
               SizedBox(
-                width: 44,
+                width: KitSizes.diffGutter,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: Space.sm),
                   child: Text(
                     number == null ? '' : '$number',
                     textAlign: TextAlign.right,
@@ -119,9 +120,9 @@ class _DiffRow extends StatelessWidget {
                 ),
               )
             else
-              const SizedBox(width: 8),
+              const Gap(Space.sm),
             SizedBox(
-              width: 16,
+              width: KitSizes.diffSign,
               child: Text(
                 sign,
                 textAlign: TextAlign.center,
@@ -135,7 +136,7 @@ class _DiffRow extends StatelessWidget {
                 decoration: line.op == DiffOp.del
                     ? TextDecoration.lineThrough
                     : TextDecoration.none,
-                decorationThickness: 1,
+                decorationThickness: Stroke.hair,
               ),
             ),
           ],
@@ -156,16 +157,13 @@ class _Gap extends StatelessWidget {
     final t = context.bb;
     return ColoredBox(
       color: t.surface2,
-      child: SizedBox(
-        height: 16,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: t.typeScale.codeSmall.line),
         child: Padding(
-          padding: EdgeInsets.only(left: lineNumbers ? 44 : 8),
+          padding: EdgeInsets.only(left: lineNumbers ? Space.xxxl : Space.sm),
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              '…',
-              style: monoStyle(const TypeSpec(12.5, 16, 400), t.faint),
-            ),
+            child: Text('…', style: monoStyle(t.typeScale.codeSmall, t.faint)),
           ),
         ),
       ),

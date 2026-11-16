@@ -71,7 +71,7 @@ class OutlineChapterCard extends StatelessWidget {
     final decision = chapter.decision;
     final gist = chapter.gist;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: Space.xxs),
       child: FoldableStackCard(
         faceKey: ValueKey('outline-card-face-${chapter.id}'),
         edge: color,
@@ -98,11 +98,11 @@ class OutlineChapterCard extends StatelessWidget {
             if (chapter.summary.isNotEmpty)
               Text(chapter.summary, style: ts(ty.body, c.textPrimary)),
             if (decision != null) ...[
-              const SizedBox(height: 8),
+              const Gap(Space.sm),
               DecisionLine(decision),
             ],
             if (chapter.sections.isNotEmpty) ...[
-              const SizedBox(height: 4),
+              const Gap(Space.xxs),
               MarkedList(
                 rows: [
                   for (final (i, s) in chapter.sections.indexed)
@@ -118,30 +118,40 @@ class OutlineChapterCard extends StatelessWidget {
           ],
         ),
         footer: (open) => Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
+          padding: const EdgeInsets.only(top: Space.sm),
+          // The count left, the actions right; the actions wrap under the
+          // count when the card is narrow.
+          child: SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              runSpacing: Space.xxs,
+              children: [
+                Text(
                   outlineCountLine(chapter),
                   style: ts(ty.uiSmall, c.textTertiary),
                 ),
-              ),
-              if (open)
-                for (final (i, action) in actions.indexed) ...[
-                  FooterAction(
-                    key: ValueKey('outline-card-action-${chapter.id}-$i'),
-                    label: action.label,
-                    onTap: action.onSelected,
-                  ),
-                  const SizedBox(width: 6),
-                ],
-              FooterAction(
-                key: ValueKey('outline-card-show-${chapter.id}'),
-                label: messagesShown ? 'Hide messages' : 'Show messages',
-                onTap: onToggleMessages,
-              ),
-            ],
+                Wrap(
+                  spacing: Space.xs,
+                  runSpacing: Space.xxs,
+                  children: [
+                    if (open)
+                      for (final (i, action) in actions.indexed)
+                        FooterAction(
+                          key: ValueKey('outline-card-action-${chapter.id}-$i'),
+                          label: action.label,
+                          onTap: action.onSelected,
+                        ),
+                    FooterAction(
+                      key: ValueKey('outline-card-show-${chapter.id}'),
+                      label: messagesShown ? 'Hide messages' : 'Show messages',
+                      onTap: onToggleMessages,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -232,14 +242,14 @@ class OutlineSectionDivider extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 4,
-          height: 13,
+          width: Sizes.barWidth,
+          height: Sizes.barHeight,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(Radii.sm),
           ),
         ),
-        const SizedBox(width: 8),
+        const Gap(Space.sm),
         Flexible(
           child: Text(
             section.title,
@@ -248,10 +258,10 @@ class OutlineSectionDivider extends StatelessWidget {
             style: ts(t.typeScale.uiSmall, c.textPrimary),
           ),
         ),
-        const SizedBox(width: 8),
+        const Gap(Space.sm),
         Expanded(
           child: CustomPaint(
-            size: const Size(double.infinity, 1),
+            size: const Size(double.infinity, Stroke.hair),
             painter: _DashedLinePainter(c.borderSubtle),
           ),
         ),
@@ -279,10 +289,10 @@ class OutlineMoreButton extends StatelessWidget {
       child: Hover(
         onTap: onTap,
         radius: Radii.md,
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(Space.xxs),
         child: Icon20(
           Ico.more,
-          size: 16,
+          size: IconSize.sm,
           color: context.bb.colors.iconTertiary,
         ),
       ),
@@ -298,7 +308,7 @@ class _DashedLinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 1;
+      ..strokeWidth = Stroke.hair;
     var x = 0.0;
     while (x < size.width) {
       canvas.drawLine(Offset(x, 0.5), Offset(x + 4, 0.5), paint);

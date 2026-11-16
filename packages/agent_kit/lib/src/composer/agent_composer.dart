@@ -22,6 +22,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'composer_pick.dart';
 import 'mention_source.dart';
@@ -460,7 +461,7 @@ class _AgentComposerState extends State<AgentComposer> {
       children: [
         if (_open)
           Padding(
-            padding: const EdgeInsets.only(bottom: 5),
+            padding: const EdgeInsets.only(bottom: Space.xs),
             child: _MentionMenu(
               key: widget.keys.mentions,
               refs: _suggestions,
@@ -474,15 +475,20 @@ class _AgentComposerState extends State<AgentComposer> {
         GestureDetector(
           onTap: _focus.requestFocus,
           child: FieldFrame(
-            padding: const EdgeInsets.fromLTRB(12, 10, 8, 8),
+            padding: const EdgeInsets.fromLTRB(
+              Space.md,
+              Space.md,
+              Space.sm,
+              Space.sm,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (widget.refs.isNotEmpty) ...[
                   Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
+                    spacing: Space.xxs,
+                    runSpacing: Space.xxs,
                     children: [
                       for (final r in widget.refs)
                         ComposerRefChip(
@@ -497,7 +503,7 @@ class _AgentComposerState extends State<AgentComposer> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 7),
+                  const Gap(Space.sm),
                 ],
                 _Field(
                   fieldKey: widget.keys.field,
@@ -510,7 +516,7 @@ class _AgentComposerState extends State<AgentComposer> {
                   color: c.textPrimary,
                   onKey: _onKey,
                 ),
-                const SizedBox(height: 8),
+                const Gap(Space.sm),
                 _bar(context),
               ],
             ),
@@ -564,7 +570,7 @@ class _AgentComposerState extends State<AgentComposer> {
     Widget send = PrimaryButton(
       key: widget.keys.send,
       label: label,
-      height: 32,
+      size: ControlSize.md,
       icon: Ico.arrowUp,
       onTap: _submit,
     );
@@ -577,7 +583,9 @@ class _AgentComposerState extends State<AgentComposer> {
       onTap: widget.canSend ? _submit : null,
       child: widget.canSend
           ? send
-          : IgnorePointer(child: Opacity(opacity: .5, child: send)),
+          : IgnorePointer(
+              child: Opacity(opacity: Alpha.muted, child: send),
+            ),
     );
     final picks = <Widget>[
       if (showWorkspace)
@@ -597,43 +605,44 @@ class _AgentComposerState extends State<AgentComposer> {
           onSelected: widget.onModelChanged,
         ),
     ];
-    Widget buttons(bool withPicks) => Row(
-      children: [
-        if (withPicks && picks.isNotEmpty)
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Row(mainAxisSize: MainAxisSize.min, children: picks),
-              ),
-            ),
-          )
-        else
-          const Spacer(),
-        if (widget.running) ...[
-          if (widget.showModeToggle) ...[
-            ComposerModeToggle(mode: _mode, onChanged: _setMode),
-            const SizedBox(width: 8),
-          ],
-          Semantics(
-            container: true,
-            excludeSemantics: true,
-            button: true,
-            enabled: widget.onStop != null,
+    final actions = <Widget>[
+      if (widget.running) ...[
+        if (widget.showModeToggle)
+          ComposerModeToggle(mode: _mode, onChanged: _setMode),
+        Semantics(
+          container: true,
+          excludeSemantics: true,
+          button: true,
+          enabled: widget.onStop != null,
+          label: 'Stop',
+          onTap: widget.onStop,
+          child: SecondaryButton(
+            key: widget.keys.stop,
             label: 'Stop',
+            size: ControlSize.md,
             onTap: widget.onStop,
-            child: SecondaryButton(
-              key: widget.keys.stop,
-              label: 'Stop',
-              height: 32,
-              onTap: widget.onStop,
+          ),
+        ),
+      ],
+      send,
+    ];
+    Widget buttons() => Row(
+      children: [
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(mainAxisSize: MainAxisSize.min, children: picks),
             ),
           ),
-          const SizedBox(width: 8),
-        ],
-        send,
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: Space.sm,
+          children: actions,
+        ),
       ],
     );
     return LayoutBuilder(
@@ -641,7 +650,19 @@ class _AgentComposerState extends State<AgentComposer> {
         final compact =
             constraints.hasBoundedWidth &&
             SizeClass.forWidth(constraints.maxWidth).isCompact;
-        if (!compact || picks.isEmpty) return buttons(true);
+        if (!compact && picks.isNotEmpty) return buttons();
+        // The actions keep to the right and wrap when the text is large.
+        final trailing = Align(
+          alignment: Alignment.centerRight,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: Space.sm,
+            runSpacing: Space.xxs,
+            children: actions,
+          ),
+        );
+        if (picks.isEmpty) return trailing;
         // Compact: the picks keep their size on a line of their own.
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -649,11 +670,11 @@ class _AgentComposerState extends State<AgentComposer> {
           children: [
             Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
-              runSpacing: 4,
+              runSpacing: Space.xxs,
               children: picks,
             ),
-            const SizedBox(height: 6),
-            buttons(false),
+            const Gap(Space.xs),
+            trailing,
           ],
         );
       },
@@ -800,7 +821,7 @@ class ComposerModeToggle extends StatelessWidget {
           borderRadius: BorderRadius.circular(t.radii.md),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(2),
+          padding: const EdgeInsets.all(Space.hair),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -823,27 +844,32 @@ class ComposerModeToggle extends StatelessWidget {
       onTap: () => onChanged(value),
       child: Hover(
         onTap: () => onChanged(value),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(Radii.md),
         lift: 0,
         background: on ? t.surface : null,
         shadow: on
             ? [
                 BoxShadow(
                   color: t.colors.palette.lift,
-                  offset: const Offset(0, 1),
-                  blurRadius: 2,
+                  offset: KitShadow.liftOffset,
+                  blurRadius: KitShadow.liftBlur,
                 ),
               ]
             : null,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: SizedBox(
-          height: 24,
+        padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: ControlSize.xs.height),
           child: Center(
             widthFactor: 1,
+            heightFactor: 1,
             child: Text(
               label,
               maxLines: 1,
-              style: ts(t.typeScale.uiSmall, on ? t.ink : t.muted, weight: 600),
+              style: ts(
+                t.typeScale.uiSmall,
+                on ? t.ink : t.muted,
+                weight: Weight.semibold,
+              ),
             ),
           ),
         ),
@@ -861,7 +887,7 @@ class ComposerRefChip extends StatelessWidget {
     super.key,
     required this.ref,
     this.onRemove,
-    this.maxWidth = 280,
+    this.maxWidth = KitSizes.refChip,
   });
 
   final KitRef ref;
@@ -877,7 +903,10 @@ class ComposerRefChip extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(color: c.bgSecondary, borderRadius: Radii.pill),
       child: Padding(
-        padding: EdgeInsets.only(left: 6, right: onRemove == null ? 8 : 0),
+        padding: EdgeInsets.only(
+          left: Space.xs,
+          right: onRemove == null ? Space.sm : 0,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -887,25 +916,27 @@ class ComposerRefChip extends StatelessWidget {
                 'chat' => Ico.comment,
                 _ => Ico.page,
               },
-              size: 12,
+              size: IconSize.xs,
               color: c.iconTertiary,
             ),
-            const SizedBox(width: 4),
-            ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              child: Text(
-                ref.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: ts(context.type.uiSmall, c.textSecondary),
+            const Gap(Space.xxs),
+            Flexible(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Text(
+                  ref.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ts(context.type.uiSmall, c.textSecondary),
+                ),
               ),
             ),
             if (onRemove != null)
               IconBtn(
                 Ico.close,
                 key: k is ValueKey ? ValueKey('${k.value}-remove') : null,
-                size: 24,
-                glyph: 12,
+                size: ControlSize.xs,
+                glyph: IconSize.xs,
                 semanticLabel: 'Remove context',
                 onTap: onRemove,
               ),
@@ -939,7 +970,6 @@ class _MentionMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final m = context.mobile;
     final rows = <Widget>[];
     String? section;
     for (var i = 0; i < refs.length; i++) {
@@ -964,7 +994,7 @@ class _MentionMenu extends StatelessWidget {
                   'date' => Ico.clock,
                   _ => Ico.page,
                 },
-                size: m ? 22 : 20,
+                size: context.metrics.icon,
                 color: c.iconSecondary,
               ),
           selected: i == active,
@@ -974,19 +1004,24 @@ class _MentionMenu extends StatelessWidget {
       );
     }
     if (refs.isEmpty) rows.add(const MenuHeader('No results'));
-    return Semantics(
-      container: true,
-      label: 'Mentions',
-      child: MenuSurface(
-        width: m ? null : 324,
-        padding: const EdgeInsets.all(6),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 168),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: rows,
+    // A compact composer gives the menu its whole width.
+    return LayoutBuilder(
+      builder: (context, constraints) => Semantics(
+        container: true,
+        label: 'Mentions',
+        child: MenuSurface(
+          width: SizeClass.forWidth(constraints.maxWidth).isCompact
+              ? null
+              : KitSizes.mentionMenu,
+          padding: const EdgeInsets.all(Space.xs),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: KitSizes.mentionList),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: rows,
+              ),
             ),
           ),
         ),

@@ -25,6 +25,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../status/status.dart';
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'composer_parts.dart';
 
@@ -212,10 +213,10 @@ class _ApprovalBarState extends State<ApprovalBar> {
         child: SizeClassBuilder(
           builder: (context, size) => BarSurface(
             padding: EdgeInsets.fromLTRB(
-              touch ? 10 : 12,
-              touch ? 10 : 8,
-              touch ? 10 : 8,
-              touch ? 10 : 8,
+              touch ? Space.md : Space.md,
+              touch ? Space.md : Space.sm,
+              touch ? Space.md : Space.sm,
+              touch ? Space.md : Space.sm,
             ),
             child: _denying
                 ? _denyBody(context, t, size)
@@ -259,13 +260,11 @@ class _ApprovalBarState extends State<ApprovalBar> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           what,
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
           Row(
+            spacing: Space.sm,
             children: [
-              for (var i = 0; i < actions.length; i++) ...[
-                if (i > 0) const SizedBox(width: 8),
-                Expanded(child: _Stretch(actions[i])),
-              ],
+              for (final action in actions) Expanded(child: _Stretch(action)),
             ],
           ),
         ],
@@ -273,12 +272,8 @@ class _ApprovalBarState extends State<ApprovalBar> {
     }
     final acts = Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < actions.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          actions[i],
-        ],
-      ],
+      spacing: Space.sm,
+      children: actions,
     );
     return _WrapActs(what: what, acts: acts);
   }
@@ -289,7 +284,7 @@ class _ApprovalBarState extends State<ApprovalBar> {
     final h = controlHeight(t);
     final field = FieldFrame(
       height: h,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: Space.md),
       child: Focus(
         canRequestFocus: false,
         skipTraversal: true,
@@ -310,7 +305,7 @@ class _ApprovalBarState extends State<ApprovalBar> {
             style: ts(
               isTouch(t) ? t.typeScale.body : t.typeScale.ui,
               t.ink,
-              weight: 400,
+              weight: Weight.regular,
             ),
             placeholder: 'Reason for the agent (optional)',
             textInputAction: TextInputAction.done,
@@ -323,7 +318,7 @@ class _ApprovalBarState extends State<ApprovalBar> {
       mainAxisSize: MainAxisSize.min,
       children: [
         KitButton(label: 'Back', kind: KitButtonKind.quiet, onTap: _back),
-        const SizedBox(width: 8),
+        const Gap(Space.sm),
         KitButton(
           label: 'Deny',
           kind: KitButtonKind.danger,
@@ -336,17 +331,17 @@ class _ApprovalBarState extends State<ApprovalBar> {
         Text(
           'Deny ${a.tool}',
           maxLines: 1,
-          style: ts(t.typeScale.ui, t.ink, weight: 700),
+          style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
         ),
         if (subject != null) ...[
-          const SizedBox(width: 8),
+          const Gap(Space.sm),
           Flexible(
             child: Text(
               size.isCompact ? shortenPath(subject) : subject,
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.ellipsis,
-              style: ts(const TypeSpec(12.5, 20, 400), t.muted, mono: true),
+              style: ts(t.typeScale.code, t.muted, mono: true),
             ),
           ),
         ],
@@ -358,9 +353,9 @@ class _ApprovalBarState extends State<ApprovalBar> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           title,
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
           field,
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
           Align(alignment: Alignment.centerRight, child: buttons),
         ],
       );
@@ -370,11 +365,11 @@ class _ApprovalBarState extends State<ApprovalBar> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         title,
-        const SizedBox(height: 8),
+        const Gap(Space.sm),
         Row(
           children: [
             Expanded(child: field),
-            const SizedBox(width: 8),
+            const Gap(Space.sm),
             buttons,
           ],
         ),
@@ -432,77 +427,98 @@ class _WhatState extends State<_What> {
         approval.kind == ToolKind.edit ||
         approval.kind == ToolKind.write ||
         approval.kind == ToolKind.read;
-    const mono = TypeSpec(12.5, 20, 400);
+    final mono = t.typeScale.code;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.xxs,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const StatusMark.pill(ChatStatus.needsYou, label: 'Needs approval'),
-            const SizedBox(width: 8),
             WaitingLabel(requestedAt: approval.requestedAt, now: now),
           ],
         ),
-        const SizedBox(height: 3),
-        Row(
+        const Gap(Space.xxs),
+        // The request, then its counts and buttons; they wrap under it when
+        // the line is full.
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          runSpacing: Space.xxs,
           children: [
-            const SizedBox(width: 1),
-            KitIcon(_glyph(approval.kind), size: 14),
-            const SizedBox(width: 6),
-            Text(
-              approval.tool,
-              maxLines: 1,
-              style: ts(const TypeSpec(13, 20, 700), t.ink, mono: true),
-            ),
-            if (subject != null) ...[
-              const SizedBox(width: 6),
-              Flexible(
-                child: KitTip(
-                  message: subject,
-                  child: Text(
-                    isPath ? shortenPath(subject) : subject,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: ts(mono, t.muted, mono: true),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Gap(Space.hair),
+                KitIcon(_glyph(approval.kind), size: IconSize.xs),
+                const Gap(Space.xs),
+                Text(
+                  approval.tool,
+                  maxLines: 1,
+                  style: ts(
+                    t.typeScale.code,
+                    t.ink,
+                    mono: true,
+                    weight: Weight.bold,
                   ),
                 ),
-              ),
-            ],
-            if (diff != null) ..._counts(t, diff),
-            if (diff != null && onReview != null) ...[
-              const SizedBox(width: 2),
-              KitButton(
-                label: 'Review diff',
-                kind: KitButtonKind.quiet,
-                onTap: onReview,
-              ),
-            ],
-            if (args != null) ...[
-              const SizedBox(width: 2),
-              KitButton(
-                label: _details ? 'Hide details' : 'Details',
-                kind: KitButtonKind.quiet,
-                onTap: () => setState(() => _details = !_details),
-              ),
-            ],
+                if (subject != null) ...[
+                  const Gap(Space.xs),
+                  Flexible(
+                    child: KitTip(
+                      message: subject,
+                      child: Text(
+                        isPath ? shortenPath(subject) : subject,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: ts(mono, t.muted, mono: true),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (diff != null) ..._counts(t, diff),
+                if (diff != null && onReview != null) ...[
+                  const Gap(Space.hair),
+                  KitButton(
+                    label: 'Review diff',
+                    kind: KitButtonKind.quiet,
+                    onTap: onReview,
+                  ),
+                ],
+                if (args != null) ...[
+                  const Gap(Space.hair),
+                  KitButton(
+                    label: _details ? 'Hide details' : 'Details',
+                    kind: KitButtonKind.quiet,
+                    onTap: () => setState(() => _details = !_details),
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
         if (args != null && _details) ...[
-          const SizedBox(height: 6),
+          const Gap(Space.xs),
           Semantics(
             label: 'Request arguments',
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(Space.sm),
               decoration: BoxDecoration(
                 borderRadius: t.radii.field,
                 border: Border.all(color: t.colors.borderSubtle),
               ),
               child: Text(
                 args,
-                style: ts(const TypeSpec(12, 18, 400), t.ink, mono: true),
+                style: ts(t.typeScale.codeSmall, t.ink, mono: true),
               ),
             ),
           ),
@@ -512,15 +528,20 @@ class _WhatState extends State<_What> {
   }
 
   List<Widget> _counts(BbTheme t, FileDiff diff) {
-    final style = ts(const TypeSpec(12, 20, 700), t.ink, mono: true);
+    final style = ts(
+      t.typeScale.codeSmall,
+      t.ink,
+      mono: true,
+      weight: Weight.bold,
+    );
     return [
-      const SizedBox(width: 6),
+      const Gap(Space.xs),
       Text(
         '+${diff.added}',
         maxLines: 1,
         style: style.copyWith(color: t.constructiveInk),
       ),
-      const SizedBox(width: 6),
+      const Gap(Space.xs),
       Text(
         '−${diff.removed}',
         maxLines: 1,
@@ -555,9 +576,9 @@ class _RenderWrapActs extends RenderBox
           RenderBox,
           ContainerBoxParentData<RenderBox>
         > {
-  static const _minWhat = 280.0;
-  static const _gapX = 12.0;
-  static const _gapY = 8.0;
+  static const _minWhat = KitSizes.approvalRequestMin;
+  static const _gapX = Space.md;
+  static const _gapY = Space.sm;
 
   @override
   void setupParentData(RenderBox child) {

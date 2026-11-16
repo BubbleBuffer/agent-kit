@@ -117,7 +117,7 @@ class OutlineList extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: contentWidth),
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.only(bottom: Space.lg),
           child: controller.flashKeys.contains(row.key)
               ? OutlineFlash(token: controller.flashToken, child: child)
               : child,

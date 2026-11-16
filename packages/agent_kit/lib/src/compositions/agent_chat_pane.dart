@@ -26,6 +26,7 @@ import '../chrome/chrome.dart';
 import '../composer/composer.dart';
 import '../composer/composer_parts.dart'
     show ComposerGlyphs, KitButton, KitIconButton;
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import '../transcript/transcript.dart';
 
@@ -81,7 +82,7 @@ class PaneMetrics {
     this.rowGap = 14,
     this.listPadding,
     this.gapBefore,
-    this.dockPadding = const EdgeInsets.only(top: 10, bottom: 14),
+    this.dockPadding = const EdgeInsets.only(top: Space.md, bottom: Space.lg),
     this.dockGutter = 16,
   });
 
@@ -379,8 +380,8 @@ class AgentChatPane extends StatefulWidget {
 }
 
 class _AgentChatPaneState extends State<AgentChatPane> {
-  static const _gap = 40.0;
-  static const _sideWidth = 252.0;
+  static const _gap = KitSizes.chatGridGap;
+  static const _sideWidth = KitSizes.chatSide;
 
   ChatFeed? _feed;
   StreamSubscription<ChatSnapshot>? _sub;
@@ -712,7 +713,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
     final failed = _loadError;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(Space.xl),
         child: failed == null
             ? Semantics(
                 liveRegion: true,
@@ -728,15 +729,15 @@ class _AgentChatPaneState extends State<AgentChatPane> {
                     Text(
                       'Couldn’t load this chat',
                       textAlign: TextAlign.center,
-                      style: ts(t.typeScale.ui, t.ink, weight: 700),
+                      style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
                     ),
-                    const SizedBox(height: 4),
+                    const Gap(Space.xxs),
                     Text(
                       failed,
                       textAlign: TextAlign.center,
                       style: ts(t.typeScale.uiSmall, t.muted),
                     ),
-                    const SizedBox(height: 12),
+                    const Gap(Space.md),
                     KitButton(label: 'Retry', onTap: _retry),
                   ],
                 ),
@@ -756,27 +757,27 @@ class _AgentChatPaneState extends State<AgentChatPane> {
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
-        final room = w - 3 * _gap - _sideWidth - 16;
-        if (!box.hasBoundedWidth || room < 160) {
+        final room = w - 3 * _gap - _sideWidth - Space.lg;
+        if (!box.hasBoundedWidth || room < KitSizes.chatGridMinContent) {
           return _main(context, snap, running, widget.contentWidth);
         }
         final content = math.min(widget.contentWidth, room);
         final free = w - 3 * _gap - _sideWidth - content;
-        final left = math.max(16.0, free * 2 / 3);
+        final left = math.max(Space.lg, free * KitSizes.chatGridLeftShare);
         return Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // The main column carries 16 px of padding on both sides.
-            SizedBox(width: left + _gap - 16),
+            // The main column carries Space.lg of padding on both sides.
+            Gap(left + _gap - Space.lg),
             SizedBox(
-              width: content + 32,
+              width: content + 2 * Space.lg,
               child: _main(context, snap, running, content),
             ),
-            const SizedBox(width: _gap - 16),
+            const Gap(_gap - Space.lg),
             SizedBox(
               width: _sideWidth,
               child: Padding(
-                padding: const EdgeInsets.only(top: 28),
+                padding: const EdgeInsets.only(top: Space.xxl),
                 child: SingleChildScrollView(child: side),
               ),
             ),
@@ -841,7 +842,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
       children: [
         Expanded(
           child: snap.stale
-              ? Opacity(opacity: .6, child: transcript)
+              ? Opacity(opacity: Alpha.muted, child: transcript)
               : transcript,
         ),
         Padding(
@@ -924,7 +925,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
               _run(() => backend.decideApproval(id, approvals[i].id, decision));
             },
           ),
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
         ],
         if (question != null) ...[
           QuestionPrompt(
@@ -936,7 +937,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
             onAnswer: (answers) =>
                 _run(() => backend.answerQuestion(id, question.id, answers)),
           ),
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
         ],
         for (final input in snap.queue) ...[
           QueuedRow(
@@ -953,14 +954,14 @@ class _AgentChatPaneState extends State<AgentChatPane> {
                 ? (i) => _run(() => backend.removeQueued(id, i.id))
                 : null,
           ),
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
         ],
         if (_error != null) ...[
           _ErrorLine(
             message: _error!,
             onDismiss: () => setState(() => _error = null),
           ),
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
         ],
         _composer(context, snap, running, models, profiles),
       ],
@@ -1057,16 +1058,20 @@ class _ErrorLine extends StatelessWidget {
           border: Border.all(color: t.colors.borderStrong),
         ),
         child: Padding(
-          padding: const EdgeInsets.only(left: 10, right: 2),
+          padding: const EdgeInsets.only(left: Space.md, right: Space.hair),
           child: Row(
             children: [
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(vertical: Space.xs),
                   child: ExcludeSemantics(
                     child: Text(
                       message,
-                      style: ts(t.typeScale.uiSmall, t.dangerInk, weight: 600),
+                      style: ts(
+                        t.typeScale.uiSmall,
+                        t.dangerInk,
+                        weight: Weight.semibold,
+                      ),
                     ),
                   ),
                 ),

@@ -53,6 +53,9 @@ void main() {
       tester,
       outline: fixtureOutline(perChapter: 4),
       count: 12,
+      // Tall enough that the third card is still laid out after the first
+      // unfolds (bb_ui 0.8's cards are a few pixels taller).
+      size: const Size(480, 700),
     );
     final fold = host.controller.fold;
     final folded = List.of(fold.stableKeys);

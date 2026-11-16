@@ -25,11 +25,11 @@ import 'package:agent_kit/agent_kit.dart';
 
 ## Theme roles
 
-`surface2` (bubble fill), `radii.panel` (bubble corners), `typeScale.body` and `ink` (message text), `typeScale.uiSmall` and `muted` (rewind label and chip text), `colors.borderSubtle` (chip border), `formFactor` (touch layout).
+`surface2` (bubble fill), `radii.panel` (bubble corners), `typeScale.body` and `ink` (message text), `typeScale.uiSmall` and `muted` (rewind label and chip text), `colors.borderSubtle` (chip border), `touch` (the density; touch layout).
 
 ## Size classes
 
-Does not read the size class. It reads `formFactor` (touch when `FormFactor.mobile`).
+Does not read the size class. It reads the density (touch when `Density.touch`).
 
 - Bubble width: at most 560 px and at most 85% of the available width (`math.min(560, width × .85)`).
 - Rewind placement, with a bounded width and a pointer: left of the bubble when `width − bubble − 6 ≥ 130` (`_rewindRoom`), so the layout does not move.

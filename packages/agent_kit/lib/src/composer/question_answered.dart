@@ -70,24 +70,21 @@ class _Line extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     final summary = answerSummary(item, answer);
-    final style = ts(
-      t.typeScale.uiSmall,
-      t.muted,
-    ).copyWith(fontSize: isTouch(t) ? 14 : 13);
+    final style = ts(t.typeScale.uiSmall, t.muted);
     final TextSpan result;
     if (summary != null) {
       result = TextSpan(
         text: summary,
-        style: style.copyWith(color: t.ink, fontWeight: FontWeight.w600),
+        style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.semibold),
       );
     } else {
       result = TextSpan(
         text: unanswered ? 'No answer' : 'Skipped',
-        style: style.copyWith(
-          color: t.faint,
-          fontWeight: FontWeight.w400,
-          fontStyle: FontStyle.italic,
-        ),
+        style: ts(
+          t.typeScale.uiSmall,
+          t.faint,
+          weight: Weight.regular,
+        ).copyWith(fontStyle: FontStyle.italic),
       );
     }
     return Semantics(
@@ -100,11 +97,16 @@ class _Line extends StatelessWidget {
           border: Border(top: BorderSide(color: t.colors.borderSubtle)),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+          padding: const EdgeInsets.fromLTRB(
+            Space.sm,
+            Space.xs,
+            Space.xxs,
+            Space.xs,
+          ),
           child: Row(
             children: [
-              const KitIcon(ComposerGlyphs.messageSquare, size: 14),
-              const SizedBox(width: 8),
+              const KitIcon(ComposerGlyphs.messageSquare, size: IconSize.xs),
+              const Gap(Space.sm),
               Expanded(
                 child: Text.rich(
                   TextSpan(

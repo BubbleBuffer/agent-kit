@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 
 import 'gallery_controller.dart';
 import 'scenes.dart';
+import 'gallery_tokens.dart';
 
 class GalleryToolbar extends StatelessWidget {
   const GalleryToolbar({super.key, required this.controller});
@@ -22,18 +23,15 @@ class GalleryToolbar extends StatelessWidget {
         border: Border(bottom: BorderSide(color: t.seam)),
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: t.spacing.md,
-          vertical: t.spacing.sm,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: Space.md, vertical: Space.sm),
         child: Wrap(
-          spacing: t.spacing.lg,
-          runSpacing: t.spacing.sm,
+          spacing: Space.lg,
+          runSpacing: Space.sm,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
               'Agent kit gallery',
-              style: ts(t.typeScale.ui, t.ink, weight: 700),
+              style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -54,19 +52,19 @@ class GalleryToolbar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('Width', style: ts(t.typeScale.uiSmall, t.muted)),
-                SizedBox(width: t.spacing.sm),
+                Gap(Space.sm),
                 WidthSlider(
                   value: controller.width,
                   min: minGalleryWidth,
                   max: maxGalleryWidth,
                   onChanged: (v) => controller.width = v,
                 ),
-                SizedBox(width: t.spacing.sm),
+                Gap(Space.sm),
                 SizedBox(
-                  width: 64,
+                  width: Specimen.widthReadout,
                   child: Text(
                     '${controller.width.round()} px',
-                    style: ts(const TypeSpec(12, 16, 400), t.ink, mono: true),
+                    style: ts(TypeScale.pointer.codeSmall, t.ink, mono: true),
                   ),
                 ),
               ],
@@ -112,16 +110,17 @@ class _SceneTab extends StatelessWidget {
         onTap: onTap,
         selected: selected,
         selectedColor: t.pressed,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: SizedBox(
-          height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: Space.md),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: ControlSize.sm.height),
           child: Center(
+            heightFactor: 1,
             child: Text(
               label,
               style: ts(
                 t.typeScale.ui,
                 selected ? t.ink : t.muted,
-                weight: selected ? 700 : 500,
+                weight: selected ? Weight.bold : Weight.medium,
               ),
             ),
           ),
@@ -152,8 +151,8 @@ class WidthSlider extends StatelessWidget {
       label: 'Width',
       value: '${value.round()} px',
       child: SizedBox(
-        width: 200,
-        height: 28,
+        width: Specimen.widthSlider,
+        height: ControlSize.sm.height,
         child: LayoutBuilder(
           builder: (context, constraints) {
             double at(double dx) =>
@@ -191,11 +190,11 @@ class _SliderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const inset = 8.0;
+    const inset = Specimen.sliderInset;
     final y = size.height / 2;
     final x = inset + (size.width - 2 * inset) * fraction;
     final line = Paint()
-      ..strokeWidth = 4
+      ..strokeWidth = Specimen.sliderTrack
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(
       Offset(inset, y),
