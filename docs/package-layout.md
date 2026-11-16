@@ -23,7 +23,7 @@ view models (`Outline`, `OutlineChapter`, `OutlineSection`) and host-supplied
 `OutlineAction`s, needs nothing in `agent_kit_core`, and is exported through the
 `agent_kit` barrel (README: `packages/agent_kit/lib/src/outline/README.md`).
 
-The three library packages share version `0.19.0`; the gallery remains an
+The three library packages share version `0.20.0`; the gallery remains an
 unpublished app. Local members use relative `path:` dependencies. The pure Dart
 packages have their own strict analysis options; the root Flutter lint rules
 cover the widget package and gallery. See [core](agent-kit-core.md),
@@ -40,7 +40,7 @@ the gallery directly declare exactly this source:
   bb_ui:
     git:
       url: https://github.com/BubbleBuffer/bb-ui
-      ref: v0.7.2
+      ref: 1e3863ac3c9a0123fb5e502e890005701423a586
       path: packages/bb_ui
 ```
 
@@ -48,12 +48,16 @@ the gallery directly declare exactly this source:
 Reach tokens through `package:bb_ui/tokens.dart` or its main barrel. A direct
 `bb_tokens` entry pinned to a tag can conflict with its transitive source at the
 resolved commit, so leave it transitive. The public token APIs, including
-`KitLayout`, `KitSpacing`, `KitMotion` and `KitInks`, remain available.
+`KitLayout`, `KitMotion` and `KitInks`, remain available; `KitSpacing` and
+`FormFactor` are gone in bb-ui 0.8 (use `Space`, and `Density` with
+`SizeClass`). The pin is a commit of bb-ui's 0.8 line until its `v0.8.0` tag
+exists; move both pins (and the plugin's `ref` in `analysis_options.yaml`) to
+the tag then.
 
 The bb-ui repository owns the vendored palette, colour generator, generated
 colours, neutral package tests and neutral component gallery. Agent widgets
 continue to read `BbTheme` roles derived from that palette. See
-[bb_tokens colour workflow](https://github.com/BubbleBuffer/bb-ui/blob/v0.7.2/packages/bb_tokens/README.md).
+[bb_tokens colour workflow](https://github.com/BubbleBuffer/bb-ui/blob/1e3863ac3c9a0123fb5e502e890005701423a586/packages/bb_tokens/README.md).
 
 ## Consuming the kit
 
@@ -79,7 +83,7 @@ declare `bb_ui` with the exact external source above; do not copy its sources
 into an application.
 
 CI's Git consumer check pins `agent_kit` at the pushed commit, leaves core
-transitive and declares `bb_ui` directly using its `v0.7.2` source. It analyzes
+transitive and declares `bb_ui` directly using the same pinned source. It analyzes
 imports from the agent widgets, primitives and token re-export.
 
 ## Fonts and goldens
@@ -92,11 +96,30 @@ all existing golden PNGs stay here; neutral-gallery goldens live in bb-ui.
 
 ## Releasing
 
-1. Release the required bb-ui tag before updating its Git pin here. This split
-   requires `bb-ui` tag `v0.7.2` to exist before dependency resolution can pass.
+1. Release the required bb-ui tag before updating its Git pin here. Release
+   0.20.0 pins the bb-ui 0.8 commit `1e3863a`; re-pin to `v0.8.0` once it is
+   tagged.
 2. Merge the agent-kit change with hosted CI green. Bump the three library
-   versions together; the current release is `0.19.0`.
-3. Tag the green commit on `main` as `v0.19.0` and push the tag.
+   versions together; the current release is `0.20.0`.
+3. Tag the green commit on `main` as `v0.20.0` and push the tag.
+
+### 0.20.0: bb-ui 0.8
+
+A breaking release for hosts:
+
+- `BbTheme` and `BbThemeScope` take `density:` (bb-ui's `Density`, default
+  pointer) instead of `formFactor:`; `BbTheme.spacing`, `sizeMedium` and
+  `sizeExpanded` are gone (use `Space`, `SizeClass.mediumWidth` and
+  `SizeClass.expandedWidth`). New getters: `metrics` and `touch`.
+- `SizeClass` and `SizeClassScope` are bb-ui's, re-exported by `agent_kit`.
+  `SizeClass.of`/`maybeOf` became `sizeClassOf(context)` (expanded without a
+  builder); `isMedium` and `isExpanded` come from the `KitSizeClass` extension.
+- `KitIcon.size` is an `IconSize`; `RailShowButton.size` is a `ControlSize`.
+- Sizes follow the density (touch controls are 44 px) and spacing snaps to
+  bb-ui's scale, so screens move by a few pixels.
+- Hosts that set `formFactor: FormFactor.forWidth(w)` now set
+  `density: Density.forPlatform(defaultTargetPlatform)` (or touch for a
+  phone-sized test window) and keep layout decisions on `SizeClass`.
 
 Applications update their pins and lockfiles when adopting a release. This
 workspace ignores its generated `pubspec.lock`.
@@ -104,7 +127,9 @@ workspace ignores its generated `pubspec.lock`.
 ## CI
 
 `.github/workflows/ci.yml` runs formatting (with a patch artifact on failure),
-Flutter analysis, widget/gallery tests, agent goldens, strict core analysis and
+`dart analyze --fatal-infos` at the workspace root (which also runs the
+bb_lints plugin; `flutter analyze` and `dart analyze` with sub-directory
+arguments skip it), widget/gallery tests, agent goldens, strict core analysis and
 tests, and the Git consumer check on pushes. `bubblepaw.yml` analyzes and tests
 the adapter, verifies it against a pinned public BubblePaw host, and builds the
 gallery for web and Linux. Colour generation and neutral package CI run in

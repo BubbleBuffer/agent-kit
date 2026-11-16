@@ -17,11 +17,10 @@ No demo: not a visual widget.
 | Parameter | Type | Notes |
 |---|---|---|
 | `colors` | `AppColors` | required. The bb-ui palette every role is derived from. `BbTheme.light()` passes `AppColors.light`, `BbTheme.dark()` passes `AppColors.darkTheme`. |
-| `formFactor` | `FormFactor` | Default `FormFactor.desktop`. Decides touch sizing and the type scale (`typeScale`). It is not a size class. |
-| `layout` | `KitLayout` | Default `KitLayout.standard`. The size-class thresholds and the pane tokens. |
-| `spacing` | `KitSpacing` | Default `KitSpacing.standard`. The spacing scale. |
+| `density` | `Density` | Default `Density.pointer`. How the user points: decides touch sizing (`metrics`) and the type ramp (`typeScale`). It is not a size class. |
+| `layout` | `KitLayout` | Default `KitLayout.standard`. The pane tokens and the composer's fit width. |
 
-Also `BbTheme.light({formFactor})` and `BbTheme.dark({formFactor})`, which build the theme from bb-ui's light or dark palette.
+Spacing is bb-ui's `Space` scale; there is no spacing field. Also `BbTheme.light({density})` and `BbTheme.dark({density})`, which build the theme from bb-ui's light or dark palette.
 
 `BbThemeScope` (a `StatelessWidget`):
 
@@ -29,7 +28,7 @@ Also `BbTheme.light({formFactor})` and `BbTheme.dark({formFactor})`, which build
 |---|---|---|
 | `brightness` | `Brightness` | required. `Brightness.dark` builds `BbTheme.dark`; anything else builds `BbTheme.light`. |
 | `child` | `Widget` | required. The subtree that reads the theme. |
-| `formFactor` | `FormFactor` | Default `FormFactor.desktop`. Passed to the theme and to bb-ui's `AppTheme`. |
+| `density` | `Density` | Default `Density.pointer`. Passed to the theme and to bb-ui's `AppTheme`. A host picks it, for example with `Density.forPlatform(defaultTargetPlatform)`. |
 
 `BbThemeScope` installs a `BbTheme` (an `InheritedWidget`), bb-ui's `AppTheme` (which the bb-ui primitives read), and a default `DefaultTextStyle` in the theme's body type and ink. No `MaterialApp` or `Theme` is needed.
 
@@ -40,9 +39,8 @@ Also `BbTheme.light({formFactor})` and `BbTheme.dark({formFactor})`, which build
 | Field | Type | Source |
 |---|---|---|
 | `colors` | `AppColors` | the palette passed in |
-| `formFactor` | `FormFactor` | the parameter |
+| `density` | `Density` | the parameter |
 | `layout` | `KitLayout` | the parameter |
-| `spacing` | `KitSpacing` | the parameter |
 | `brightness` | `Brightness` | `colors.dark ? dark : light` |
 | `canvas` | `Color` | `colors.desk` (the desk behind sheets) |
 | `surface` | `Color` | `colors.bgPrimary` (the sheet a transcript sits on) |
@@ -83,19 +81,19 @@ Also `BbTheme.light({formFactor})` and `BbTheme.dark({formFactor})`, which build
 | `ctxLive` | `Color` | `colors.palette.ctxLive` |
 | `radii` | `BbRadii` | const. Getters `sm`, `md`, `lg`, `sheet`, `ctl`, `field`, `panel`, `pill` (bb-ui `Radii`) |
 | `motion` | `BbMotion` | const. Getters `fast`, `standard`, `sheet`, `wiggle`, `breathe`, `ease`, `settle` |
-| `typeScale` | `TypeScale` (getter) | `TypeScale.mobile` when `formFactor` is mobile, else `TypeScale.desktop` |
-| `sizeMedium` | `double` (getter) | `layout.sizeMedium` |
-| `sizeExpanded` | `double` (getter) | `layout.sizeExpanded` |
+| `typeScale` | `TypeScale` (getter) | `density.type`: `TypeScale.touch` by touch, else `TypeScale.pointer` |
+| `metrics` | `Metrics` (getter) | `density.metrics`: control, row and icon sizes for the density |
+| `touch` | `bool` (getter) | `density == Density.touch` |
 
 `statusStyle(ChatStatus)` returns `status[s]`. A `BbStatusStyle` has `mark` (the dot, square or ring), `ink` (the text and icon colour), and `fill` and `line` (set only for `needsYou`).
 
-Reading the theme: `BbTheme.of(context)` and `context.bb` assert that a `BbThemeScope` is above the context. `BbTheme.maybeOf(context)` returns null instead. `copyWith` rebuilds the theme with a different palette, form factor, layout or spacing. `lerp` does not blend: the nearer theme wins at the halfway point.
+Reading the theme: `BbTheme.of(context)` and `context.bb` assert that a `BbThemeScope` is above the context. `BbTheme.maybeOf(context)` returns null instead. `copyWith` rebuilds the theme with a different palette, density or layout. `lerp` does not blend: the nearer theme wins at the halfway point.
 
 ## Size classes
 
-`BbTheme` is not a layout widget. It holds the thresholds: `sizeMedium` (compact below it) and `sizeExpanded` (expanded from it), both from `layout` (bb-ui's `KitLayout`). They are 600 and 1000 px. `docs/agent-kit.md:125` and `packages/agent_kit/test/bb_theme_test.dart:65-66` state these values. `SizeClassBuilder` reads them.
+`BbTheme` is not a layout widget and holds no thresholds: the size classes are bb-ui's `SizeClass` (compact below `SizeClass.mediumWidth`, 600 px; expanded from `SizeClass.expandedWidth`, 1000 px). `packages/agent_kit/test/bb_theme_test.dart` asserts these values.
 
-`formFactor` is separate. It is set by the host (the gallery sets it from the scene's width, `apps/gallery/lib/src/scene_frame.dart:34`), and it changes touch sizing and the type scale only. It does not change the layout.
+`density` is separate. It is set by the host (the gallery sets touch for a compact scene width, `apps/gallery/lib/src/scene_frame.dart`), and it changes touch sizing and the type ramp only. It does not change the layout.
 
 ## Accessibility
 
@@ -105,7 +103,7 @@ Reading the theme: `BbTheme.of(context)` and `context.bb` assert that a `BbTheme
 
 ## Gallery and tests
 
-- Gallery: `SceneFrame.build` wraps each scene in a `BbThemeScope` with the scene's brightness and `FormFactor.forWidth(width)` (`apps/gallery/lib/src/scene_frame.dart:32-34`). The toolbar's Light and Dark button (`apps/gallery/lib/src/toolbar.dart:50`) changes `controller.brightness`, which `apps/gallery/lib/src/gallery_app.dart:62-72` passes to each `SceneFrame`. `apps/gallery/lib/components/composer.dart:448` and `apps/gallery/lib/src/live_gallery.dart:182` also wrap their content in a `BbThemeScope`.
+- Gallery: `SceneFrame.build` wraps each scene in a `BbThemeScope` with the scene's brightness and `Density.touch` for a compact width, else `Density.pointer` (`apps/gallery/lib/src/scene_frame.dart`). The toolbar's Light and Dark button (`apps/gallery/lib/src/toolbar.dart:50`) changes `controller.brightness`, which `apps/gallery/lib/src/gallery_app.dart:62-72` passes to each `SceneFrame`. `apps/gallery/lib/components/composer.dart:448` and `apps/gallery/lib/src/live_gallery.dart:182` also wrap their content in a `BbThemeScope`.
 - Golden: no shot. The scene goldens (`apps/gallery/test/scenes_golden_test.dart`) render every scene in light and dark through `SceneFrame`, so each one shows the roles.
 - Other tests:
   - `packages/agent_kit/test/bb_theme_test.dart`: the light and dark roles match the mockup's token mapping; the status roles follow the status table; the size thresholds and pane tokens match `theme.css`; `BbThemeScope` gives a `BbTheme` and bb-ui's `AppTheme`.

@@ -82,10 +82,11 @@ Flutter `3.47.5` (stable). This is a Dart pub workspace; these are the commands 
 ```sh
 flutter pub get
 dart format --output=none --set-exit-if-changed .
-flutter analyze
+dart analyze --fatal-infos   # at the root: also runs the bb_lints plugin
 bash scripts/check-raw-colours.sh
 
-# widget and gallery tests
+# widget and gallery tests (the gallery's include an overflow matrix of every
+# scene at six widths and two text sizes)
 (cd packages/agent_kit && flutter test --exclude-tags golden)
 (cd apps/gallery && flutter test --exclude-tags golden)
 

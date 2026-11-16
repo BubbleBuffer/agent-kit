@@ -17,7 +17,7 @@ One sheet per public widget, grouped by the folder under `packages/agent_kit/lib
 ### theme
 
 - [BbTheme](components/theme/BbTheme.md): The one `ThemeExtension` of the kit: colour roles, status styles, radii, motion, type scale and layout tokens, with `BbThemeScope` to install it.
-- [SizeClassBuilder](components/theme/SizeClassBuilder.md): Measures its own width and gives its `builder` the `SizeClass` for that width, from the theme's thresholds; this sheet also covers `SizeClass` .
+- [SizeClassBuilder](components/theme/SizeClassBuilder.md): Measures its own width and gives its `builder` bb-ui's `SizeClass` for that width; this sheet also covers `SizeClass` .
 
 ### status
 
