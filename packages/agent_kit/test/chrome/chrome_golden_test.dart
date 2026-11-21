@@ -207,7 +207,7 @@ void main() {
           tester,
           _sheet(_crew(wide: width > 600)),
           brightness: brightness,
-          size: Size(width.toDouble(), width > 600 ? 340 : 520),
+          size: Size(width.toDouble(), width > 600 ? 360 : 520),
         );
         await expectLater(
           find.byType(WidgetsApp),

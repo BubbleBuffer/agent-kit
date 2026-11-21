@@ -425,7 +425,10 @@ class _Sub extends StatelessWidget {
     final t = context.bb;
     return Padding(
       padding: EdgeInsets.only(top: Space.md, bottom: Space.sm),
-      child: Text(text, style: ts(t.typeScale.ui, t.ink, weight: Weight.bold)),
+      child: Text(
+        text,
+        style: ts(t.typeScale.ui, t.ink, weight: Weight.strong),
+      ),
     );
   }
 }

@@ -221,7 +221,7 @@ class _ChapterBand extends StatelessWidget {
               CxTag('Chapter ${c.ordinal}'),
               Text(
                 c.title,
-                style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+                style: ts(t.typeScale.ui, t.ink, weight: Weight.strong),
               ),
               Text(
                 range,
@@ -339,7 +339,7 @@ class _EpisodeBlock extends StatelessWidget {
                           style: ts(
                             t.typeScale.ui,
                             t.ink,
-                            weight: Weight.semibold,
+                            weight: Weight.strong,
                           ),
                         ),
                       ),
@@ -567,7 +567,11 @@ class _MessageRow extends StatelessWidget {
                 width: KitSizes.historyRoleColumn,
                 child: Text(
                   who,
-                  style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.bold),
+                  style: ts(
+                    t.typeScale.uiSmall,
+                    t.muted,
+                    weight: Weight.strong,
+                  ),
                 ),
               ),
               const Gap(Space.xs),
@@ -579,7 +583,7 @@ class _MessageRow extends StatelessWidget {
                   style: ts(
                     t.typeScale.ui,
                     t.ink,
-                    weight: dim ? Weight.regular : Weight.medium,
+                    weight: dim ? Weight.regular : Weight.strong,
                   ),
                 ),
               ),

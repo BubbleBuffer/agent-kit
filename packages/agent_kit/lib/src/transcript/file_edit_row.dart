@@ -98,7 +98,7 @@ class _FileEditRowState extends State<FileEditRow> {
         ts(
           t.typeScale.uiSmall,
           edit.undone ? t.faint : t.ink,
-          weight: Weight.semibold,
+          weight: Weight.strong,
         ).copyWith(
           decoration: edit.undone ? TextDecoration.lineThrough : null,
           decorationColor: t.faint,
@@ -116,7 +116,7 @@ class _FileEditRowState extends State<FileEditRow> {
     final primary = created
         ? [?openButton]
         : [?reviewButton, if (widget.openEveryEdit) ?openButton];
-    final countStyle = ts(t.typeScale.uiSmall, t.ink, weight: Weight.semibold);
+    final countStyle = ts(t.typeScale.uiSmall, t.ink, weight: Weight.strong);
     final added = diff.added;
     final removed = diff.removed;
     return DecoratedBox(

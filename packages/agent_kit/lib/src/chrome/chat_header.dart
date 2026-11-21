@@ -114,7 +114,7 @@ class ChatHeader extends StatelessWidget {
                               style: ts(
                                 theme.typeScale.ui,
                                 theme.ink,
-                                weight: Weight.bold,
+                                weight: Weight.strong,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

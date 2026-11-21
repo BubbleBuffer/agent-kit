@@ -220,7 +220,7 @@ class KitButton extends StatelessWidget {
     final style = ts(
       type ?? t.typeScale.ui,
       fg,
-      weight: kind == KitButtonKind.primary ? Weight.bold : Weight.semibold,
+      weight: kind == KitButtonKind.primary ? Weight.strong : Weight.strong,
     );
     final hint = keyHint;
     final content = Row(

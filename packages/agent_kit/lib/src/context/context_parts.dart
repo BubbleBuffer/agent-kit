@@ -160,7 +160,7 @@ class CxTag extends StatelessWidget {
         child: Text(
           text,
           maxLines: 1,
-          style: ts(t.typeScale.caption, t.muted, weight: Weight.bold),
+          style: ts(t.typeScale.caption, t.muted, weight: Weight.strong),
         ),
       ),
     );
@@ -191,7 +191,7 @@ class CxGroup extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.bold),
+              style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.strong),
             ),
           ),
           if (trailing != null)

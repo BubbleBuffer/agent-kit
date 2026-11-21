@@ -75,7 +75,7 @@ class _Line extends StatelessWidget {
     if (summary != null) {
       result = TextSpan(
         text: summary,
-        style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.semibold),
+        style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.strong),
       );
     } else {
       result = TextSpan(

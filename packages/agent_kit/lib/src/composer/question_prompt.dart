@@ -469,7 +469,7 @@ class _QuestionPromptState extends State<QuestionPrompt> {
     final item = _item;
     final d = _draft;
     final hideKeys = touch || size.isCompact;
-    final textStyle = ts(t.typeScale.body, t.ink, weight: Weight.semibold);
+    final textStyle = ts(t.typeScale.body, t.ink, weight: Weight.strong);
     final Widget text = item.text.contains('\n')
         ? const LeanMarkdownRenderer().build(context, item.text)
         : MarkdownText(item.text, style: textStyle);
@@ -593,7 +593,7 @@ class _QuestionTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     final color = done ? t.constructiveInk : (active ? t.ink : t.muted);
-    final style = ts(t.typeScale.uiSmall, color, weight: Weight.semibold);
+    final style = ts(t.typeScale.uiSmall, color, weight: Weight.strong);
     final h = (isTouch(t) ? ControlSize.md : ControlSize.sm).height;
     return Semantics(
       button: true,
@@ -818,7 +818,7 @@ class _OptionRowState extends State<_OptionRow> {
                             style: ts(
                               t.typeScale.ui,
                               t.ink,
-                              weight: Weight.semibold,
+                              weight: Weight.strong,
                             ),
                           ),
                           if (o.description != null) ...[
@@ -1066,7 +1066,7 @@ class _SkipButton extends StatelessWidget {
             child: Text(
               'Skip',
               maxLines: 1,
-              style: ts(t.typeScale.ui, t.muted, weight: Weight.semibold),
+              style: ts(t.typeScale.ui, t.muted, weight: Weight.strong),
             ),
           ),
         ),

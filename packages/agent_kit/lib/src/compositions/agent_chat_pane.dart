@@ -729,7 +729,7 @@ class _AgentChatPaneState extends State<AgentChatPane> {
                     Text(
                       'Couldn’t load this chat',
                       textAlign: TextAlign.center,
-                      style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+                      style: ts(t.typeScale.ui, t.ink, weight: Weight.strong),
                     ),
                     const Gap(Space.xxs),
                     Text(
@@ -1070,7 +1070,7 @@ class _ErrorLine extends StatelessWidget {
                       style: ts(
                         t.typeScale.uiSmall,
                         t.dangerInk,
-                        weight: Weight.semibold,
+                        weight: Weight.strong,
                       ),
                     ),
                   ),

@@ -75,7 +75,7 @@ PickerSheet _contents(
             dot: true,
             small: true,
             oneLine: true,
-            labelStyle: ts(ty.ui, c.textPrimary, weight: Weight.semibold),
+            labelStyle: ts(ty.ui, c.textPrimary, weight: Weight.strong),
             padding: const EdgeInsets.fromLTRB(
               Layout.gutter,
               Space.sm,
@@ -126,7 +126,7 @@ PickerSheet _contents(
                 ty.uiSmall,
                 c.textPrimary,
                 weight: where.sectionId == section.id
-                    ? Weight.semibold
+                    ? Weight.strong
                     : Weight.regular,
               ),
               padding: const EdgeInsets.fromLTRB(

@@ -23,7 +23,7 @@ view models (`Outline`, `OutlineChapter`, `OutlineSection`) and host-supplied
 `OutlineAction`s, needs nothing in `agent_kit_core`, and is exported through the
 `agent_kit` barrel (README: `packages/agent_kit/lib/src/outline/README.md`).
 
-The three library packages share version `0.20.0`; the gallery remains an
+The three library packages share version `0.21.0`; the gallery remains an
 unpublished app. Local members use relative `path:` dependencies. The pure Dart
 packages have their own strict analysis options; the root Flutter lint rules
 cover the widget package and gallery. See [core](agent-kit-core.md),
@@ -40,7 +40,7 @@ the gallery directly declare exactly this source:
   bb_ui:
     git:
       url: https://github.com/BubbleBuffer/bb-ui
-      ref: 7c92a358a57656271ff8174ecef41d4a49dc0794
+      ref: 012d9f283b8378fb7197c6238e7068dfd3205c30
       path: packages/bb_ui
 ```
 
@@ -57,7 +57,7 @@ the tag then.
 The bb-ui repository owns the vendored palette, colour generator, generated
 colours, neutral package tests and neutral component gallery. Agent widgets
 continue to read `BbTheme` roles derived from that palette. See
-[bb_tokens colour workflow](https://github.com/BubbleBuffer/bb-ui/blob/7c92a358a57656271ff8174ecef41d4a49dc0794/packages/bb_tokens/README.md).
+[bb_tokens colour workflow](https://github.com/BubbleBuffer/bb-ui/blob/012d9f283b8378fb7197c6238e7068dfd3205c30/packages/bb_tokens/README.md).
 
 ## Consuming the kit
 
@@ -97,12 +97,29 @@ all existing golden PNGs stay here; neutral-gallery goldens live in bb-ui.
 ## Releasing
 
 1. Release the required bb-ui tag before updating its Git pin here. Release
-   0.20.0 pins bb-ui 0.8.0 by its merge commit `7c92a35` on bb-ui `main`
-   (the commit tagged `v0.8.0`); switch the ref to the tag name once the tag
+   0.21.0 pins bb-ui 0.9.1 by its merge commit `012d9f2` on bb-ui `main`
+   (the commit to tag `v0.9.1`); switch the ref to the tag name once the tag
    is pushed.
 2. Merge the agent-kit change with hosted CI green. Bump the three library
-   versions together; the current release is `0.20.0`.
-3. Tag the green commit on `main` as `v0.20.0` and push the tag.
+   versions together; the current release is `0.21.0`.
+3. Tag the green commit on `main` as `v0.21.0` and push the tag.
+
+### 0.21.0: bb-ui 0.9
+
+bb-ui 0.9 builds its tokens from the unified BubbleBuffer language:
+
+- Weights are `Weight.regular`, `strong`, `display` and `displayStrong`;
+  0.8's `medium`, `semibold` and `bold` became `strong` (`displayStrong` for
+  bold in the display face).
+- `AppColors.onAccent` is `accentInk`; the palette's old `accentInk` (accent
+  text) is `accentText`. `dart run bb_lints:migrate` makes both renames by
+  type, so the two colours cannot swap.
+- Token values follow the design repository, so text is heavier and spacing
+  and control heights move slightly; the goldens are re-rendered. The wide
+  crew scene is 20 px taller to fit.
+
+Hosts move from 0.20 by running the migrate tool while still on 0.20 (bb-ui
+0.8), then bumping both pins.
 
 ### 0.20.0: bb-ui 0.8
 

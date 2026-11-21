@@ -212,7 +212,7 @@ class _ConnectionStatus extends StatelessWidget {
                       style: ts(
                         theme.typeScale.body,
                         theme.ink,
-                        weight: Weight.semibold,
+                        weight: Weight.strong,
                       ),
                     ),
                     const Gap(Space.md),

@@ -63,7 +63,7 @@ class OutlineWhereStrip extends StatelessWidget {
                           style: ts(
                             t.typeScale.ui,
                             c.textPrimary,
-                            weight: Weight.semibold,
+                            weight: Weight.strong,
                           ),
                         ),
                         if (w.section != null)

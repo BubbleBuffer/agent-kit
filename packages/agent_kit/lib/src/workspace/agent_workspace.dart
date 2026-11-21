@@ -1178,7 +1178,7 @@ class _TabChip extends StatelessWidget {
                   style: ts(
                     t.typeScale.uiSmall,
                     selected ? t.ink : t.muted,
-                    weight: selected ? Weight.semibold : Weight.medium,
+                    weight: selected ? Weight.strong : Weight.strong,
                   ),
                 ),
               ),
@@ -1274,7 +1274,7 @@ class _Pill extends StatelessWidget {
               child: Text(
                 text,
                 textAlign: TextAlign.center,
-                style: ts(t.typeScale.uiSmall, fg, weight: Weight.semibold),
+                style: ts(t.typeScale.uiSmall, fg, weight: Weight.strong),
               ),
             ),
           ],
@@ -1309,7 +1309,7 @@ class _EdgeTab extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       softWrap: false,
-      style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.semibold),
+      style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.strong),
     );
     final glyph = LucideIcon(icon, size: IconSize.xs.px, color: t.faint);
     return Semantics(

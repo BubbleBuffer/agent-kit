@@ -91,7 +91,7 @@ class CompactionMarker extends StatelessWidget {
                                 failed
                                     ? t.statusStyle(ChatStatus.failed).ink
                                     : t.ink,
-                                weight: Weight.bold,
+                                weight: Weight.strong,
                               ),
                             ),
                             for (final p in parts) TextSpan(text: ' · $p'),

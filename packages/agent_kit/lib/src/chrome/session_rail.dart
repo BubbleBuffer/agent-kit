@@ -272,7 +272,7 @@ class SessionRow extends StatelessWidget {
       theme.railInk.withValues(
         alpha: selected ? KitAlpha.opaque : Alpha.strong,
       ),
-      weight: selected ? Weight.bold : Weight.medium,
+      weight: selected ? Weight.strong : Weight.strong,
     );
     return Semantics(
       selected: selected,
@@ -384,7 +384,7 @@ class _LoadMoreRow extends StatelessWidget {
                   style: ts(
                     theme.typeScale.ui,
                     failed ? theme.dangerInk : theme.railMuted,
-                    weight: Weight.medium,
+                    weight: Weight.strong,
                   ),
                 ),
               ),
@@ -417,7 +417,7 @@ class _GroupLabel extends StatelessWidget {
               style: ts(
                 theme.typeScale.uiSmall,
                 theme.railMuted,
-                weight: Weight.bold,
+                weight: Weight.strong,
               ),
             ),
           ),
@@ -461,7 +461,7 @@ class _WorkspaceButton extends StatelessWidget {
                   style: ts(
                     theme.typeScale.ui,
                     theme.railInk,
-                    weight: Weight.bold,
+                    weight: Weight.strong,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -515,7 +515,7 @@ class _SearchRow extends StatelessWidget {
                   style: ts(
                     theme.typeScale.ui,
                     theme.railMuted,
-                    weight: Weight.medium,
+                    weight: Weight.strong,
                   ),
                   maxLines: 1,
                 ),
@@ -569,7 +569,7 @@ class _SettingsLink extends StatelessWidget {
                 style: ts(
                   theme.typeScale.ui,
                   theme.railMuted,
-                  weight: Weight.medium,
+                  weight: Weight.strong,
                 ),
               ),
             ],
@@ -602,7 +602,7 @@ class _Avatar extends StatelessWidget {
           child: Center(
             child: Text(
               initials,
-              style: ts(theme.typeScale.micro, letters, weight: Weight.bold),
+              style: ts(theme.typeScale.micro, letters, weight: Weight.strong),
             ),
           ),
         ),
