@@ -245,9 +245,13 @@ class _Legend extends StatelessWidget {
           ),
         ),
         const Gap(Space.xs),
-        Text(
-          '${segment.label} ${ctxTokens(segment.tokens)}',
-          style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.regular),
+        // Wraps within its run rather than overflowing a narrow meter at
+        // large text sizes.
+        Flexible(
+          child: Text(
+            '${segment.label} ${ctxTokens(segment.tokens)}',
+            style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.regular),
+          ),
         ),
       ],
     );

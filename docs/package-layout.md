@@ -23,7 +23,7 @@ view models (`Outline`, `OutlineChapter`, `OutlineSection`) and host-supplied
 `OutlineAction`s, needs nothing in `agent_kit_core`, and is exported through the
 `agent_kit` barrel (README: `packages/agent_kit/lib/src/outline/README.md`).
 
-The three library packages share version `0.21.0`; the gallery remains an
+The three library packages share version `0.21.1`; the gallery remains an
 unpublished app. Local members use relative `path:` dependencies. The pure Dart
 packages have their own strict analysis options; the root Flutter lint rules
 cover the widget package and gallery. See [core](agent-kit-core.md),
@@ -101,8 +101,14 @@ all existing golden PNGs stay here; neutral-gallery goldens live in bb-ui.
    (the commit to tag `v0.9.1`); switch the ref to the tag name once the tag
    is pushed.
 2. Merge the agent-kit change with hosted CI green. Bump the three library
-   versions together; the current release is `0.21.0`.
-3. Tag the green commit on `main` as `v0.21.0` and push the tag.
+   versions together; the current release is `0.21.1`.
+3. Tag the green commit on `main` as `v0.21.1` and push the tag.
+
+### 0.21.1
+
+The context meter's legend labels wrap within their run instead of
+overflowing a narrow meter at large text sizes (found by BubblePaw-Desktop's
+adaptive matrix at 480 px with 2x text). No API change.
 
 ### 0.21.0: bb-ui 0.9
 
