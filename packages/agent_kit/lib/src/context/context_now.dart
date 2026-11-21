@@ -87,7 +87,7 @@ class _ContextRowState extends State<ContextRow> {
               children: [
                 Text(
                   widget.name,
-                  style: ts(t.typeScale.ui, t.ink, weight: Weight.semibold),
+                  style: ts(t.typeScale.ui, t.ink, weight: Weight.strong),
                 ),
                 if (widget.sub != null)
                   Padding(
@@ -113,7 +113,7 @@ class _ContextRowState extends State<ContextRow> {
                 Text(
                   widget.tokens!,
                   style: tabular(
-                    ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+                    ts(t.typeScale.ui, t.ink, weight: Weight.strong),
                   ),
                 ),
                 if (widget.from != null)
@@ -509,7 +509,7 @@ class ContextDetail extends StatelessWidget {
                   style: ts(
                     t.typeScale.uiSmall,
                     t.muted,
-                    weight: Weight.semibold,
+                    weight: Weight.strong,
                   ),
                 ),
               ),
@@ -554,7 +554,7 @@ class ContextDetail extends StatelessWidget {
                   Text(
                     'Saves ${ctxTokens(s.savedTokens)} · $pct%',
                     style: tabular(
-                      ts(t.typeScale.uiSmall, done, weight: Weight.semibold),
+                      ts(t.typeScale.uiSmall, done, weight: Weight.strong),
                     ),
                   ),
                 ],
@@ -611,7 +611,7 @@ class _H extends StatelessWidget {
       padding: const EdgeInsets.only(top: Space.lg, bottom: Space.xs),
       child: Text(
         text,
-        style: ts(t.typeScale.uiSmall, t.faint, weight: Weight.bold),
+        style: ts(t.typeScale.uiSmall, t.faint, weight: Weight.strong),
       ),
     );
   }
@@ -663,7 +663,7 @@ class _TokenBar extends StatelessWidget {
             ctxTokens(tokens),
             textAlign: TextAlign.right,
             style: tabular(
-              ts(t.typeScale.uiSmall, t.ink, weight: Weight.semibold),
+              ts(t.typeScale.uiSmall, t.ink, weight: Weight.strong),
             ),
           ),
         ),

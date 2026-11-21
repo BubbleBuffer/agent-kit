@@ -119,7 +119,7 @@ class _QueuedRowState extends State<QueuedRow> {
               Text(
                 'Queued',
                 maxLines: 1,
-                style: ts(t.typeScale.ui, t.faint, weight: Weight.bold),
+                style: ts(t.typeScale.ui, t.faint, weight: Weight.strong),
               ),
               const Gap(Space.sm),
             ],
@@ -129,7 +129,7 @@ class _QueuedRowState extends State<QueuedRow> {
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
-                style: ts(t.typeScale.ui, t.ink, weight: Weight.medium),
+                style: ts(t.typeScale.ui, t.ink, weight: Weight.strong),
               ),
             ),
             if (_show(widget.onSendNow)) ...[

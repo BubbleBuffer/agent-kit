@@ -81,7 +81,7 @@ class CrewLedger extends StatelessWidget {
                   style: ts(
                     theme.typeScale.uiSmall,
                     theme.muted,
-                    weight: Weight.bold,
+                    weight: Weight.strong,
                   ),
                 ),
                 Text(
@@ -178,7 +178,7 @@ class _LedgerRow extends StatelessWidget {
     final theme = context.bb;
     final titleStyle = mono
         ? ts(theme.typeScale.codeSmall, theme.ink, mono: true)
-        : ts(theme.typeScale.ui, theme.ink, weight: Weight.semibold);
+        : ts(theme.typeScale.ui, theme.ink, weight: Weight.strong);
     return Stack(
       children: [
         Hover(

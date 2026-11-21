@@ -156,7 +156,7 @@ class KitTextButton extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: ts(t.typeScale.uiSmall, c, weight: Weight.semibold),
+                  style: ts(t.typeScale.uiSmall, c, weight: Weight.strong),
                 ),
               ),
             ],

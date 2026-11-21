@@ -145,8 +145,8 @@ class _EventRow extends StatelessWidget {
         : 'would save ${ctxTokens(saved)}';
     final label = applied && inputKnown ? 'Input' : 'Covered';
     final name = applied
-        ? ts(t.typeScale.title, t.ink, weight: Weight.bold)
-        : ts(t.typeScale.ui, t.muted, weight: Weight.semibold);
+        ? ts(t.typeScale.title, t.ink, weight: Weight.strong)
+        : ts(t.typeScale.ui, t.muted, weight: Weight.strong);
     final dot = applied ? KitTimeline.dotApplied : Sizes.dot;
 
     return Semantics(
@@ -248,7 +248,7 @@ class _EventRow extends StatelessWidget {
                                       ts(
                                         t.typeScale.ui,
                                         t.ink,
-                                        weight: Weight.bold,
+                                        weight: Weight.strong,
                                       ),
                                     ),
                                   ),
@@ -261,9 +261,7 @@ class _EventRow extends StatelessWidget {
                               style: ts(
                                 t.typeScale.ui,
                                 applied ? done : t.muted,
-                                weight: applied
-                                    ? Weight.semibold
-                                    : Weight.medium,
+                                weight: applied ? Weight.strong : Weight.strong,
                               ),
                             ),
                           ],

@@ -65,7 +65,7 @@ class _PlanChecklistState extends State<PlanChecklist> {
                     const Gap(Space.sm),
                     Text(
                       'Plan',
-                      style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+                      style: ts(t.typeScale.ui, t.ink, weight: Weight.strong),
                     ),
                     const Gap(Space.sm),
                     Text(
@@ -112,7 +112,7 @@ class _PlanRow extends StatelessWidget {
     final t = context.bb;
     final style = switch (item.state) {
       PlanItemState.done => ts(t.typeScale.ui, t.muted, weight: Weight.regular),
-      PlanItemState.now => ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+      PlanItemState.now => ts(t.typeScale.ui, t.ink, weight: Weight.strong),
       PlanItemState.todo => ts(t.typeScale.ui, t.ink, weight: Weight.regular),
     };
     final mark = switch (item.state) {

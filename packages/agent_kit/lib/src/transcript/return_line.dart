@@ -54,7 +54,7 @@ class ReturnLine extends StatelessWidget {
         children: [
           TextSpan(
             text: result.task,
-            style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.bold),
+            style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.strong),
           ),
           TextSpan(text: ' $verb'),
         ],

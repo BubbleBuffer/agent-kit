@@ -688,7 +688,7 @@ class JumpToLatestButton extends StatelessWidget {
             Text(
               label,
               maxLines: 1,
-              style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.semibold),
+              style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.strong),
             ),
           ],
         ),

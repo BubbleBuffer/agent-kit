@@ -289,7 +289,7 @@ class NoticeLineView extends StatelessWidget {
           Expanded(
             child: Text(
               line.text,
-              style: ts(t.typeScale.uiSmall, ink, weight: Weight.medium),
+              style: ts(t.typeScale.uiSmall, ink, weight: Weight.strong),
             ),
           ),
         ],

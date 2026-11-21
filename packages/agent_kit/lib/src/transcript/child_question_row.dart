@@ -145,7 +145,7 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
           const Gap(Space.xxs),
           Text(
             'Answered',
-            style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.semibold),
+            style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.strong),
           ),
         ],
       );
@@ -157,7 +157,7 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
           const Gap(Space.xxs),
           Text(
             'Cancelled',
-            style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.semibold),
+            style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.strong),
           ),
         ],
       );
@@ -221,7 +221,7 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                               style: ts(
                                 t.typeScale.ui,
                                 t.ink,
-                                weight: Weight.bold,
+                                weight: Weight.strong,
                               ),
                             ),
                           ),
@@ -307,7 +307,7 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                               style: ts(
                                 t.typeScale.uiSmall,
                                 t.muted,
-                                weight: Weight.bold,
+                                weight: Weight.strong,
                               ),
                             ),
                           ),

@@ -868,7 +868,7 @@ class ComposerModeToggle extends StatelessWidget {
               style: ts(
                 t.typeScale.uiSmall,
                 on ? t.ink : t.muted,
-                weight: Weight.semibold,
+                weight: Weight.strong,
               ),
             ),
           ),

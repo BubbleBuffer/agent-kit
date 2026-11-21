@@ -109,7 +109,7 @@ class BbTheme extends ThemeExtension<BbTheme> {
       accent = colors.accent,
       accentHover = colors.accentHover,
       accentInk = colors.accentText,
-      onAccent = colors.onAccent,
+      onAccent = colors.accentInk,
       constructive = colors.okBg,
       constructiveInk = inks.constructive,
       information = colors.infoBg,

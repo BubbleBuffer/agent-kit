@@ -1,7 +1,7 @@
 # agent_kit and the gallery
 
 `packages/agent_kit` is the Flutter widget package of the kit. It depends on
-`bb_ui` from [bb-ui](https://github.com/BubbleBuffer/bb-ui), pinned to bb-ui 0.8.0 (commit `7c92a35`, tagged `v0.8.0`)
+`bb_ui` from [bb-ui](https://github.com/BubbleBuffer/bb-ui), pinned to bb-ui 0.9.1 (commit `012d9f2`, to be tagged `v0.9.1`)
 (primitives, which bring `bb_tokens`), and `agent_kit_core` (chat view
 models and the backend port). `apps/gallery` shows its widgets on
 `agent_kit_core`'s scripted fake backend. The look is the approved Scratch-skin
@@ -193,7 +193,7 @@ caught by `scripts/check-raw-colours.sh` (vendored from bb-ui `v0.7.1`; re-sync 
 when the pin moves) in the `raw-colours` CI job, which first runs
 `scripts/test-check-raw-colours.sh`, a failing-case test of the script.
 To change the palette, follow its
-[bb_tokens workflow](https://github.com/BubbleBuffer/bb-ui/blob/7c92a358a57656271ff8174ecef41d4a49dc0794/packages/bb_tokens/README.md),
+[bb_tokens workflow](https://github.com/BubbleBuffer/bb-ui/blob/012d9f283b8378fb7197c6238e7068dfd3205c30/packages/bb_tokens/README.md),
 release that dependency and update both `bb_ui` Git pins here together. Agent
 CI then compares the existing agent goldens against the updated palette; it
 does not generate a local copy of the shared colours.

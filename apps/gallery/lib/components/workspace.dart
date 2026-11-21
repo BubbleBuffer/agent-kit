@@ -314,7 +314,11 @@ class FakeBrowserPane extends StatelessWidget {
                       children: [
                         Text(
                           'BubblePaw',
-                          style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+                          style: ts(
+                            t.typeScale.ui,
+                            t.ink,
+                            weight: Weight.strong,
+                          ),
                         ),
                         Text(
                           'Sessions',
@@ -325,7 +329,7 @@ class FakeBrowserPane extends StatelessWidget {
                           style: ts(
                             t.typeScale.uiSmall,
                             t.ink,
-                            weight: Weight.bold,
+                            weight: Weight.strong,
                           ),
                         ),
                       ],
@@ -345,7 +349,11 @@ class FakeBrowserPane extends StatelessWidget {
                         ),
                         Text(
                           '62%',
-                          style: ts(t.typeScale.h2, t.ink, weight: Weight.bold),
+                          style: ts(
+                            t.typeScale.h2,
+                            t.ink,
+                            weight: Weight.strong,
+                          ),
                         ),
                         const Gap(Space.xxs),
                         _Meter(fraction: .62, color: t.faint),
@@ -373,7 +381,7 @@ class FakeBrowserPane extends StatelessWidget {
                                 style: ts(
                                   t.typeScale.uiSmall,
                                   t.attentionInk,
-                                  weight: Weight.medium,
+                                  weight: Weight.strong,
                                 ),
                               ),
                             ),
@@ -541,15 +549,11 @@ class FakeTerminalPane extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.clip,
-                  style: _mono(
-                    t,
-                    switch (kind) {
-                      'p' => t.ink,
-                      'b' => t.dangerInk,
-                      _ => t.muted,
-                    },
-                    weight: kind == 'b' || kind == 'p' ? Weight.semibold : null,
-                  ),
+                  style: _mono(t, switch (kind) {
+                    'p' => t.ink,
+                    'b' => t.dangerInk,
+                    _ => t.muted,
+                  }, weight: kind == 'b' || kind == 'p' ? Weight.strong : null),
                 ),
             ],
           ),
@@ -602,7 +606,7 @@ class FakeFilePane extends StatelessWidget {
                     style: ts(
                       t.typeScale.uiSmall,
                       t.attentionInk,
-                      weight: Weight.semibold,
+                      weight: Weight.strong,
                     ),
                   ),
                   const Gap(Space.sm),

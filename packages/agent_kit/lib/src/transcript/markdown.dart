@@ -311,7 +311,7 @@ class _Prose extends StatelessWidget {
           text,
           style: level <= 2
               ? ts(t.typeScale.h3, t.ink)
-              : ts(t.typeScale.body, t.ink, weight: Weight.bold),
+              : ts(t.typeScale.body, t.ink, weight: Weight.strong),
           onLinkTap: onLinkTap,
         ),
         final MdList l => _ListBlock(list: l, onLinkTap: onLinkTap),
@@ -473,7 +473,7 @@ class _MarkdownTextState extends State<MarkdownText> {
       var style = base.copyWith(
         // A bold run keeps the caller's role and takes the scale's bold.
         // ignore: bb_lints/no_raw_text_style
-        fontWeight: m.bold ? Weight.bold.fontWeight : null,
+        fontWeight: m.bold ? Weight.strong.fontWeight : null,
         fontStyle: m.italic ? FontStyle.italic : null,
       );
       TapGestureRecognizer? recognizer;

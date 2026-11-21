@@ -331,7 +331,7 @@ class _ApprovalBarState extends State<ApprovalBar> {
         Text(
           'Deny ${a.tool}',
           maxLines: 1,
-          style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+          style: ts(t.typeScale.ui, t.ink, weight: Weight.strong),
         ),
         if (subject != null) ...[
           const Gap(Space.sm),
@@ -461,7 +461,7 @@ class _WhatState extends State<_What> {
                     t.typeScale.code,
                     t.ink,
                     mono: true,
-                    weight: Weight.bold,
+                    weight: Weight.strong,
                   ),
                 ),
                 if (subject != null) ...[
@@ -532,7 +532,7 @@ class _WhatState extends State<_What> {
       t.typeScale.codeSmall,
       t.ink,
       mono: true,
-      weight: Weight.bold,
+      weight: Weight.strong,
     );
     return [
       const Gap(Space.xs),

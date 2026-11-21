@@ -31,7 +31,7 @@ class GalleryToolbar extends StatelessWidget {
           children: [
             Text(
               'Agent kit gallery',
-              style: ts(t.typeScale.ui, t.ink, weight: Weight.bold),
+              style: ts(t.typeScale.ui, t.ink, weight: Weight.strong),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -120,7 +120,7 @@ class _SceneTab extends StatelessWidget {
               style: ts(
                 t.typeScale.ui,
                 selected ? t.ink : t.muted,
-                weight: selected ? Weight.bold : Weight.medium,
+                weight: selected ? Weight.strong : Weight.strong,
               ),
             ),
           ),

@@ -84,7 +84,7 @@ class ContextMeterBar extends StatelessWidget {
                     Text(
                       ctxTokens(total),
                       style: tabular(
-                        ts(t.typeScale.title, t.ink, weight: Weight.bold),
+                        ts(t.typeScale.title, t.ink, weight: Weight.strong),
                       ),
                     ),
                     const Gap(Space.xs),

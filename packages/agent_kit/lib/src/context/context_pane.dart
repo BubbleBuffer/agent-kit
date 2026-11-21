@@ -645,7 +645,7 @@ class _TabButton extends StatelessWidget {
                       style: ts(
                         t.typeScale.ui,
                         selected ? t.ink : t.muted,
-                        weight: Weight.semibold,
+                        weight: Weight.strong,
                       ),
                     ),
                     if (count != null) ...[
@@ -665,7 +665,7 @@ class _TabButton extends StatelessWidget {
                               ts(
                                 t.typeScale.caption,
                                 t.muted,
-                                weight: Weight.semibold,
+                                weight: Weight.strong,
                               ),
                             ),
                           ),

@@ -235,7 +235,7 @@ class HistoryCurrentChapter extends StatelessWidget {
               children: [
                 TextSpan(
                   text: 'Current chapter',
-                  style: ts(ty.uiSmall, t.ink, weight: Weight.bold),
+                  style: ts(ty.uiSmall, t.ink, weight: Weight.strong),
                 ),
                 if (when.isNotEmpty) ...[sep, TextSpan(text: when)],
                 sep,
@@ -395,7 +395,7 @@ class HistoryBoundary extends StatelessWidget {
             const Gap(Space.sm),
             Text(
               'Full messages from here',
-              style: ts(ty.uiSmall, t.ink, weight: Weight.semibold),
+              style: ts(ty.uiSmall, t.ink, weight: Weight.strong),
             ),
             if (!compact) ...[
               const Gap(Space.sm),
@@ -552,7 +552,7 @@ class HistoryEpisodeCard extends StatelessWidget {
                       children: [
                         Text(
                           episode.title,
-                          style: ts(ty.ui, t.ink, weight: Weight.bold),
+                          style: ts(ty.ui, t.ink, weight: Weight.strong),
                         ),
                         if (gist != null && gist.isNotEmpty)
                           Text(
@@ -721,7 +721,7 @@ class _ActionRow extends StatelessWidget {
                                   style: ts(
                                     ty.uiSmall,
                                     _tone(t, tone),
-                                    weight: Weight.semibold,
+                                    weight: Weight.strong,
                                   ),
                                 ),
                             ],
@@ -790,7 +790,7 @@ class _PointLine extends StatelessWidget {
               word,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: ts(ty.uiSmall, ink, weight: Weight.bold),
+              style: ts(ty.uiSmall, ink, weight: Weight.strong),
             ),
           ),
           const Gap(Space.xs),

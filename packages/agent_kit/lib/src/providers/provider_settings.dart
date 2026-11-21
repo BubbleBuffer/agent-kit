@@ -145,7 +145,7 @@ class _Provider extends StatelessWidget {
             children: [
               Text(
                 provider.name,
-                style: ts(theme.typeScale.ui, theme.ink, weight: Weight.bold),
+                style: ts(theme.typeScale.ui, theme.ink, weight: Weight.strong),
               ),
               Text(
                 provider.kind,

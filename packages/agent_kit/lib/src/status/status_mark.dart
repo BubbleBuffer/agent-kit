@@ -121,7 +121,7 @@ class StatusMark extends StatelessWidget {
     final base = ts(
       theme.typeScale.uiSmall,
       style.ink,
-      weight: status == ChatStatus.needsYou ? Weight.semibold : Weight.medium,
+      weight: status == ChatStatus.needsYou ? Weight.strong : Weight.strong,
     );
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -147,7 +147,7 @@ class StatusMark extends StatelessWidget {
                     style: ts(
                       theme.typeScale.uiSmall,
                       style.ink.withValues(alpha: Alpha.strong),
-                      weight: Weight.medium,
+                      weight: Weight.strong,
                     ),
                   ),
               ],
@@ -166,7 +166,7 @@ class StatusMark extends StatelessWidget {
     final textStyle = ts(
       theme.typeScale.uiSmall,
       style.ink,
-      weight: Weight.semibold,
+      weight: Weight.strong,
     );
     final labelText = Text(
       detail == null ? text : '$text · $detail',
