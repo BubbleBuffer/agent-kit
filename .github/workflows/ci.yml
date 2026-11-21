@@ -217,7 +217,7 @@ jobs:
             bb_ui:
               git:
                 url: https://github.com/BubbleBuffer/bb-ui
-                ref: 1e3863ac3c9a0123fb5e502e890005701423a586
+                ref: 7c92a358a57656271ff8174ecef41d4a49dc0794
                 path: packages/bb_ui
           YAML
           printf "import 'package:agent_kit/agent_kit.dart';\n\nfinal theme = BbTheme.light();\nconst sizeClass = SizeClass.compact;\n" > "$dir/lib/agent_use.dart"

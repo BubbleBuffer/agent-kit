@@ -40,7 +40,7 @@ the gallery directly declare exactly this source:
   bb_ui:
     git:
       url: https://github.com/BubbleBuffer/bb-ui
-      ref: 1e3863ac3c9a0123fb5e502e890005701423a586
+      ref: 7c92a358a57656271ff8174ecef41d4a49dc0794
       path: packages/bb_ui
 ```
 
@@ -57,7 +57,7 @@ the tag then.
 The bb-ui repository owns the vendored palette, colour generator, generated
 colours, neutral package tests and neutral component gallery. Agent widgets
 continue to read `BbTheme` roles derived from that palette. See
-[bb_tokens colour workflow](https://github.com/BubbleBuffer/bb-ui/blob/1e3863ac3c9a0123fb5e502e890005701423a586/packages/bb_tokens/README.md).
+[bb_tokens colour workflow](https://github.com/BubbleBuffer/bb-ui/blob/7c92a358a57656271ff8174ecef41d4a49dc0794/packages/bb_tokens/README.md).
 
 ## Consuming the kit
 
@@ -97,8 +97,9 @@ all existing golden PNGs stay here; neutral-gallery goldens live in bb-ui.
 ## Releasing
 
 1. Release the required bb-ui tag before updating its Git pin here. Release
-   0.20.0 pins the bb-ui 0.8 commit `1e3863a`; re-pin to `v0.8.0` once it is
-   tagged.
+   0.20.0 pins bb-ui 0.8.0 by its merge commit `7c92a35` on bb-ui `main`
+   (the commit tagged `v0.8.0`); switch the ref to the tag name once the tag
+   is pushed.
 2. Merge the agent-kit change with hosted CI green. Bump the three library
    versions together; the current release is `0.20.0`.
 3. Tag the green commit on `main` as `v0.20.0` and push the tag.
