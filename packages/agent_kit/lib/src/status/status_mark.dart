@@ -14,6 +14,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 
 /// The default label of [status].
@@ -120,7 +121,7 @@ class StatusMark extends StatelessWidget {
     final base = ts(
       theme.typeScale.uiSmall,
       style.ink,
-      weight: status == ChatStatus.needsYou ? 600 : 500,
+      weight: status == ChatStatus.needsYou ? Weight.semibold : Weight.medium,
     );
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -134,7 +135,7 @@ class StatusMark extends StatelessWidget {
           )
         else
           _Glyph(status: status, style: style, animate: animate),
-        SizedBox(width: theme.spacing.xs + 2),
+        const Gap(Space.xs),
         Flexible(
           child: Text.rich(
             TextSpan(
@@ -143,9 +144,10 @@ class StatusMark extends StatelessWidget {
                 if (detail != null)
                   TextSpan(
                     text: ' · $detail',
-                    style: TextStyle(
-                      color: style.ink.withValues(alpha: .8),
-                      fontWeight: fw(500),
+                    style: ts(
+                      theme.typeScale.uiSmall,
+                      style.ink.withValues(alpha: Alpha.strong),
+                      weight: Weight.medium,
                     ),
                   ),
               ],
@@ -161,7 +163,11 @@ class StatusMark extends StatelessWidget {
 
   Widget _pillForm(BbTheme theme, BbStatusStyle style, String text) {
     // `.pill` in the mockup: 600 12/18 whatever the form factor.
-    final textStyle = ts(const TypeSpec(12, 18, 600), style.ink);
+    final textStyle = ts(
+      theme.typeScale.uiSmall,
+      style.ink,
+      weight: Weight.semibold,
+    );
     final labelText = Text(
       detail == null ? text : '$text · $detail',
       style: textStyle,
@@ -176,7 +182,10 @@ class StatusMark extends StatelessWidget {
           border: Border.all(color: style.line!),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.sm,
+            vertical: Space.hair,
+          ),
           child: labelText,
         ),
       );
@@ -202,7 +211,7 @@ class StatusMark extends StatelessWidget {
               style.ink,
             ),
             _ => Padding(
-              padding: const EdgeInsets.all(2),
+              padding: const EdgeInsets.all(Space.hair),
               child: _Glyph(status: status, style: style, animate: animate),
             ),
           };
@@ -210,7 +219,7 @@ class StatusMark extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         icon,
-        SizedBox(width: theme.spacing.xs),
+        const Gap(Space.xxs),
         Flexible(child: labelText),
       ],
     );
@@ -224,7 +233,7 @@ class StatusMark extends StatelessWidget {
   ) {
     return LucideIcon(
       lucideWeight((light, regular, bold), 12, 1.5),
-      size: 12,
+      size: IconSize.xs.px,
       color: c,
     );
   }
@@ -242,7 +251,7 @@ class _Glyph extends StatelessWidget {
   final BbStatusStyle style;
   final bool animate;
 
-  static const _size = 8.0;
+  static const _size = Sizes.dot;
 
   @override
   Widget build(BuildContext context) {
@@ -256,25 +265,26 @@ class _Glyph extends StatelessWidget {
         child: _box(
           BoxDecoration(
             color: style.mark,
-            borderRadius: const BorderRadius.all(Radius.circular(2)),
+            borderRadius: const BorderRadius.all(
+              Radius.circular(KitRadii.runningMark),
+            ),
           ),
         ),
       ),
       ChatStatus.idle => _box(
         BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: style.mark, width: 1.5),
+          border: Border.all(color: style.mark, width: Stroke.regular),
         ),
       ),
       ChatStatus.interrupted => _box(
         BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: style.mark, width: 1.5),
+          border: Border.all(color: style.mark, width: Stroke.regular),
         ),
         child: Center(
-          child: SizedBox(
-            width: 2.5,
-            height: 2.5,
+          child: SizedBox.square(
+            dimension: KitSizes.interruptedDot,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: style.mark,
@@ -357,7 +367,7 @@ class _BreathingState extends State<_Breathing>
       builder: (context, child) {
         final v = curve.value;
         return Opacity(
-          opacity: .35 + .65 * v,
+          opacity: Alpha.wash + (1 - Alpha.wash) * v,
           child: Transform.scale(scale: .8 + .2 * v, child: child),
         );
       },

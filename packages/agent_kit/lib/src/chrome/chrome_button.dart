@@ -26,8 +26,8 @@ class ChromeIconButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onTap,
-    this.size = 32,
-    this.glyphSize = 18,
+    this.size = ControlSize.md,
+    this.glyphSize = IconSize.md,
     this.color,
     this.hoverColor,
     this.selected = false,
@@ -40,7 +40,8 @@ class ChromeIconButton extends StatelessWidget {
   /// The semantics label and the tooltip.
   final String label;
   final VoidCallback? onTap;
-  final double size, glyphSize;
+  final ControlSize size;
+  final IconSize glyphSize;
   final Color? color, hoverColor;
   final bool selected;
 
@@ -68,8 +69,8 @@ class ChromeIconButton extends StatelessWidget {
         pressedBackground: theme.pressed,
         lift: 0,
         child: SizedBox(
-          width: size,
-          height: size,
+          width: size.height,
+          height: size.height,
           child: Center(
             child: ChromeIcon(
               glyph,

@@ -50,7 +50,7 @@ class ComposerPick extends StatelessWidget {
       context,
       anchor,
       (menu) => MenuList(
-        width: 260,
+        width: Widths.menu,
         header: title,
         children: [
           for (final c in choices)
@@ -60,14 +60,14 @@ class ComposerPick extends StatelessWidget {
               trailing: c.detail == null
                   ? null
                   : Padding(
-                      padding: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.only(left: Space.sm),
                       child: Text(
                         c.detail!,
                         maxLines: 1,
                         style: ts(
                           menu.bb.typeScale.uiSmall,
                           menu.bb.faint,
-                          weight: 400,
+                          weight: Weight.regular,
                         ),
                       ),
                     ),
@@ -84,7 +84,7 @@ class ComposerPick extends StatelessWidget {
     final t = context.bb;
     final current = _selected;
     final text = current?.label ?? placeholder ?? title;
-    final h = isTouch(t) ? 40.0 : 28.0;
+    final h = t.metrics.row.height;
     return Builder(
       builder: (context) => Semantics(
         button: true,
@@ -94,9 +94,9 @@ class ComposerPick extends StatelessWidget {
         child: Hover(
           onTap: choices.isEmpty ? null : () => _open(context),
           borderRadius: BorderRadius.circular(t.radii.md),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: SizedBox(
-            height: h,
+          padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: h),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -109,7 +109,7 @@ class ComposerPick extends StatelessWidget {
                     style: ts(t.typeScale.ui, t.muted),
                   ),
                 ),
-                const SizedBox(width: 4),
+                const Gap(Space.xxs),
                 const KitIcon(ComposerGlyphs.chevronDown),
               ],
             ),

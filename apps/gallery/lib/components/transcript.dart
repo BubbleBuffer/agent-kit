@@ -7,6 +7,8 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../src/gallery_tokens.dart';
+
 /// Every widget of the transcript group, in each state. Lays out by its own
 /// width, so the gallery's width slider shows the size classes.
 class TranscriptSpecimens extends StatelessWidget {
@@ -19,7 +21,7 @@ class TranscriptSpecimens extends StatelessWidget {
       builder: (context, sizeClass) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(height: context.bb.spacing.xl),
+          Gap(Space.xl),
           Text(
             'Transcript',
             style: ts(context.bb.typeScale.h3, context.bb.ink),
@@ -28,7 +30,7 @@ class TranscriptSpecimens extends StatelessWidget {
             'Transcript list (follows the tail; scroll up for the button)',
           ),
           _Frame(
-            height: 380,
+            height: Specimen.transcriptHeight,
             child: TranscriptList(
               items: _listItems(),
               actions: TranscriptActions(
@@ -58,7 +60,7 @@ class TranscriptSpecimens extends StatelessWidget {
           const _Sub('System and notice lines'),
           const SystemLineView(SystemLine(id: 's', text: 'Context compacted')),
           for (final tone in NoticeTone.values) ...[
-            const SizedBox(height: 8),
+            const Gap(Space.sm),
             NoticeLineView(
               NoticeLine(
                 id: tone.name,
@@ -87,7 +89,7 @@ class TranscriptSpecimens extends StatelessWidget {
             initiallyOpen: true,
             initiallyOpenRow: 'r1',
           ),
-          const SizedBox(height: 12),
+          const Gap(Space.md),
           ActivityGroupView(_mixed(), initiallyOpen: true),
           const _Sub('Exec output, short'),
           const ExecOutput(
@@ -101,21 +103,21 @@ class TranscriptSpecimens extends StatelessWidget {
             onReviewDiff: () {},
             onUndo: () {},
           ),
-          const SizedBox(height: 6),
+          const Gap(Space.xs),
           FileEditRow(_created(), onOpen: () {}, onUndo: () {}),
-          const SizedBox(height: 6),
+          const Gap(Space.xs),
           FileEditRow(_modified(undone: true), onReviewDiff: () {}),
           const _Sub('Diff view'),
           DiffView(_modified().diff),
           const _Sub('Plan: collapsed and open'),
           const PlanChecklist(_plan),
-          const SizedBox(height: 12),
+          const Gap(Space.md),
           const PlanChecklist(_plan, initiallyOpen: true),
           const _Sub('Return line and interrupted notice'),
           ReturnLine(_childResult, onOpen: (_) {}),
-          const SizedBox(height: 12),
+          const Gap(Space.md),
           ReturnLine(_childFailed, onOpen: (_) {}),
-          const SizedBox(height: 12),
+          const Gap(Space.md),
           InterruptedNotice(onResume: () {}),
         ],
       ),
@@ -132,7 +134,7 @@ class _Sub extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: EdgeInsets.only(top: t.spacing.lg, bottom: t.spacing.sm),
+      padding: EdgeInsets.only(top: Space.lg, bottom: Space.sm),
       child: Text(text, style: ts(t.typeScale.uiSmall, t.faint)),
     );
   }

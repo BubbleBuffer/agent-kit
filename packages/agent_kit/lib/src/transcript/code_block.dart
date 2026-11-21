@@ -7,6 +7,8 @@ import 'package:flutter/widgets.dart';
 import '../theme/theme.dart';
 import 'transcript_support.dart';
 
+import 'package:bb_ui/bb_ui.dart';
+
 class CodeBlock extends StatelessWidget {
   const CodeBlock(this.code, {super.key, this.language});
 
@@ -32,7 +34,10 @@ class CodeBlock extends StatelessWidget {
           width: double.infinity,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.lg,
+              vertical: Space.md,
+            ),
             child: Text(
               code,
               softWrap: false,

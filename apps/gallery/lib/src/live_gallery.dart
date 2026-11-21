@@ -4,11 +4,12 @@ import 'dart:ui' show AppExitResponse;
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_bubblepaw/agent_kit_bubblepaw.dart';
 import 'package:agent_kit_core/agent_kit_core.dart' show ChatSummary;
-import 'package:bb_ui/bb_ui.dart' show AppColors;
+import 'package:bb_ui/bb_ui.dart' show AppColors, Gap, Space, Weight, ts;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 
 import 'gallery_app.dart';
+import 'gallery_tokens.dart';
 
 /// Optional local-host mode. With no defines the scripted gallery is unchanged.
 class GalleryLaunch extends StatelessWidget {
@@ -197,9 +198,9 @@ class _ConnectionStatus extends StatelessWidget {
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(Space.xl),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: Specimen.liveMessage),
               child: Semantics(
                 liveRegion: true,
                 child: Column(
@@ -208,10 +209,13 @@ class _ConnectionStatus extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: DefaultTextStyle.of(context).style
-                          .copyWith(fontWeight: FontWeight.w600),
+                      style: ts(
+                        theme.typeScale.body,
+                        theme.ink,
+                        weight: Weight.semibold,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const Gap(Space.md),
                     Text(message, style: TextStyle(color: theme.muted)),
                   ],
                 ),

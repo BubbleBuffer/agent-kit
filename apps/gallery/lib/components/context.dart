@@ -9,6 +9,8 @@ import 'package:agent_kit_core/fake.dart';
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../src/gallery_tokens.dart';
+
 final _view = quotaContextView();
 final _details = quotaContextDetails();
 final _asked = DateTime.utc(2025, 12, 29, 10);
@@ -78,7 +80,7 @@ class ContextSpecimens extends StatelessWidget {
             Text('Context', style: ts(t.typeScale.h3, t.ink)),
             const _Sub('Context meter (header): plain readout and button'),
             Wrap(
-              spacing: 24,
+              spacing: Space.xl,
               children: [
                 const ContextMeter(fraction: .38),
                 ContextMeter(fraction: .38, onTap: () {}),
@@ -126,8 +128,8 @@ class ContextSpecimens extends StatelessWidget {
             ),
             const _Sub('Context pane, wide (summary beside the list)'),
             _Frame(
-              height: 760,
-              width: 760,
+              height: Specimen.contextTall,
+              width: Specimen.contextWide,
               child: ContextPane(
                 view: _view,
                 details: _details,
@@ -139,8 +141,8 @@ class ContextSpecimens extends StatelessWidget {
             ),
             const _Sub('Context pane, narrow'),
             _Frame(
-              height: 640,
-              width: 420,
+              height: Specimen.contextShort,
+              width: Specimen.contextNarrow,
               child: ContextPane(
                 view: _view,
                 details: _details,
@@ -151,8 +153,8 @@ class ContextSpecimens extends StatelessWidget {
             ),
             const _Sub('Context pane, narrow, summary open'),
             _Frame(
-              height: 760,
-              width: 420,
+              height: Specimen.contextTall,
+              width: Specimen.contextNarrow,
               child: ContextPane(
                 view: _view,
                 details: _details,
@@ -164,8 +166,8 @@ class ContextSpecimens extends StatelessWidget {
             ),
             const _Sub('Context pane, History'),
             _Frame(
-              height: 760,
-              width: 680,
+              height: Specimen.contextTall,
+              width: Specimen.contextHistory,
               child: ContextPane(
                 view: _view,
                 details: _details,
@@ -176,8 +178,8 @@ class ContextSpecimens extends StatelessWidget {
             ),
             const _Sub('Context pane, Compactions'),
             _Frame(
-              height: 760,
-              width: 680,
+              height: Specimen.contextTall,
+              width: Specimen.contextHistory,
               child: ContextPane(
                 view: _view,
                 details: _details,
@@ -185,7 +187,7 @@ class ContextSpecimens extends StatelessWidget {
                 initialTab: ContextTab.compactions,
               ),
             ),
-            SizedBox(height: t.spacing.xl),
+            Gap(Space.xl),
             Text('Child questions', style: ts(t.typeScale.h3, t.ink)),
             const _Sub('Asking parent in the crew strip and the ledger'),
             CrewStrip(agents: [_asking], now: _now),
@@ -298,7 +300,7 @@ class _Sub extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: EdgeInsets.only(top: t.spacing.lg, bottom: t.spacing.sm),
+      padding: EdgeInsets.only(top: Space.lg, bottom: Space.sm),
       child: Text(text, style: ts(t.typeScale.uiSmall, t.muted)),
     );
   }

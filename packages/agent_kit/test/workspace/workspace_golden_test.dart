@@ -7,7 +7,7 @@
 library;
 
 import 'package:agent_kit/agent_kit.dart';
-import 'package:bb_ui/bb_ui.dart' show TypeSpec, ts;
+import 'package:bb_ui/bb_ui.dart' show ts;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -86,7 +86,7 @@ Widget _pane(BuildContext context, WorkspaceTab tab) {
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.clip,
-              style: ts(const TypeSpec(12, 18, 400), t.muted, mono: true),
+              style: ts(t.typeScale.codeSmall, t.muted, mono: true),
             ),
         ],
       ),

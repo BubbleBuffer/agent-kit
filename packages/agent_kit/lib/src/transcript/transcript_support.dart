@@ -76,7 +76,7 @@ Widget glyphIcon(LucideGlyph g, {required double size, required Color color}) =>
     kitIcon(g, size: size, color: color);
 
 /// Mono text style without ligatures (NOTES.md, departure 9).
-TextStyle monoStyle(TypeSpec spec, Color color, {int? weight}) =>
+TextStyle monoStyle(TypeSpec spec, Color color, {Weight? weight}) =>
     ts(spec, color, weight: weight, mono: true).copyWith(
       fontFeatures: const [
         FontFeature.disable('calt'),
@@ -84,13 +84,8 @@ TextStyle monoStyle(TypeSpec spec, Color color, {int? weight}) =>
       ],
     );
 
-/// The size class of the nearest builder, or expanded without one.
-SizeClass sizeClassOf(BuildContext context) =>
-    SizeClass.maybeOf(context) ?? SizeClass.expanded;
-
 /// Whether the theme asks for touch-sized controls.
-bool isTouch(BuildContext context) =>
-    context.bb.formFactor == FormFactor.mobile;
+bool isTouch(BuildContext context) => context.bb.touch;
 
 /// The last [parts] segments of [path] ("usage/mod.rs").
 String tailPath(String path, {int parts = 2}) {
@@ -143,20 +138,26 @@ class KitTextButton extends StatelessWidget {
       child: Hover(
         onTap: onTap,
         lift: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: SizedBox(
-          height: isTouch(context) ? 32 : 24,
+        padding: const EdgeInsets.symmetric(horizontal: Space.sm),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight:
+                (isTouch(context) ? ControlSize.md : ControlSize.xs).height,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (glyph != null) ...[
-                glyphIcon(glyph!, size: 14, color: c),
-                const SizedBox(width: 4),
+                glyphIcon(glyph!, size: IconSize.xs.px, color: c),
+                const Gap(Space.xxs),
               ],
-              Text(
-                label,
-                maxLines: 1,
-                style: ts(t.typeScale.uiSmall, c, weight: 600),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ts(t.typeScale.uiSmall, c, weight: Weight.semibold),
+                ),
               ),
             ],
           ),
@@ -168,10 +169,14 @@ class KitTextButton extends StatelessWidget {
 
 /// The chevron of a disclosure: down when open, right (rotated down) shut.
 class DisclosureChevron extends StatelessWidget {
-  const DisclosureChevron({super.key, required this.open, this.size = 13});
+  const DisclosureChevron({
+    super.key,
+    required this.open,
+    this.size = IconSize.xs,
+  });
 
   final bool open;
-  final double size;
+  final IconSize size;
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +187,7 @@ class DisclosureChevron extends StatelessWidget {
       curve: Motion.ease,
       child: glyphIcon(
         glyphChevronDown,
-        size: size,
+        size: size.px,
         color: t.colors.iconTertiary,
       ),
     );

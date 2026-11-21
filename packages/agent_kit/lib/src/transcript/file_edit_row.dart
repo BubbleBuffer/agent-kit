@@ -8,6 +8,7 @@ import 'package:agent_kit_core/agent_kit_core.dart' show FileChange, FileEdit;
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'diff_view.dart';
 import 'transcript_support.dart';
@@ -94,7 +95,11 @@ class _FileEditRowState extends State<FileEditRow> {
     final path = tailPath(diff.path);
     final name = edit.label ?? (compact ? path : '$verb $path');
     final nameStyle =
-        ts(const TypeSpec(13, 16, 600), edit.undone ? t.faint : t.ink).copyWith(
+        ts(
+          t.typeScale.uiSmall,
+          edit.undone ? t.faint : t.ink,
+          weight: Weight.semibold,
+        ).copyWith(
           decoration: edit.undone ? TextDecoration.lineThrough : null,
           decorationColor: t.faint,
         );
@@ -111,7 +116,7 @@ class _FileEditRowState extends State<FileEditRow> {
     final primary = created
         ? [?openButton]
         : [?reviewButton, if (widget.openEveryEdit) ?openButton];
-    final countStyle = ts(const TypeSpec(12, 16, 600), t.ink);
+    final countStyle = ts(t.typeScale.uiSmall, t.ink, weight: Weight.semibold);
     final added = diff.added;
     final removed = diff.removed;
     return DecoratedBox(
@@ -124,75 +129,93 @@ class _FileEditRowState extends State<FileEditRow> {
         mainAxisSize: MainAxisSize.min,
         children: [
           ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 34),
+            constraints: BoxConstraints(minHeight: ControlSize.lg.height),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 2, 4, 2),
+              padding: const EdgeInsets.fromLTRB(
+                Space.sm,
+                Space.hair,
+                Space.xxs,
+                Space.hair,
+              ),
               child: Row(
                 children: [
                   Expanded(
-                    child: Semantics(
-                      button: hasBody,
-                      expanded: hasBody ? open : null,
-                      label: '$verb ${diff.path}, +$added −$removed',
-                      excludeSemantics: true,
-                      child: Hover(
-                        onTap: hasBody
-                            ? () => setState(() => _open = !_open)
-                            : null,
-                        lift: 0,
-                        radius: t.radii.sm,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: isTouch(context) ? 36 : 30,
-                          ),
-                          child: Row(
-                            children: [
-                              if (hasBody)
-                                DisclosureChevron(open: open, size: 12)
-                              else
-                                const SizedBox(width: 12),
-                              const SizedBox(width: 6),
-                              glyphIcon(
-                                created ? glyphFilePlus : glyphFilePen,
-                                size: 14,
-                                color: t.colors.iconSecondary,
+                    child: LayoutBuilder(
+                      builder: (context, box) {
+                        final tight = box.maxWidth < KitSizes.editRowCounts;
+                        return Semantics(
+                          button: hasBody,
+                          expanded: hasBody ? open : null,
+                          label: '$verb ${diff.path}, +$added −$removed',
+                          excludeSemantics: true,
+                          child: Hover(
+                            onTap: hasBody
+                                ? () => setState(() => _open = !_open)
+                                : null,
+                            lift: 0,
+                            radius: t.radii.sm,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight:
+                                    (isTouch(context)
+                                            ? ControlSize.lg
+                                            : ControlSize.md)
+                                        .height,
                               ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: nameStyle,
-                                ),
+                              child: Row(
+                                children: [
+                                  if (hasBody)
+                                    DisclosureChevron(
+                                      open: open,
+                                      size: IconSize.xs,
+                                    )
+                                  else
+                                    const Gap(Space.md),
+                                  const Gap(Space.xs),
+                                  glyphIcon(
+                                    created ? glyphFilePlus : glyphFilePen,
+                                    size: IconSize.xs.px,
+                                    color: t.colors.iconSecondary,
+                                  ),
+                                  const Gap(Space.xs),
+                                  Flexible(
+                                    child: Text(
+                                      name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: nameStyle,
+                                    ),
+                                  ),
+                                  // The counts give way on a very narrow row.
+                                  if (added > 0 && !tight) ...[
+                                    const Gap(Space.xs),
+                                    Text(
+                                      '+$added',
+                                      style: countStyle.copyWith(
+                                        color: t.constructiveInk,
+                                      ),
+                                    ),
+                                  ],
+                                  if (removed > 0 && !tight) ...[
+                                    const Gap(Space.xs),
+                                    Text(
+                                      '−$removed',
+                                      style: countStyle.copyWith(
+                                        color: t.dangerInk,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                              if (added > 0) ...[
-                                const SizedBox(width: 6),
-                                Text(
-                                  '+$added',
-                                  style: countStyle.copyWith(
-                                    color: t.constructiveInk,
-                                  ),
-                                ),
-                              ],
-                              if (removed > 0) ...[
-                                const SizedBox(width: 6),
-                                Text(
-                                  '−$removed',
-                                  style: countStyle.copyWith(
-                                    color: t.dangerInk,
-                                  ),
-                                ),
-                              ],
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
                   if (edit.undone)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: Space.sm),
                       child: Text(
                         'Undone',
                         style: ts(t.typeScale.uiSmall, t.faint),
@@ -219,12 +242,22 @@ class _FileEditRowState extends State<FileEditRow> {
           ),
           if (_refusal != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              padding: const EdgeInsets.fromLTRB(
+                Space.md,
+                0,
+                Space.md,
+                Space.sm,
+              ),
               child: Text(_refusal!, style: ts(t.typeScale.uiSmall, t.faint)),
             ),
           if (open)
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              padding: const EdgeInsets.fromLTRB(
+                Space.md,
+                0,
+                Space.md,
+                Space.md,
+              ),
               child: DiffView(diff),
             ),
         ],

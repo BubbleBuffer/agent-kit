@@ -45,27 +45,34 @@ class CompactionMarker extends StatelessWidget {
               n == 1 ? '1 episode summarized' : '$n episodes summarized',
             ?sizes,
           ];
-    final style = ts(t.typeScale.uiSmall, t.muted, weight: 400);
+    final style = ts(t.typeScale.uiSmall, t.muted, weight: Weight.regular);
     final label = [title, ...parts].join(', ');
     final Widget lead = failed
         ? glyphIcon(
             glyphCircleX,
-            size: 14,
+            size: IconSize.xs.px,
             color: t.statusStyle(ChatStatus.failed).ink,
           )
-        : glyphIcon(glyphFoldVertical, size: 14, color: t.colors.iconSecondary);
+        : glyphIcon(
+            glyphFoldVertical,
+            size: IconSize.xs.px,
+            color: t.colors.iconSecondary,
+          );
     return Semantics(
       container: true,
       liveRegion: running,
       label: label,
       child: ExcludeSemantics(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: Space.xs),
           child: Row(
             children: [
               if (!running) ...[
-                SizedBox(width: 18, child: Center(child: lead)),
-                const SizedBox(width: 8),
+                SizedBox(
+                  width: IconSize.md.px,
+                  child: Center(child: lead),
+                ),
+                const Gap(Space.sm),
               ],
               Flexible(
                 child: running
@@ -79,11 +86,12 @@ class CompactionMarker extends StatelessWidget {
                           children: [
                             TextSpan(
                               text: title,
-                              style: TextStyle(
-                                color: failed
+                              style: ts(
+                                t.typeScale.uiSmall,
+                                failed
                                     ? t.statusStyle(ChatStatus.failed).ink
                                     : t.ink,
-                                fontWeight: fw(700),
+                                weight: Weight.bold,
                               ),
                             ),
                             for (final p in parts) TextSpan(text: ' · $p'),
@@ -97,10 +105,10 @@ class CompactionMarker extends StatelessWidget {
               if (!compact)
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: Space.md),
                     child: ColoredBox(
                       color: t.colors.borderSubtle,
-                      child: const SizedBox(height: 1),
+                      child: const SizedBox(height: Stroke.hair),
                     ),
                   ),
                 )

@@ -1,6 +1,6 @@
 # SizeClassBuilder
 
-Measures its own width and gives its `builder` the `SizeClass` for that width, from the theme's thresholds; this sheet also covers `SizeClass` (the three classes) and `SizeClassScope` (the inherited widget that carries the class down the tree).
+Measures its own width and gives its `builder` the `SizeClass` for that width; this sheet also covers `SizeClass` (the three classes) and `SizeClassScope` (the inherited widget that carries the class down the tree). Both are bb-ui's (`bb_tokens`); `agent_kit` re-exports them.
 
 ```dart
 import 'package:agent_kit/agent_kit.dart';
@@ -16,9 +16,9 @@ No demo: not a visual widget.
 
 | Parameter | Type | Notes |
 |---|---|---|
-| `builder` | `Widget Function(BuildContext context, SizeClass sizeClass)` | required. Gets the class of this widget's own width. The builder's context can read the class again with `SizeClass.of(context)`. |
+| `builder` | `Widget Function(BuildContext context, SizeClass sizeClass)` | required. Gets the class of this widget's own width. The builder's context can read the class again with `sizeClassOf(context)` or `context.sizeClass`. |
 
-`SizeClassScope` (an `InheritedWidget`, built by `SizeClassBuilder`):
+`SizeClassScope` (bb-ui's `InheritedWidget`, built by `SizeClassBuilder`):
 
 | Parameter | Type | Notes |
 |---|---|---|
@@ -27,7 +27,7 @@ No demo: not a visual widget.
 
 ## Theme roles
 
-`SizeClassBuilder` reads no colour or type role. It reads the thresholds `sizeMedium` and `sizeExpanded` from `BbTheme.of(context)` (`packages/agent_kit/lib/src/theme/size_class.dart:55` and `:61-62`). Those assert that a `BbThemeScope` is above the builder.
+`SizeClassBuilder` reads no theme value: the thresholds are bb-ui's `SizeClass.mediumWidth` (600) and `SizeClass.expandedWidth` (1000).
 
 ## Size classes
 
@@ -35,16 +35,14 @@ No demo: not a visual widget.
 
 | Class | Width |
 |---|---|
-| `SizeClass.compact` | below `sizeMedium` (600 px) |
-| `SizeClass.medium` | from `sizeMedium` to below `sizeExpanded` (600 px up to 1000 px) |
-| `SizeClass.expanded` | `sizeExpanded` (1000 px) and wider |
+| `SizeClass.compact` | below 600 px |
+| `SizeClass.medium` | 600 px up to 1000 px |
+| `SizeClass.expanded` | 1000 px and wider |
 
-- The thresholds are the theme's `sizeMedium` and `sizeExpanded`, from bb-ui's `KitLayout`. The values 600 and 1000 are stated in `docs/agent-kit.md:125` and asserted in `packages/agent_kit/test/bb_theme_test.dart:65-66`.
-- `SizeClass.forWidth(width, {medium = 600, expanded = 1000})` takes the same thresholds as arguments. It is the function the builder uses, with the theme's values. A caller that does not pass them gets the defaults: `packages/agent_kit/lib/src/composer/agent_composer.dart:643` does this.
-- An unbounded width (no bounded constraint) counts as `expanded`.
+- `SizeClass.forWidth(width)` is the function the builder uses. An unbounded width (no bounded constraint) counts as `expanded`.
 - Layout follows the container's width, never the window.
-- Helpers on the enum: `isCompact`, `isMedium`, `isExpanded`, `atLeast(other)` (this class is `other` or wider), `SizeClass.of(context)` (asserts that a builder is above), and `SizeClass.maybeOf(context)` (returns null instead).
-- Users in the kit: `chrome/rail_layout.dart:39` (the rail area), `compositions/agent_workbench.dart:391` (the area beside the rail), `composer/approval_bar.dart:212`, `composer/question_prompt.dart:389`, `composer/queued_row.dart:90`, `transcript/transcript_list.dart:506`, and `workspace/agent_workspace.dart:456`. `transcript/transcript_support.dart:89` reads `SizeClass.maybeOf` and falls back to `expanded`.
+- Helpers: bb-ui's `isCompact` and `atLeast(other)`; the kit's `KitSizeClass` extension adds `isMedium` and `isExpanded`. `sizeClassOf(context)` returns the nearest scope's class, or `expanded` when there is none; bb-ui's `context.sizeClass` falls back to the window's class instead.
+- Users in the kit: `chrome/rail_layout.dart` (the rail area), `compositions/agent_workbench.dart` (the area beside the rail), `composer/approval_bar.dart`, `composer/question_prompt.dart`, `composer/queued_row.dart`, `transcript/transcript_list.dart` and `workspace/agent_workspace.dart`. The transcript rows read `sizeClassOf`.
 
 ## Accessibility
 

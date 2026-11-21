@@ -21,6 +21,7 @@ import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import '../status/status.dart';
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'exec_output.dart';
 import 'transcript_support.dart';
@@ -167,14 +168,14 @@ class _ActivityGroupViewState extends State<ActivityGroupView> {
                 onTap: () => setState(() => _toggled = !_open),
                 lift: 0,
                 padding: EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: isTouch(context) ? 9 : 5,
+                  horizontal: Space.xs,
+                  vertical: isTouch(context) ? Space.sm : Space.xs,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DisclosureChevron(open: _open),
-                    const SizedBox(width: 6),
+                    const Gap(Space.xs),
                     Flexible(
                       child: Text(
                         summary,
@@ -191,13 +192,13 @@ class _ActivityGroupViewState extends State<ActivityGroupView> {
         ),
         if (_open && group.rows.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 2, left: 6),
+            padding: const EdgeInsets.only(top: Space.hair, left: Space.xs),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 border: Border(left: BorderSide(color: t.colors.borderSubtle)),
               ),
               child: Padding(
-                padding: const EdgeInsets.only(left: 12),
+                padding: const EdgeInsets.only(left: Space.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -220,7 +221,7 @@ class _ActivityGroupViewState extends State<ActivityGroupView> {
           ),
         if (_open && widget.footer != null)
           Padding(
-            padding: const EdgeInsets.only(top: 2, left: 18),
+            padding: const EdgeInsets.only(top: Space.hair, left: Space.lg),
             child: widget.footer,
           ),
       ],
@@ -253,8 +254,7 @@ class EvidenceRow extends StatelessWidget {
 
   /// The chevron's slot, kept empty on rows that do not open so the verbs
   /// line up.
-  static const _chevronSlot = 18.0;
-  static const _lineHeight = 16.0;
+  static final _chevronSlot = IconSize.md.px;
 
   @override
   Widget build(BuildContext context) {
@@ -268,18 +268,25 @@ class EvidenceRow extends StatelessWidget {
     };
     final metaStyle = ts(t.typeScale.uiSmall, t.faint);
     final meta = spec.meta(context, metaStyle);
-    final targetStyle = ts(const TypeSpec(13, 16, 500), open ? t.ink : t.muted);
-    final verbWidth = compact ? 40.0 : 44.0;
+    final targetStyle = ts(t.typeScale.uiSmall, open ? t.ink : t.muted);
+    final verbWidth = compact
+        ? KitSizes.activityVerbCompact
+        : KitSizes.activityVerb;
+    // One line of the row's text; the row centres it in its minimum height.
+    final lineHeight = t.typeScale.uiSmall.line;
+    final rowHeight = isTouch(context)
+        ? ControlSize.lg.height
+        : KitSizes.activityRow;
     final showWhole = open && row is ToolRow;
     Widget? body;
     if (open && spec.body != null) {
       body = Padding(
         padding: EdgeInsets.fromLTRB(
           // Under the target; under the verb on a phone.
-          6 + _chevronSlot + (compact ? 0 : verbWidth + 8),
-          2,
+          Space.xs + _chevronSlot + (compact ? 0 : verbWidth + Space.sm),
+          Space.hair,
           0,
-          8,
+          Space.sm,
         ),
         child: spec.body!(context),
       );
@@ -296,22 +303,28 @@ class EvidenceRow extends StatelessWidget {
           child: Hover(
             onTap: tap,
             lift: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.xs,
+              vertical: Space.xxs,
+            ),
             child: Padding(
-              // Centres a one-line row in the 20 px (36 px touch) minimum.
+              // Centres a one-line row in its minimum height.
               padding: EdgeInsets.symmetric(
-                vertical: ((isTouch(context) ? 36 : 20) - _lineHeight) / 2,
+                vertical: (rowHeight - lineHeight) / 2,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
                     width: _chevronSlot,
-                    height: _lineHeight,
+                    height: lineHeight,
                     child: expandable && tap != null
                         ? Align(
                             alignment: Alignment.centerLeft,
-                            child: DisclosureChevron(open: open, size: 12),
+                            child: DisclosureChevron(
+                              open: open,
+                              size: IconSize.xs,
+                            ),
                           )
                         : null,
                   ),
@@ -320,13 +333,10 @@ class EvidenceRow extends StatelessWidget {
                     child: Text(
                       spec.verb,
                       maxLines: 1,
-                      style: monoStyle(
-                        const TypeSpec(12, _lineHeight, 400),
-                        t.faint,
-                      ),
+                      style: monoStyle(t.typeScale.codeSmall, t.faint),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const Gap(Space.sm),
                   Expanded(
                     child: Text(
                       spec.target,
@@ -337,7 +347,7 @@ class EvidenceRow extends StatelessWidget {
                       style: targetStyle,
                     ),
                   ),
-                  if (meta != null) ...[const SizedBox(width: 8), meta],
+                  if (meta != null) ...[const Gap(Space.sm), meta],
                 ],
               ),
             ),
@@ -381,7 +391,7 @@ class EvidenceRow extends StatelessWidget {
               final t = context.bb;
               return Text(
                 text,
-                style: ts(const TypeSpec(13, 20, 400), t.muted),
+                style: ts(t.typeScale.ui, t.muted, weight: Weight.regular),
               );
             }
           : null,
@@ -445,7 +455,7 @@ class EvidenceRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (showArguments) _ArgumentLines(shown),
-                if (showArguments && hasOutput) const SizedBox(height: 6),
+                if (showArguments && hasOutput) const Gap(Space.xs),
                 if (hasOutput)
                   ExecOutput(
                     output: output,
@@ -542,7 +552,7 @@ class _ArgumentLines extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.bb;
-    const spec = TypeSpec(12, 17, 400);
+    final spec = t.typeScale.codeSmall;
     final key = monoStyle(spec, t.faint);
     final value = monoStyle(spec, t.ink);
     final text = arguments.text;
@@ -554,11 +564,14 @@ class _ArgumentLines extends StatelessWidget {
           TableRow(
             children: [
               Padding(
-                padding: const EdgeInsets.only(right: 10, bottom: 2),
+                padding: const EdgeInsets.only(
+                  right: Space.md,
+                  bottom: Space.hair,
+                ),
                 child: Text(k, style: key),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 2),
+                padding: const EdgeInsets.only(bottom: Space.hair),
                 child: Text(v, style: value),
               ),
             ],

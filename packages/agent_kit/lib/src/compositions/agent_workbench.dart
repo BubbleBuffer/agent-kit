@@ -25,6 +25,7 @@ import '../chrome/chrome.dart';
 import '../composer/composer.dart';
 import '../composer/composer_parts.dart' show KitButton;
 import '../context/context_pane.dart' show ContextPaneController;
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import '../transcript/transcript.dart';
 import '../workspace/workspace.dart';
@@ -450,11 +451,12 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
     }
     if (!shown) return sheet;
     final padded = Padding(
-      padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+      padding: const EdgeInsets.fromLTRB(0, Space.md, Space.md, Space.md),
       child: workspace,
     );
     if (area.isMedium) {
-      final w = math.min(420.0, math.max(240.0, width * .4));
+      const pane = KitSizes.workspaceMedium;
+      final w = math.min(pane.max, math.max(pane.min, width * pane.share));
       return Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -463,7 +465,8 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
         ],
       );
     }
-    final w = math.min(584.0, math.max(444.0, width * .44));
+    const chat = KitSizes.chatExpanded;
+    final w = math.min(chat.max, math.max(chat.min, width * chat.share));
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -511,7 +514,7 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
     return KeyedSubtree(
       key: _sheetKey,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+        padding: const EdgeInsets.fromLTRB(Space.md, Space.md, Space.md, 0),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: t.surface,
@@ -550,19 +553,28 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
         ),
         if (_cancelError != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            padding: const EdgeInsets.fromLTRB(
+              Space.sm,
+              Space.xxs,
+              Space.sm,
+              0,
+            ),
             child: Semantics(
               liveRegion: true,
               child: Text(
                 _cancelError!,
                 key: const ValueKey('ledger-cancel-error'),
-                style: ts(const TypeSpec(12, 16, 400), t.dangerInk),
+                style: ts(
+                  t.typeScale.uiSmall,
+                  t.dangerInk,
+                  weight: Weight.regular,
+                ),
               ),
             ),
           ),
         if (widget.modelUsage.isNotEmpty) ...[
           if (snap.children.isNotEmpty || snap.jobs.isNotEmpty)
-            const SizedBox(height: 16),
+            const Gap(Space.lg),
           UsageByModel(models: widget.modelUsage, usage: snap.usage),
         ],
       ],
@@ -583,7 +595,7 @@ class _AgentWorkbenchState extends State<AgentWorkbench> {
             _listError ?? 'No chats yet',
             style: ts(t.typeScale.ui, t.muted),
           ),
-          const SizedBox(height: 12),
+          const Gap(Space.md),
           if (_listError == null)
             KitButton(label: 'New chat', onTap: _newChat)
           else

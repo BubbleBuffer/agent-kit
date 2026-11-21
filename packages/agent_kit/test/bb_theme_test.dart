@@ -62,8 +62,8 @@ void main() {
 
   test('size thresholds and pane tokens match theme.css', () {
     final t = BbTheme.light();
-    expect(t.sizeMedium, 600);
-    expect(t.sizeExpanded, 1000);
+    expect(SizeClass.mediumWidth, 600);
+    expect(SizeClass.expandedWidth, 1000);
     expect(t.layout.paneMinWidth, 200);
     expect(t.layout.paneMinHeight, 120);
     expect(t.layout.edgeTab, 28);

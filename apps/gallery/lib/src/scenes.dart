@@ -169,7 +169,7 @@ class ScenePlaceholder extends StatelessWidget {
     return ColoredBox(
       color: t.canvas,
       child: Padding(
-        padding: EdgeInsets.all(t.spacing.md),
+        padding: EdgeInsets.all(Space.md),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: t.surface,
@@ -179,7 +179,7 @@ class ScenePlaceholder extends StatelessWidget {
           ),
           child: SizedBox.expand(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(t.spacing.xl),
+              padding: EdgeInsets.all(Space.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -187,17 +187,17 @@ class ScenePlaceholder extends StatelessWidget {
                     'Scene ${scene.tag} · ${scene.composition}',
                     style: small,
                   ),
-                  SizedBox(height: t.spacing.sm),
+                  Gap(Space.sm),
                   Text(
                     s == null || s.title.isEmpty
                         ? 'Loading the scripted chat…'
                         : s.title,
                     style: ts(t.typeScale.h3, t.ink),
                   ),
-                  SizedBox(height: t.spacing.sm),
+                  Gap(Space.sm),
                   if (s != null) ...[
                     StatusMark.pill(s.status),
-                    SizedBox(height: t.spacing.sm),
+                    Gap(Space.sm),
                     Text(
                       '${_count(s.items.length, 'item')} · '
                       '${_count(s.children.length, 'agent')} · '
@@ -207,7 +207,7 @@ class ScenePlaceholder extends StatelessWidget {
                       style: small,
                     ),
                   ],
-                  SizedBox(height: t.spacing.lg),
+                  Gap(Space.lg),
                   const _AreaLine(),
                 ],
               ),
@@ -228,7 +228,7 @@ class _AreaLine extends StatelessWidget {
     builder: (context, sizeClass) => LayoutBuilder(
       builder: (context, constraints) => Text(
         'Area ${constraints.maxWidth.round()} px → ${sizeClass.name}',
-        style: ts(const TypeSpec(12, 16, 400), context.bb.ink, mono: true),
+        style: ts(TypeScale.pointer.codeSmall, context.bb.ink, mono: true),
       ),
     ),
   );

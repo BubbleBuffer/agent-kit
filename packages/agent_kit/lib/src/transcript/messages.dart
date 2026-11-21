@@ -14,6 +14,7 @@ import 'package:agent_kit_core/agent_kit_core.dart'
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../theme/kit_tokens.dart';
 import '../theme/theme.dart';
 import 'markdown.dart';
 import 'transcript_support.dart';
@@ -47,7 +48,7 @@ class _UserBubbleState extends State<UserBubble> {
 
   Widget _rewind(BbTheme t, {required bool visible}) {
     return Opacity(
-      opacity: visible ? 1 : 0,
+      opacity: visible ? KitAlpha.opaque : 0,
       child: Semantics(
         button: true,
         label: 'Rewind from here',
@@ -57,8 +58,11 @@ class _UserBubbleState extends State<UserBubble> {
           child: Hover(
             onTap: widget.onRewind,
             lift: 0,
-            borderRadius: BorderRadius.circular(8),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            borderRadius: BorderRadius.circular(Radii.lg),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.xs,
+              vertical: Space.hair,
+            ),
             child: Text(
               'Rewind from here',
               maxLines: 1,
@@ -75,7 +79,7 @@ class _UserBubbleState extends State<UserBubble> {
   Widget build(BuildContext context) {
     final t = context.bb;
     final message = widget.message;
-    final touch = t.formFactor == FormFactor.mobile;
+    final touch = t.touch;
     final rewind = widget.onRewind != null;
     final chips = message.refs
         .where((r) => r.start == null)
@@ -89,11 +93,11 @@ class _UserBubbleState extends State<UserBubble> {
         children: [
           if (chips.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.only(bottom: Space.xs),
               child: Wrap(
                 alignment: WrapAlignment.end,
-                spacing: 6,
-                runSpacing: 6,
+                spacing: Space.xs,
+                runSpacing: Space.xs,
                 children: [
                   for (final ref in chips)
                     _ContextChip(ref: ref, onTap: widget.onRefTap),
@@ -102,10 +106,11 @@ class _UserBubbleState extends State<UserBubble> {
             ),
           LayoutBuilder(
             builder: (context, constraints) {
+              const bubbleSize = KitSizes.userBubble;
               final width = constraints.hasBoundedWidth
                   ? constraints.maxWidth
-                  : 560.0 / .85;
-              final max = math.min(560.0, width * .85);
+                  : bubbleSize.max / bubbleSize.share;
+              final max = math.min(bubbleSize.max, width * bubbleSize.share);
               final bubble = ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: max),
                 child: DecoratedBox(
@@ -115,8 +120,8 @@ class _UserBubbleState extends State<UserBubble> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 9,
+                      horizontal: Space.lg,
+                      vertical: Space.sm,
                     ),
                     child: Text(
                       message.text,
@@ -139,7 +144,7 @@ class _UserBubbleState extends State<UserBubble> {
                         child: _rewind(t, visible: _hovered || _focused),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const Gap(Space.xs),
                     bubble,
                   ],
                 );
@@ -150,7 +155,7 @@ class _UserBubbleState extends State<UserBubble> {
                 children: [
                   bubble,
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.only(top: Space.xxs),
                     child: _rewind(t, visible: touch || _hovered || _focused),
                   ),
                 ],
@@ -180,14 +185,17 @@ class _ContextChip extends StatelessWidget {
       child: Hover(
         onTap: tap == null ? null : () => tap(ref),
         lift: 0,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: Radii.pill,
         border: Border.all(color: t.colors.borderSubtle),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.sm,
+          vertical: Space.xxs,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            glyphIcon(glyphFileText, size: 12, color: t.muted),
-            const SizedBox(width: 4),
+            glyphIcon(glyphFileText, size: IconSize.xs.px, color: t.muted),
+            const Gap(Space.xxs),
             Flexible(
               child: Text(
                 ref.label,
@@ -235,7 +243,7 @@ class SystemLineView extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: Space.hair),
       child: Text(
         line.text,
         textAlign: TextAlign.center,
@@ -275,13 +283,13 @@ class NoticeLineView extends StatelessWidget {
         children: [
           if (glyph != null)
             Padding(
-              padding: const EdgeInsets.only(top: 2, right: 6),
-              child: glyphIcon(glyph, size: 12, color: ink),
+              padding: const EdgeInsets.only(top: Space.hair, right: Space.xs),
+              child: glyphIcon(glyph, size: IconSize.xs.px, color: ink),
             ),
           Expanded(
             child: Text(
               line.text,
-              style: ts(t.typeScale.uiSmall, ink, weight: 500),
+              style: ts(t.typeScale.uiSmall, ink, weight: Weight.medium),
             ),
           ),
         ],

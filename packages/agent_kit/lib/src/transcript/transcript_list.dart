@@ -259,7 +259,7 @@ class _TranscriptListState extends State<TranscriptList> {
 
   /// The pill's distance from the bottom edge, and the length of the fade
   /// above it.
-  static const _pillBottom = 12.0;
+  static const _pillBottom = Space.md;
   static const _pillFade = 28.0;
 
   bool get _atBottom {
@@ -474,7 +474,7 @@ class _TranscriptListState extends State<TranscriptList> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PlanChecklist(widget.plan),
-              const SizedBox(height: 12),
+              const Gap(Space.md),
               widget.leading!,
             ],
           );
@@ -535,7 +535,10 @@ class _TranscriptListState extends State<TranscriptList> {
             controller: _scroll,
             padding:
                 widget.padding ??
-                EdgeInsets.only(top: compact ? 20 : 28, bottom: 40),
+                EdgeInsets.only(
+                  top: compact ? Space.xl : Space.xxl,
+                  bottom: Space.xxxl,
+                ),
             itemCount: count,
             findChildIndexCallback: (key) {
               if (key is ValueKey<String>) return _indexById[key.value];
@@ -674,18 +677,18 @@ class JumpToLatestButton extends StatelessWidget {
         border: Border.all(color: t.thread),
         shadow: t.colors.seam,
         padding: EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: isTouch(context) ? 9 : 6,
+          horizontal: Space.md,
+          vertical: isTouch(context) ? Space.sm : Space.xs,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            glyphIcon(glyphArrowDown, size: 14, color: t.ink),
-            const SizedBox(width: 6),
+            glyphIcon(glyphArrowDown, size: IconSize.xs.px, color: t.ink),
+            const Gap(Space.xs),
             Text(
               label,
               maxLines: 1,
-              style: ts(t.typeScale.uiSmall, t.ink, weight: 600),
+              style: ts(t.typeScale.uiSmall, t.ink, weight: Weight.semibold),
             ),
           ],
         ),

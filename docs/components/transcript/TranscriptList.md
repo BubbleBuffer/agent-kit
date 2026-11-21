@@ -92,10 +92,10 @@ import 'package:agent_kit/agent_kit.dart';
 
 ## Size classes
 
-- `TranscriptList` wraps itself in a `SizeClassBuilder`, so the class comes from the list's own width. It is `compact` below `theme.sizeMedium` and `expanded` from `theme.sizeExpanded` (values from the theme, set in bb_ui; not checked in this repo). Its only use is the top padding: 20 when compact, 28 otherwise.
+- `TranscriptList` wraps itself in a `SizeClassBuilder`, so the class comes from the list's own width. It is `compact` below `SizeClass.mediumWidth` (600) and `expanded` from `SizeClass.expandedWidth` (1000). Its only use is the top padding: 20 when compact, 28 otherwise.
 - The content column is capped at `contentWidth + 2 × gutter` (752 px by default) and centred.
 - Item rows read the class through `sizeClassOf`, which finds this list's `SizeClassBuilder`. See the item sheets.
-- `JumpToLatestButton` does not read the size class. It reads `isTouch` (`formFactor == FormFactor.mobile`): padding 9 px vertical on touch, 6 px otherwise, and the list reserves a larger zone at the bottom on touch (38 px against 30 px).
+- `JumpToLatestButton` does not read the size class. It reads `isTouch` (`density == Density.touch`): padding 9 px vertical on touch, 6 px otherwise, and the list reserves a larger zone at the bottom on touch (38 px against 30 px).
 
 ## Accessibility
 

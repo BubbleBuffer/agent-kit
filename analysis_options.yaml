@@ -1,6 +1,15 @@
-# Same rules as Scratch's app/analysis_options.yaml.
+# Same rules as Scratch's app/analysis_options.yaml, plus bb-ui's bb_lints
+# (tokens only, no raw colours or text styles, Gap, no Material imports).
+# Run `dart analyze`: `flutter analyze` does not report plugin diagnostics.
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
   exclude:
     - build/**
+
+plugins:
+  bb_lints:
+    git:
+      url: https://github.com/BubbleBuffer/bb-ui
+      ref: 7c92a358a57656271ff8174ecef41d4a49dc0794
+      path: packages/bb_lints

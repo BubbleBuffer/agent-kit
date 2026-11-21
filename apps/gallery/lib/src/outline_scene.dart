@@ -8,7 +8,7 @@
 import 'package:agent_kit/agent_kit.dart';
 import 'package:agent_kit_core/agent_kit_core.dart'
     show AssistantMessage, TranscriptItem, UserMessage;
-import 'package:bb_ui/bb_ui.dart' show Ico;
+import 'package:bb_ui/bb_ui.dart' show Ico, Space;
 import 'package:flutter/widgets.dart';
 
 /// One message of the fixture: the anchor `m$n` shown by the item `i$n`.
@@ -147,7 +147,7 @@ class _OutlineSceneState extends State<OutlineScene>
       color: t.surface,
       child: SizeClassBuilder(
         builder: (context, sizeClass) {
-          final pad = sizeClass.isCompact ? 12.0 : 32.0;
+          final pad = sizeClass.isCompact ? Space.md : Space.xxl;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -159,7 +159,7 @@ class _OutlineSceneState extends State<OutlineScene>
               Expanded(
                 child: OutlineList(
                   controller: _controller,
-                  padding: EdgeInsets.fromLTRB(pad, 20, pad, 16),
+                  padding: EdgeInsets.fromLTRB(pad, Space.xl, pad, Space.lg),
                   chapterActions: (_) => _actions,
                   sectionActions: (_, _) => _actions,
                   cardActions: (_) => _actions,

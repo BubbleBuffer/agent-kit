@@ -1,7 +1,7 @@
 # agent_kit and the gallery
 
 `packages/agent_kit` is the Flutter widget package of the kit. It depends on
-`bb_ui` from [bb-ui](https://github.com/BubbleBuffer/bb-ui), pinned to `v0.7.2`
+`bb_ui` from [bb-ui](https://github.com/BubbleBuffer/bb-ui), pinned to bb-ui 0.8.0 (commit `7c92a35`, tagged `v0.8.0`)
 (primitives, which bring `bb_tokens`), and `agent_kit_core` (chat view
 models and the backend port). `apps/gallery` shows its widgets on
 `agent_kit_core`'s scripted fake backend. The look is the approved Scratch-skin
@@ -126,7 +126,7 @@ and `ChangeNotifier`/`ValueListenable`s around `ChatFeed`.
 
 `BbTheme` is the one `ThemeExtension`, in `agent_kit` (not `bb_ui`, which is
 Material-free; only the `ThemeExtension` class is imported from Material).
-`BbThemeScope(brightness:, formFactor:)` installs it together with `bb_ui`'s
+`BbThemeScope(brightness:, density:)` installs it together with `bb_ui`'s
 `AppTheme`, so the primitives and the kit read the same palette. Read it with
 `BbTheme.of(context)` or `context.bb`. Widgets read roles, never raw colours.
 
@@ -144,24 +144,38 @@ Roles (the mockup's `theme.css` names; values from `bb_tokens`'
 | `constructiveInk`, `informationInk`, `attentionInk`, `dangerInk` | `KitInks` (see below) |
 | `rail*` | follows the theme: light from `bgSecondary` and friends, dark Scratch's `rail*` |
 
-Also on the theme: `typeScale` (Scratch's `TypeScale`, mobile under the 768 px
-form factor), `spacing` (`KitSpacing`), `radii`, `motion` (with the 2400 ms
-`breathe` loop), `layout` (`KitLayout`) and `statusStyle(status)`.
+Also on the theme: `density` (bb-ui's `Density`, pointer or touch, set by the
+host; default pointer), `typeScale` and `metrics` (bb-ui's type ramp and control
+sizes for that density), `touch`, `radii`, `motion` (with the 2400 ms `breathe`
+loop), `layout` (`KitLayout`) and `statusStyle(status)`. Spacing is bb-ui's
+shared `Space` scale.
+
+### Tokens only
+
+Widgets write no number for spacing, size, type, stroke, opacity, colour or
+duration: they use `bb_tokens`' scales (`Space`, `ControlSize`, `IconSize`,
+`Stroke`, `Alpha`, `Radii`, `Motion`, the `TypeScale` roles) or
+`theme.metrics`. The few values particular to the kit (a column width, a menu
+width, a timeline's geometry) are named in `lib/src/theme/kit_tokens.dart`, and
+the gallery's specimen frames in `apps/gallery/lib/src/gallery_tokens.dart`.
+bb-ui's `bb_lints` analyzer plugin enforces this; it is enabled in the root
+`analysis_options.yaml` and runs in `dart analyze` (not `flutter analyze`, which
+does not report plugin diagnostics). Text-bearing boxes take a minimum height,
+so they grow with the system text size.
 
 ### Tokens supplied by `bb_tokens`
 
 `theme.css` has values Scratch's tokens lack. They live in bb-ui's `bb_tokens`
 package and remain available through `package:bb_ui/tokens.dart`:
 
-- `KitLayout`: `sizeMedium` 600, `sizeExpanded` 1000, `fitComposer` 460,
-  `paneMinWidth` 200, `paneMinHeight` 120, `edgeTab` 28, `controlHeight` 32,
-  `rowHeight` 28.
+- `KitLayout`: `fitComposer` 460, `contextSplit` 680, `paneMinWidth` 200,
+  `paneMinHeight` 120, `edgeTab` 28, `controlHeight` 32, `rowHeight` 28. The
+  size-class thresholds are `SizeClass.mediumWidth` (600) and
+  `SizeClass.expandedWidth` (1000).
 - `KitInks`: the text colours of the state roles (constructive `#397748` /
   `#93BD9B`, danger `#AD4B4B` / `#E0A3A3`, attention `#874016` / `#F0D29C`,
   light / dark). `informationInk` is `textSecondary`.
 - `KitMotion`: `breathe`, 2400 ms.
-- `KitSpacing`: `theme.css` has no scale; the steps are 2, 4, 8, 12, 16 and 24
-  px, taken from `app.css`.
 
 ### One colour source
 
@@ -179,7 +193,7 @@ caught by `scripts/check-raw-colours.sh` (vendored from bb-ui `v0.7.1`; re-sync 
 when the pin moves) in the `raw-colours` CI job, which first runs
 `scripts/test-check-raw-colours.sh`, a failing-case test of the script.
 To change the palette, follow its
-[bb_tokens workflow](https://github.com/BubbleBuffer/bb-ui/blob/v0.7.2/packages/bb_tokens/README.md),
+[bb_tokens workflow](https://github.com/BubbleBuffer/bb-ui/blob/7c92a358a57656271ff8174ecef41d4a49dc0794/packages/bb_tokens/README.md),
 release that dependency and update both `bb_ui` Git pins here together. Agent
 CI then compares the existing agent goldens against the updated palette; it
 does not generate a local copy of the shared colours.
@@ -188,11 +202,14 @@ does not generate a local copy of the shared colours.
 
 Layout depends on the width of the widget's own container, never the window:
 `SizeClassBuilder` wraps a `LayoutBuilder` and picks `SizeClass.compact` (below
-600 px), `medium` (to below 1000 px) or `expanded`, using the theme's
-thresholds. Descendants read it with `SizeClass.of(context)`; a nested builder
-(a pane inside a workbench) measures its own area. Do not use
-`MediaQuery.size` for layout. The form factor (`BbTheme.formFactor`, from the
-window width as in Scratch) decides only touch sizing and the type scale.
+600 px), `medium` (to below 1000 px) or `expanded`. `SizeClass` and
+`SizeClassScope` are bb-ui's (`bb_tokens`), re-exported by `agent_kit`.
+Descendants read the class with `sizeClassOf(context)` (expanded when no builder
+is above) or bb-ui's `context.sizeClass` (the window's class when no scope is
+above); a nested builder (a pane inside a workbench) measures its own area. Do
+not use `MediaQuery.size` for layout. The density (`BbTheme.density`, set by the
+host, for example `Density.forPlatform(defaultTargetPlatform)`) decides only
+touch sizing and the type ramp.
 
 ## Status
 

@@ -38,13 +38,13 @@ import 'package:agent_kit/agent_kit.dart';
 
 - `threadStrong` (the fill), `seam` (the track), `ink`, `muted`, `faint`
 - `hover` and `pressed` (the button overlays, when `onTap` is set)
-- `formFactor` (touch height)
+- `metrics.control` (the button's minimum height by density)
 
 ## Size classes
 
 - Bar: 40 × 2 px (`chat_header.dart`, `ContextMeter`).
 - Button height: 40 px on touch, 32 px otherwise.
-- ChatHeader drops the label when it is narrow (below `sizeMedium`, 600 px by default).
+- ChatHeader drops the label when it is narrow (below `SizeClass.mediumWidth`, 600 px).
 
 ## Accessibility
 

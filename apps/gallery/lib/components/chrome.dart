@@ -8,6 +8,8 @@ import 'package:agent_kit_core/agent_kit_core.dart';
 import 'package:bb_ui/bb_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import '../src/gallery_tokens.dart';
+
 final _now = DateTime(2026, 10, 26, 15);
 
 final _chats = <ChatSummary>[
@@ -115,7 +117,6 @@ class ChromeSpecimens extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.bb;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -123,28 +124,32 @@ class ChromeSpecimens extends StatelessWidget {
           'SessionRail: the 240 px column, and a sliding screen at 390 px',
         ),
         Wrap(
-          spacing: t.spacing.xl,
-          runSpacing: t.spacing.lg,
+          spacing: Space.xl,
+          runSpacing: Space.lg,
           children: [
-            SizedBox(width: 240, height: 560, child: _rail()),
+            SizedBox(
+              width: Layout.sidebarWidth,
+              height: Specimen.railHeight,
+              child: _rail(),
+            ),
             const _SlidingRail(),
           ],
         ),
-        SizedBox(height: t.spacing.xl),
+        Gap(Space.xl),
         const _Label('Hidden rail: the header gets the show button'),
         const _HiddenRail(),
-        SizedBox(height: t.spacing.xl),
+        Gap(Space.xl),
         const _Label('ChatHeader at 1000 px: needs you, running, failed, done'),
-        const _Headers(maxWidth: 1000),
-        SizedBox(height: t.spacing.xl),
+        const _Headers(maxWidth: StageWidths.desktop),
+        Gap(Space.xl),
         const _Label(
           'ChatHeader at 390 px: tile, branch and meter label dropped',
         ),
-        const _Headers(maxWidth: 390),
-        SizedBox(height: t.spacing.xl),
+        const _Headers(maxWidth: StageWidths.phone),
+        Gap(Space.xl),
         const _Label('CrewStrip at 1000 px and 390 px (scrolls sideways)'),
         _Boxed(
-          maxWidth: 1000,
+          maxWidth: StageWidths.desktop,
           child: CrewStrip(
             agents: _agents,
             jobs: _jobs,
@@ -152,9 +157,9 @@ class ChromeSpecimens extends StatelessWidget {
             agentTitle: _agentTitle,
           ),
         ),
-        SizedBox(height: t.spacing.md),
+        Gap(Space.md),
         _Boxed(
-          maxWidth: 390,
+          maxWidth: StageWidths.phone,
           child: CrewStrip(
             agents: _agents,
             jobs: _jobs,
@@ -162,27 +167,27 @@ class ChromeSpecimens extends StatelessWidget {
             agentTitle: _agentTitle,
           ),
         ),
-        SizedBox(height: t.spacing.xl),
+        Gap(Space.xl),
         const _Label('CrewLedger ("Still running") and UsageByModel'),
         Wrap(
-          spacing: t.spacing.xl,
-          runSpacing: t.spacing.lg,
+          spacing: Space.xl,
+          runSpacing: Space.lg,
           crossAxisAlignment: WrapCrossAlignment.start,
           children: [
             SizedBox(
-              width: 252,
+              width: Specimen.sideCard,
               child: CrewLedger(agents: _agents, jobs: _jobs, now: _now),
             ),
             const SizedBox(
-              width: 252,
+              width: Specimen.sideCard,
               child: UsageByModel(models: _models, usage: _usage),
             ),
           ],
         ),
-        SizedBox(height: t.spacing.xl),
+        Gap(Space.xl),
         const _Label('ContextMeter: 12%, 38%, 96%, bar only'),
         const Wrap(
-          spacing: 24,
+          spacing: Space.xl,
           children: [
             ContextMeter(fraction: .12),
             ContextMeter(fraction: .38),
@@ -204,10 +209,10 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.bb;
     return Padding(
-      padding: EdgeInsets.only(bottom: t.spacing.sm),
+      padding: EdgeInsets.only(bottom: Space.sm),
       child: Text(
         text,
-        style: ts(const TypeSpec(12, 16, 400), t.faint, mono: true),
+        style: ts(TypeScale.pointer.codeSmall, t.faint, mono: true),
       ),
     );
   }
@@ -312,8 +317,8 @@ class _SlidingRailState extends State<_SlidingRail> {
   Widget build(BuildContext context) {
     final t = context.bb;
     return SizedBox(
-      width: 390,
-      height: 560,
+      width: StageWidths.phone,
+      height: Specimen.railHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: t.surface,
@@ -355,8 +360,8 @@ class _HiddenRailState extends State<_HiddenRail> {
     return Align(
       alignment: Alignment.topLeft,
       child: SizedBox(
-        width: 760,
-        height: 120,
+        width: Specimen.hiddenRailWidth,
+        height: Specimen.hiddenRailHeight,
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: t.surface,

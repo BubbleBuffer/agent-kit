@@ -25,10 +25,10 @@ Widget kitIcon(
 /// A Lucide glyph at [size], hidden from semantics (the button around it
 /// speaks). [color] defaults to the secondary icon colour.
 class KitIcon extends StatelessWidget {
-  const KitIcon(this.glyph, {super.key, this.size = 14, this.color});
+  const KitIcon(this.glyph, {super.key, this.size = IconSize.xs, this.color});
 
   final LucideGlyph glyph;
-  final double size;
+  final IconSize size;
 
   /// Defaults to the secondary icon colour.
   final Color? color;
@@ -37,7 +37,7 @@ class KitIcon extends StatelessWidget {
   Widget build(BuildContext context) => ExcludeSemantics(
     child: kitIcon(
       glyph,
-      size: size,
+      size: size.px,
       color: color ?? context.bb.colors.iconSecondary,
     ),
   );

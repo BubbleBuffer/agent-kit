@@ -40,8 +40,11 @@ jobs:
           name: format-patch
           path: format.patch
 
+  # dart analyze, not flutter analyze: only dart analyze reports the bb_lints
+  # analyzer plugin (root analysis_options.yaml). Run it at the workspace root
+  # with no path arguments, or the plugin is skipped.
   analyze:
-    name: flutter analyze
+    name: dart analyze
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -54,7 +57,7 @@ jobs:
           flutter-version: 3.47.5
           cache: true
       - run: flutter pub get
-      - run: flutter analyze
+      - run: dart analyze --fatal-infos
 
   # Raw colours in the kit's own source; the script is vendored from bb-ui
   # (see its header). The second step proves the check fails on a raw colour.
@@ -214,7 +217,7 @@ jobs:
             bb_ui:
               git:
                 url: https://github.com/BubbleBuffer/bb-ui
-                ref: v0.7.2
+                ref: 7c92a358a57656271ff8174ecef41d4a49dc0794
                 path: packages/bb_ui
           YAML
           printf "import 'package:agent_kit/agent_kit.dart';\n\nfinal theme = BbTheme.light();\nconst sizeClass = SizeClass.compact;\n" > "$dir/lib/agent_use.dart"

@@ -133,7 +133,6 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
     final pending = q.isPending;
     final answered = q.state == ChildQuestionState.answered;
     final cancelled = q.state == ChildQuestionState.cancelled;
-    final small = ts(t.typeScale.uiSmall, t.muted, weight: 500);
 
     final Widget status;
     if (pending) {
@@ -142,23 +141,29 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
       status = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          glyphIcon(glyphCheck, size: 14, color: t.muted),
-          const SizedBox(width: 4),
-          Text('Answered', style: small.copyWith(fontWeight: fw(600))),
+          glyphIcon(glyphCheck, size: IconSize.xs.px, color: t.muted),
+          const Gap(Space.xxs),
+          Text(
+            'Answered',
+            style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.semibold),
+          ),
         ],
       );
     } else {
       status = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          glyphIcon(glyphCircleX, size: 14, color: t.muted),
-          const SizedBox(width: 4),
-          Text('Cancelled', style: small.copyWith(fontWeight: fw(600))),
+          glyphIcon(glyphCircleX, size: IconSize.xs.px, color: t.muted),
+          const Gap(Space.xxs),
+          Text(
+            'Cancelled',
+            style: ts(t.typeScale.uiSmall, t.muted, weight: Weight.semibold),
+          ),
         ],
       );
     }
 
-    final note = ts(t.typeScale.uiSmall, t.faint, weight: 400);
+    final note = ts(t.typeScale.uiSmall, t.faint, weight: Weight.regular);
     final canAnswer = widget.onAnswer != null;
     final actions = <Widget>[
       if (widget.onOpenChild != null)
@@ -178,13 +183,20 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
       container: true,
       label: 'Question from $task to the agent',
       child: Padding(
-        padding: const EdgeInsets.only(left: 6),
+        padding: const EdgeInsets.only(left: Space.xs),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: t.seam, width: 2)),
+            border: Border(
+              left: BorderSide(color: t.seam, width: Stroke.bold),
+            ),
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 2, 0, 2),
+            padding: const EdgeInsets.fromLTRB(
+              Space.md,
+              Space.hair,
+              0,
+              Space.hair,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
@@ -197,48 +209,48 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                         children: [
                           glyphIcon(
                             _glyphBot,
-                            size: 14,
+                            size: IconSize.xs.px,
                             color: t.colors.iconSecondary,
                           ),
-                          const SizedBox(width: 8),
+                          const Gap(Space.sm),
                           Flexible(
                             child: Text(
                               task,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: ts(
-                                const TypeSpec(13, 18, 500),
+                                t.typeScale.ui,
                                 t.ink,
-                                weight: 700,
+                                weight: Weight.bold,
                               ),
                             ),
                           ),
                           if (!compact) ...[
-                            const SizedBox(width: 8),
+                            const Gap(Space.sm),
                             Text(
                               'asked the agent',
                               maxLines: 1,
                               style: ts(
-                                const TypeSpec(13, 18, 500),
+                                t.typeScale.ui,
                                 t.faint,
-                                weight: 400,
+                                weight: Weight.regular,
                               ),
                             ),
                           ],
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const Gap(Space.sm),
                     status,
                   ],
                 ),
-                const SizedBox(height: 4),
+                const Gap(Space.xxs),
                 Text(q.text, style: ts(t.typeScale.body, t.ink)),
                 if (q.options.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const Gap(Space.xxs),
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: Space.xs,
+                    runSpacing: Space.xs,
                     children: [
                       for (final o in q.options)
                         DecoratedBox(
@@ -248,12 +260,16 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                           ),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 9,
-                              vertical: 1,
+                              horizontal: Space.sm,
+                              vertical: Space.hair,
                             ),
                             child: Text(
                               o,
-                              style: small.copyWith(fontWeight: fw(400)),
+                              style: ts(
+                                t.typeScale.uiSmall,
+                                t.muted,
+                                weight: Weight.regular,
+                              ),
                             ),
                           ),
                         ),
@@ -261,7 +277,7 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                   ),
                 ],
                 if (answered && q.answer != null) ...[
-                  const SizedBox(height: 6),
+                  const Gap(Space.xs),
                   DecoratedBox(
                     decoration: BoxDecoration(
                       color: t.surface2,
@@ -269,33 +285,33 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                        horizontal: Space.md,
+                        vertical: Space.xs,
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.only(top: 3),
+                            padding: const EdgeInsets.only(top: Space.xxs),
                             child: glyphIcon(
                               _glyphReply,
-                              size: 14,
+                              size: IconSize.xs.px,
                               color: t.colors.iconSecondary,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const Gap(Space.sm),
                           Padding(
-                            padding: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.only(top: Space.hair),
                             child: Text(
                               q.answeredBy == AnsweredBy.user ? 'You' : 'Agent',
                               style: ts(
                                 t.typeScale.uiSmall,
                                 t.muted,
-                                weight: 700,
+                                weight: Weight.bold,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const Gap(Space.sm),
                           Expanded(
                             child: Text(
                               q.answer!,
@@ -308,24 +324,26 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                   ),
                 ],
                 if (cancelled) ...[
-                  const SizedBox(height: 2),
+                  const Gap(Space.hair),
                   Padding(
                     padding: const EdgeInsets.only(left: 0),
                     child: Text('The child was cancelled', style: note),
                   ),
                 ],
                 if (pending) ...[
-                  const SizedBox(height: 2),
+                  const Gap(Space.hair),
                   if (compact) ...[
                     Text('Waiting for the agent to answer', style: note),
                     if (actions.isNotEmpty)
                       Transform.translate(
-                        offset: const Offset(-8, 0),
+                        offset: const Offset(-Space.sm, 0),
                         child: Wrap(children: actions),
                       ),
                   ] else
                     ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 28),
+                      constraints: BoxConstraints(
+                        minHeight: ControlSize.sm.height,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -339,33 +357,45 @@ class _ChildQuestionRowState extends State<ChildQuestionRow> {
                       ),
                     ),
                   if (_composing && canAnswer) ...[
-                    const SizedBox(height: 6),
+                    const Gap(Space.xs),
                     _AnswerField(
                       controller: _text,
                       focusNode: _focus,
                       hint: 'Your answer',
                     ),
-                    const SizedBox(height: 6),
-                    Row(
+                    const Gap(Space.xs),
+                    // The note beside the buttons, or above them when
+                    // compact.
+                    Flex(
+                      direction: compact ? Axis.vertical : Axis.horizontal,
+                      crossAxisAlignment: compact
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.center,
+                      spacing: compact ? Space.xs : Space.sm,
                       children: [
-                        Expanded(
-                          child: Text(
-                            'Goes to the child as the answer. The agent is '
-                            'told you answered.',
-                            style: note,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        KitButton(
-                          label: 'Cancel',
-                          kind: KitButtonKind.quiet,
-                          onTap: _toggle,
-                        ),
-                        const SizedBox(width: 6),
-                        KitButton(
-                          label: 'Send answer',
-                          kind: KitButtonKind.primary,
-                          onTap: _text.text.trim().isEmpty ? null : _send,
+                        if (compact)
+                          SizedBox(
+                            width: double.infinity,
+                            child: Text(_answerNote, style: note),
+                          )
+                        else
+                          Expanded(child: Text(_answerNote, style: note)),
+                        Wrap(
+                          alignment: WrapAlignment.end,
+                          spacing: Space.xs,
+                          runSpacing: Space.xxs,
+                          children: [
+                            KitButton(
+                              label: 'Cancel',
+                              kind: KitButtonKind.quiet,
+                              onTap: _toggle,
+                            ),
+                            KitButton(
+                              label: 'Send answer',
+                              kind: KitButtonKind.primary,
+                              onTap: _text.text.trim().isEmpty ? null : _send,
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -414,7 +444,10 @@ class _AnswerField extends StatelessWidget {
         border: Border.all(color: t.seam),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.md,
+          vertical: Space.sm,
+        ),
         child: Semantics(
           label: 'Your answer to the child',
           textField: true,
@@ -456,3 +489,7 @@ class _AnswerField extends StatelessWidget {
     );
   }
 }
+
+/// The note under the answer field.
+const _answerNote =
+    'Goes to the child as the answer. The agent is told you answered.';

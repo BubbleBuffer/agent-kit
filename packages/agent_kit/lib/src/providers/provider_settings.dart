@@ -71,7 +71,7 @@ class ProviderList extends StatelessWidget {
         ),
         if (pending)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: Space.sm),
             child: Text(
               'Saved as ${setup.main}.',
               key: const ValueKey('provider-saved'),
@@ -80,7 +80,7 @@ class ProviderList extends StatelessWidget {
           ),
         if (setup.providers.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: Space.sm),
             child: Text(
               'No providers are configured on this host. Add one to the '
               'host configuration, then reload it.',
@@ -98,7 +98,7 @@ class ProviderList extends StatelessWidget {
           ),
         if (error != null)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: Space.xxs),
             child: Semantics(
               liveRegion: true,
               child: Text(
@@ -133,19 +133,19 @@ class _Provider extends StatelessWidget {
     final needsKey = provider.keyEnv != null;
     final usable = provider.keyPresent || !needsKey;
     return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      padding: const EdgeInsets.only(top: Space.sm, bottom: Space.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
           Wrap(
-            spacing: 12,
-            runSpacing: 4,
+            spacing: Space.md,
+            runSpacing: Space.xxs,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 provider.name,
-                style: ts(theme.typeScale.ui, theme.ink, weight: 700),
+                style: ts(theme.typeScale.ui, theme.ink, weight: Weight.bold),
               ),
               Text(
                 provider.kind,
@@ -159,7 +159,7 @@ class _Provider extends StatelessWidget {
             ],
           ),
           if (provider.baseUrl != null) ...[
-            const SizedBox(height: 2),
+            const Gap(Space.hair),
             Text(
               provider.baseUrl!,
               style: ts(theme.typeScale.uiSmall, theme.faint, mono: true),
@@ -168,7 +168,7 @@ class _Provider extends StatelessWidget {
             ),
           ],
           if (!usable) ...[
-            const SizedBox(height: 4),
+            const Gap(Space.xxs),
             Text(
               'The host did not find ${provider.keyEnv}. Set it for the '
               'host and restart it to use this provider.',
@@ -177,7 +177,7 @@ class _Provider extends StatelessWidget {
             ),
           ],
           if (provider.models.isEmpty) ...[
-            const SizedBox(height: 4),
+            const Gap(Space.xxs),
             Text(
               'This provider lists no models.',
               style: ts(theme.typeScale.uiSmall, theme.muted),
@@ -231,12 +231,12 @@ class _Model extends StatelessWidget {
             key: ValueKey('make-default-$id'),
             label: making ? 'Making default…' : 'Make default',
             semanticLabel: 'Make $id the default model',
-            height: 28,
-            fontSize: 12,
+            height: ControlSize.sm,
+            type: theme.typeScale.uiSmall,
             onTap: !usable || busy ? null : () => onMakeDefault!(id),
           );
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: Space.xs),
       child: Row(
         children: [
           Expanded(
@@ -247,7 +247,7 @@ class _Model extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (trailing != null) ...[const SizedBox(width: 12), trailing],
+          if (trailing != null) ...[const Gap(Space.md), trailing],
         ],
       ),
     );
@@ -365,7 +365,7 @@ class _ProviderSettingsState extends State<ProviderSettings> {
             key: const ValueKey('provider-load-error'),
             style: ts(theme.typeScale.ui, theme.dangerInk),
           ),
-          const SizedBox(height: 8),
+          const Gap(Space.sm),
           Align(
             alignment: Alignment.centerLeft,
             child: KitButton(
